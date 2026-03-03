@@ -1,0 +1,22 @@
+# Dependency directories
+node_modules/
+
+# IDE and OS files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.DS_Store
+
+# Build directories (Spring Boot / Maven / React)
+target/
+build/
+dist/
+out/
+
+# Environment variables
+.env
+.env.local
