@@ -1,0 +1,14 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "SmartCampus Local",
+      "Group": "Servers",
+      "Host": "postgres",
+      "Port": 5432,
+      "MaintenanceDB": "smartcampus",
+      "Username": "smartcampus",
+      "SSLMode": "prefer",
+      "PassFile": "/tmp/pgpassfile"
+    }
+  }
+}
