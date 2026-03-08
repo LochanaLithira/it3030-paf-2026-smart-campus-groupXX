@@ -1,7 +1,8 @@
 # Claude Context — Smart Campus Resource Management Platform
 
 > **Purpose:** This file provides AI assistants (Claude, Copilot, etc.) with complete project context for consistent, accurate code generation.  
-> **Date:** 2026-03-04
+> **Date:** 2026-03-05  
+> **Last updated by:** GitHub Copilot (Claude Sonnet 4.6) — Sprint 1 implementation: Auth, Roles, Notifications, Docker
 
 ---
 
@@ -206,4 +207,135 @@ Backend config:  backend/src/main/resources/
 Backend tests:   backend/src/test/java/com/smartcampus/backend/
 Frontend source: frontend/src/
 Docs:            docs/
+Docker:          docker-compose.yml (root), backend/Dockerfile
 ```
+
+---
+
+## Implementation Status (as of 2026-03-05)
+
+### ✅ Completed — Sprint 0 Foundation
+
+| Task | File(s) |
+|------|---------|
+| Updated `pom.xml` — Spring Boot 3.4.3, Java 21, all declared deps (OAuth2, JWT, Flyway, Lombok, MapStruct, SpringDoc, Testcontainers, REST Assured) | `backend/pom.xml` |
+| Full `application.properties` — datasource, Flyway, OAuth2, JWT, CORS, Swagger, Actuator | `backend/src/main/resources/application.properties` |
+| Flyway V1 migration from `schema.sql` — 15 tables, 7 enums, triggers, indexes, seed roles + tags | `backend/src/main/resources/db/migration/V1__initial_schema.sql` |
+| Multi-stage `Dockerfile` — build (JDK 21) → extract layers → runtime (JRE 21, non-root user, JVM container-aware flags) | `backend/Dockerfile` |
+| `docker-compose.yml` — PostgreSQL 16 + pgAdmin (with pre-configured server) + Backend service; volumes, healthchecks, env-driven config | `docker-compose.yml` |
+| `.env.example` — template for all required environment variables | `.env.example` |
+| pgAdmin server auto-config | `docker/pgadmin/servers.json` |
+| PostgreSQL extension init script | `docker/postgres/init.sql` |
+
+### ✅ Completed — Sprint 1: Auth, Roles & Notifications (Member 4)
+
+#### Models & Enums
+| Task | File(s) |
+|------|---------|
+| `User` JPA entity (UUID PK, OAuth2 fields, `is_active`, JPA auditing) | `model/User.java` |
+| `Role` JPA entity (`TEXT[]` permissions via `@JdbcTypeCode(SqlTypes.ARRAY)`) | `model/Role.java` |
+| `UserRole` JPA entity with `@IdClass(UserRoleId.class)` composite PK | `model/UserRole.java`, `model/UserRoleId.java` |
+| `Notification` JPA entity (generic `related_entity_id`, `notification_type` PG enum) | `model/Notification.java` |
+| All 6 Java enums mirroring PostgreSQL ENUM types | `model/enums/` |
+
+#### DTOs (Java 21 Records)
+| Task | File(s) |
+|------|---------|
+| `ApiErrorResponse`, `PageResponse<T>` | `dto/common/` |
+| `LoginRequest`, `RefreshTokenRequest`, `AuthResponse`, `UserResponse`, `UserSummaryResponse`, `UpdateRolesRequest`, `RoleResponse` | `dto/auth/` |
+| `NotificationResponse`, `UnreadCountResponse`, `NotificationPageResponse` | `dto/notification/` |
+
+#### Repositories
+| Task | File(s) |
+|------|---------|
+| `UserRepository` — custom JPQL queries with roles fetch, filtering by search/role/isActive | `repository/UserRepository.java` |
+| `RoleRepository`, `UserRoleRepository`, `NotificationRepository` — modifying queries for read/mark-all-read | `repository/` |
+
+#### Security (M4-B03 → M4-B10)
+| Task | File(s) |
+|------|---------|
+| `UserPrincipal` — implements `UserDetails` + `OAuth2User`, built from `User` entity | `security/UserPrincipal.java` |
+| `JwtTokenProvider` — RS256 via nimbus-jose-jwt; auto-generates ephemeral RSA key pair in dev; access (15 min) + refresh (7 day) JWT generation/validation | `security/JwtTokenProvider.java` |
+| `JwtAuthenticationFilter` — `OncePerRequestFilter`; extracts Bearer token, validates, populates `SecurityContextHolder` | `security/JwtAuthenticationFilter.java` |
+| `CustomOAuth2UserService` — extends `DefaultOAuth2UserService`; upserts user on Google login; assigns default USER role to new users | `security/CustomOAuth2UserService.java` |
+| `CustomPermissionEvaluator` — enables `@PreAuthorize("hasAuthority('PERMISSION_NAME')")` with flat permission strings | `security/CustomPermissionEvaluator.java` |
+| `SecurityUtils` — static helpers `getCurrentPrincipal()` / `getCurrentUserId()` | `security/SecurityUtils.java` |
+
+#### Configuration (M4-B03, M4-B15, M4-B16, M4-B17, M4-B18)
+| Task | File(s) |
+|------|---------|
+| `SecurityConfig` — stateless JWT filter chain, CORS, CSRF disabled, OAuth2 login, method security with `@EnableMethodSecurity` | `config/SecurityConfig.java` |
+| `AuditConfig` — `@EnableJpaAuditing`, `AuditorAware` from SecurityContext | `config/AuditConfig.java` |
+| `CorsConfig` — environment-driven `corsConfigurationSource` | `config/CorsConfig.java` |
+| `OpenApiConfig` — SpringDoc with global JWT Bearer security scheme | `config/OpenApiConfig.java` |
+| `AppConfig` — `RestTemplate` bean (used by `AuthService` for Google code exchange) | `config/AppConfig.java` |
+| `GlobalExceptionHandler` — `@RestControllerAdvice`; handles `AppException`, `AccessDeniedException`, `MethodArgumentNotValidException`, `DataIntegrityViolationException` | `exception/GlobalExceptionHandler.java` |
+| Custom exceptions: `AppException`, `ResourceNotFoundException`, `UnauthorizedException`, `ConflictException`, `ForbiddenException` | `exception/` |
+
+#### Services (M4-B05, M4-B06, M4-B08, M4-B09, M4-B12)
+| Task | File(s) |
+|------|---------|
+| `AuthService` — SPA Google code-exchange flow (RestTemplate → Google token endpoint → userinfo); upsert user; generate JWT pair; refresh with JTI blacklist; logout | `service/AuthService.java` |
+| `UserService` — list with filters/pagination, get by ID, get current user, update roles (full replace), deactivate, list all roles | `service/UserService.java` |
+| `NotificationService` — create (called by booking/ticket services), list (paginated + isRead filter), unread count, markAsRead, markAllAsRead | `service/NotificationService.java` |
+
+#### Controllers (M4-B08, M4-B09, M4-B13)
+| Task | File(s) |
+|------|---------|
+| `AuthController` — `POST /auth/google`, `POST /auth/refresh`, `POST /auth/logout`; refresh token stored in `HttpOnly` cookie | `controller/AuthController.java` |
+| `UserController` — `GET /users`, `GET /users/me`, `GET /users/{id}`, `PATCH /users/{id}/roles`, `PATCH /users/{id}/deactivate`; full `@PreAuthorize` guards | `controller/UserController.java` |
+| `RoleController` — `GET /roles` (separate from UserController per API spec) | `controller/RoleController.java` |
+| `NotificationController` — `GET /notifications`, `GET /notifications/unread-count`, `PATCH /notifications/{id}/read`, `PATCH /notifications/read-all` | `controller/NotificationController.java` |
+
+---
+
+### ⏳ Remaining — Sprint 2+ (Other Members)
+
+| Domain | Status | Key classes to create |
+|--------|--------|-----------------------|
+| Member 1 — Facilities & Assets | Not started | `Location`, `Resource`, `ResourceAvailability`, `ResourceTag` entities; `ResourceService`, `LocationService`; `ResourceController`, `LocationController` |
+| Member 2 — Booking Management | Not started | `Booking`, `RecurringBookingGroup` entities; `BookingService`, `BookingValidationService`; `BookingController` |
+| Member 3 — Ticketing | Not started | `Ticket`, `TicketAttachment`, `TicketComment`, `TicketStatusHistory` entities; `TicketService`; `TicketController` |
+| All — Frontend | Not started | All React pages/hooks/stores — see `tasks.md` M4-F01 to M4-F14 |
+| All — Integration tests | Not started | Testcontainers + REST Assured integration tests for all controllers |
+
+### Integration Points (for Sprint 2/3)
+
+When implementing `BookingService` and `TicketService`, call `NotificationService.create()` to send notifications:
+
+```java
+// Example in BookingService.approveBooking():
+notificationService.create(
+    booking.getUserId(),
+    "Booking Approved",
+    "Your booking for " + resource.getName() + " on " + booking.getBookingDate() + " has been approved.",
+    NotificationType.BOOKING_APPROVED,
+    booking.getBookingId()
+);
+```
+
+### Running the Stack (Docker)
+
+```bash
+# 1. Copy and edit environment variables
+cp .env.example .env
+# Fill in GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, DB_PASSWORD
+
+# 2. Start all services
+docker compose up -d
+
+# 3. Access points
+# Backend API:    http://localhost:8080/api/v1
+# Swagger UI:     http://localhost:8080/api/v1/swagger-ui.html
+# pgAdmin:        http://localhost:5050  (admin@smartcampus.local / admin)
+# PostgreSQL:     localhost:5432         (smartcampus / smartcampus)
+```
+
+### Running Backend Locally (No Docker for App)
+
+```bash
+# Requires PostgreSQL running (docker compose up postgres -d)
+cd backend
+./mvnw spring-boot:run
+```
+
