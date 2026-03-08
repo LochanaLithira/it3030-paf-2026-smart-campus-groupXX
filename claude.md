@@ -1,8 +1,8 @@
 # Claude Context — Smart Campus Resource Management Platform
 
 > **Purpose:** This file provides AI assistants (Claude, Copilot, etc.) with complete project context for consistent, accurate code generation.  
-> **Date:** 2026-03-05  
-> **Last updated by:** GitHub Copilot (Claude Sonnet 4.6) — Sprint 1 implementation: Auth, Roles, Notifications, Docker
+> **Date:** 2026-03-08  
+> **Last updated by:** GitHub Copilot (Claude Sonnet 4.6) — Sprint 1 complete: Auth, Roles, Notifications, Docker, Frontend infrastructure, Credential login, Sign-up, Create User, Role Management UI
 
 ---
 
@@ -40,18 +40,43 @@
 | UI Framework | React 19.2 |
 | Language | TypeScript 5.9+ |
 | Build | Vite 7.3 with `@vitejs/plugin-react-swc` |
-| Routing | TanStack Router 1.x (file-based) |
-| Server State | TanStack Query 5.x |
-| Client State | Zustand 5.x |
-| Forms | React Hook Form 7.x + Zod 3.x |
-| UI Kit | Shadcn/ui (Radix primitives) |
-| Styling | Tailwind CSS 4.x |
-| HTTP Client | ky 1.x |
+| Routing | TanStack Router 1.x (code-based, `createRoute`) |
+| Server State | TanStack Query 5.x + Devtools |
+| Client State | Zustand 5.x with `persist` middleware (`sc-auth` key) |
+| Forms | React Hook Form 7.x + Zod 4.x + `@hookform/resolvers` |
+| UI Kit | shadcn/ui v4 (base-ui primitives — **not** Radix) |
+| Styling | Tailwind CSS 4.x (CSS-first, `@import "tailwindcss"`, oklch vars) |
+| HTTP Client | ky 1.x (with JWT Bearer injection + auto-401 refresh interceptor) |
 | Tables | TanStack Table 8.x |
 | Icons | Lucide React |
 | Toasts | Sonner 2.x |
 | Dates | date-fns 4.x |
 | Testing | Vitest, Testing Library, Playwright |
+
+> **Important UI note:** The project uses **shadcn/ui v4** which is built on **base-ui**, NOT Radix UI.  
+> `DropdownMenuTrigger`, `SelectPrimitive`, etc. do **not** support the `asChild` prop.  
+> Use `className` directly on the trigger or wrap with a plain `<button>`.
+
+---
+
+## Current Frontend Source Layout
+
+```
+frontend/src/
+├── api/            HTTP layer: auth.ts, users.ts, roles.ts, notifications.ts
+├── components/
+│   ├── layout/     AppLayout.tsx, Header.tsx, Sidebar.tsx
+│   ├── ui/         All shadcn/ui generated components
+│   ├── roles/      RoleEditorDialog.tsx, PermissionSelector.tsx
+│   └── users/      AssignRolesDialog.tsx, CreateUserDialog.tsx
+├── hooks/          useUsers.ts, useRoles.ts (TanStack Query wrappers)
+├── lib/            permissions.ts (PERMISSIONS + PERMISSION_GROUPS), utils.ts
+├── pages/          DashboardPage.tsx, LoginPage.tsx, UserManagementPage.tsx,
+│                   RoleManagementPage.tsx, ProfilePage.tsx, OAuthCallback.tsx
+├── router.tsx      Code-based TanStack Router (createRoute / createRootRoute)
+├── store/          authStore.ts (Zustand, persisted)
+└── types/          api.ts (mirrors all backend DTOs)
+```
 
 ---
 
@@ -187,15 +212,17 @@ When generating code for this project, follow these conventions:
 
 ### TypeScript (Frontend)
 - All components: named `function` exports (not arrow-function default exports)
-- API calls: in `src/api/<domain>.api.ts`, using `ky` client
+- API calls: in `src/api/<domain>.ts`, using `ky` client with `api` instance from `src/api/client.ts`
 - Data hooks: in `src/hooks/use<Domain>.ts`, wrapping TanStack Query's `useQuery`/`useMutation`
-- Form validation: Zod schemas in `src/lib/validators.ts`
+- Form validation: Zod schemas co-located in the component or page file
 - Types: mirrored from backend DTOs in `src/types/api.ts`
 - State: server state via TanStack Query only; Zustand for client-only state (auth, UI)
-- Components: Shadcn/ui primitives, composed in feature components
-- Styling: Tailwind CSS utility classes, `cn()` helper for conditional classes
-- Permission checks: `hasPermission(user, 'PERMISSION_NAME')` from `src/lib/permissions.ts`
-- Routes: file-based in `src/routes/` following TanStack Router conventions
+- Components: shadcn/ui v4 primitives (base-ui — no `asChild` on triggers)
+- Styling: Tailwind CSS 4.x utility classes, `cn()` helper for conditional classes
+- Permission checks: `hasPermission(PERMISSIONS.PERMISSION_KEY)` from `src/lib/permissions.ts` via `useAuthStore`
+- Routes: code-based in `src/router.tsx` using `createRoute` / `createRootRoute`
+- `DropdownMenuTrigger`: pass `className` directly — do NOT use `asChild`
+- Select from base-ui: `onValueChange` fires `string | null` — always handle null explicitly
 
 ---
 
@@ -212,7 +239,7 @@ Docker:          docker-compose.yml (root), backend/Dockerfile
 
 ---
 
-## Implementation Status (as of 2026-03-05)
+## Implementation Status (as of 2026-03-08)
 
 ### ✅ Completed — Sprint 0 Foundation
 
@@ -221,13 +248,14 @@ Docker:          docker-compose.yml (root), backend/Dockerfile
 | Updated `pom.xml` — Spring Boot 3.4.3, Java 21, all declared deps (OAuth2, JWT, Flyway, Lombok, MapStruct, SpringDoc, Testcontainers, REST Assured) | `backend/pom.xml` |
 | Full `application.properties` — datasource, Flyway, OAuth2, JWT, CORS, Swagger, Actuator | `backend/src/main/resources/application.properties` |
 | Flyway V1 migration from `schema.sql` — 15 tables, 7 enums, triggers, indexes, seed roles + tags | `backend/src/main/resources/db/migration/V1__initial_schema.sql` |
+| Flyway V2 migration — seed data (ADMIN role with all permissions, test user) | `backend/src/main/resources/db/migration/V2__seed_data.sql` |
 | Multi-stage `Dockerfile` — build (JDK 21) → extract layers → runtime (JRE 21, non-root user, JVM container-aware flags) | `backend/Dockerfile` |
 | `docker-compose.yml` — PostgreSQL 16 + pgAdmin (with pre-configured server) + Backend service; volumes, healthchecks, env-driven config | `docker-compose.yml` |
 | `.env.example` — template for all required environment variables | `.env.example` |
 | pgAdmin server auto-config | `docker/pgadmin/servers.json` |
 | PostgreSQL extension init script | `docker/postgres/init.sql` |
 
-### ✅ Completed — Sprint 1: Auth, Roles & Notifications (Member 4)
+### ✅ Completed — Sprint 1: Auth, Roles & Notifications (Member 4 — Backend)
 
 #### Models & Enums
 | Task | File(s) |
@@ -243,6 +271,9 @@ Docker:          docker-compose.yml (root), backend/Dockerfile
 |------|---------|
 | `ApiErrorResponse`, `PageResponse<T>` | `dto/common/` |
 | `LoginRequest`, `RefreshTokenRequest`, `AuthResponse`, `UserResponse`, `UserSummaryResponse`, `UpdateRolesRequest`, `RoleResponse` | `dto/auth/` |
+| `RegisterRequest` — public self-registration (fullName, email, password) | `dto/auth/RegisterRequest.java` |
+| `CreateUserRequest` — admin user creation (fullName, email, password, optional roleId) | `dto/auth/CreateUserRequest.java` |
+| `CredentialsLoginRequest` — email/password login | `dto/auth/CredentialsLoginRequest.java` |
 | `NotificationResponse`, `UnreadCountResponse`, `NotificationPageResponse` | `dto/notification/` |
 
 #### Repositories
@@ -251,7 +282,7 @@ Docker:          docker-compose.yml (root), backend/Dockerfile
 | `UserRepository` — custom JPQL queries with roles fetch, filtering by search/role/isActive | `repository/UserRepository.java` |
 | `RoleRepository`, `UserRoleRepository`, `NotificationRepository` — modifying queries for read/mark-all-read | `repository/` |
 
-#### Security (M4-B03 → M4-B10)
+#### Security
 | Task | File(s) |
 |------|---------|
 | `UserPrincipal` — implements `UserDetails` + `OAuth2User`, built from `User` entity | `security/UserPrincipal.java` |
@@ -261,31 +292,68 @@ Docker:          docker-compose.yml (root), backend/Dockerfile
 | `CustomPermissionEvaluator` — enables `@PreAuthorize("hasAuthority('PERMISSION_NAME')")` with flat permission strings | `security/CustomPermissionEvaluator.java` |
 | `SecurityUtils` — static helpers `getCurrentPrincipal()` / `getCurrentUserId()` | `security/SecurityUtils.java` |
 
-#### Configuration (M4-B03, M4-B15, M4-B16, M4-B17, M4-B18)
+#### Configuration
 | Task | File(s) |
 |------|---------|
-| `SecurityConfig` — stateless JWT filter chain, CORS, CSRF disabled, OAuth2 login, method security with `@EnableMethodSecurity` | `config/SecurityConfig.java` |
+| `SecurityConfig` — stateless JWT filter chain, CORS, CSRF disabled, OAuth2 login, method security. Public: `POST /auth/google`, `/auth/refresh`, `/auth/login`, `/auth/register` | `config/SecurityConfig.java` |
 | `AuditConfig` — `@EnableJpaAuditing`, `AuditorAware` from SecurityContext | `config/AuditConfig.java` |
 | `CorsConfig` — environment-driven `corsConfigurationSource` | `config/CorsConfig.java` |
 | `OpenApiConfig` — SpringDoc with global JWT Bearer security scheme | `config/OpenApiConfig.java` |
-| `AppConfig` — `RestTemplate` bean (used by `AuthService` for Google code exchange) | `config/AppConfig.java` |
-| `GlobalExceptionHandler` — `@RestControllerAdvice`; handles `AppException`, `AccessDeniedException`, `MethodArgumentNotValidException`, `DataIntegrityViolationException` | `exception/GlobalExceptionHandler.java` |
+| `AppConfig` — `RestTemplate` + `PasswordEncoder` (BCrypt) beans | `config/AppConfig.java` |
+| `GlobalExceptionHandler` — handles `AppException`, `AccessDeniedException`, `MethodArgumentNotValidException`, `DataIntegrityViolationException` | `exception/GlobalExceptionHandler.java` |
 | Custom exceptions: `AppException`, `ResourceNotFoundException`, `UnauthorizedException`, `ConflictException`, `ForbiddenException` | `exception/` |
 
-#### Services (M4-B05, M4-B06, M4-B08, M4-B09, M4-B12)
+#### Services
 | Task | File(s) |
 |------|---------|
-| `AuthService` — SPA Google code-exchange flow (RestTemplate → Google token endpoint → userinfo); upsert user; generate JWT pair; refresh with JTI blacklist; logout | `service/AuthService.java` |
-| `UserService` — list with filters/pagination, get by ID, get current user, update roles (full replace), deactivate, list all roles | `service/UserService.java` |
-| `NotificationService` — create (called by booking/ticket services), list (paginated + isRead filter), unread count, markAsRead, markAllAsRead | `service/NotificationService.java` |
+| `AuthService` — Google OAuth SPA flow; email/password login (`loginWithCredentials`); public registration (`register` — no role assigned); JWT generation/refresh/logout | `service/AuthService.java` |
+| `UserService` — list with filters/pagination, get by ID, get current user, update roles, deactivate, **admin create user with optional role** (`createUser`) | `service/UserService.java` |
+| `NotificationService` — create, list (paginated + isRead filter), unread count, markAsRead, markAllAsRead | `service/NotificationService.java` |
 
-#### Controllers (M4-B08, M4-B09, M4-B13)
+#### Controllers
 | Task | File(s) |
 |------|---------|
-| `AuthController` — `POST /auth/google`, `POST /auth/refresh`, `POST /auth/logout`; refresh token stored in `HttpOnly` cookie | `controller/AuthController.java` |
-| `UserController` — `GET /users`, `GET /users/me`, `GET /users/{id}`, `PATCH /users/{id}/roles`, `PATCH /users/{id}/deactivate`; full `@PreAuthorize` guards | `controller/UserController.java` |
-| `RoleController` — `GET /roles` (separate from UserController per API spec) | `controller/RoleController.java` |
+| `AuthController` — `POST /auth/google`, `POST /auth/refresh`, `POST /auth/logout`, `POST /auth/login`, `POST /auth/register` | `controller/AuthController.java` |
+| `UserController` — `GET /users`, `GET /users/me`, `GET /users/{id}`, `PATCH /users/{id}/roles`, `PATCH /users/{id}/deactivate`, `POST /users` (admin create) | `controller/UserController.java` |
+| `RoleController` — `GET /roles`, `POST /roles`, `PUT /roles/{id}`, `DELETE /roles/{id}` | `controller/RoleController.java` |
 | `NotificationController` — `GET /notifications`, `GET /notifications/unread-count`, `PATCH /notifications/{id}/read`, `PATCH /notifications/read-all` | `controller/NotificationController.java` |
+
+### ✅ Completed — Sprint 1: Frontend (Member 4)
+
+#### Infrastructure
+| File | Purpose |
+|------|---------|
+| `src/api/client.ts` | ky instance with JWT Bearer injection + auto-401 refresh |
+| `src/api/auth.ts` | `authApi` — google, loginWithCredentials, register, refresh, logout |
+| `src/api/users.ts` | `usersApi` — list, getById, me, updateRoles, deactivate, create |
+| `src/api/roles.ts` | `rolesApi` — list, create, update, delete |
+| `src/api/notifications.ts` | `notificationsApi` — list, unreadCount, markRead, markAllRead |
+| `src/store/authStore.ts` | Zustand store (persisted, `sc-auth` key) — user, tokens, login, logout, hasPermission, isAdmin |
+| `src/types/api.ts` | All TypeScript interfaces mirroring backend DTOs |
+| `src/lib/permissions.ts` | `PERMISSIONS` const, `PERMISSION_GROUPS` (2 groups: user-management + roles), `ALL_PERMISSIONS` |
+| `src/router.tsx` | Code-based TanStack Router — all routes, `beforeLoad` permission guards |
+| `src/main.tsx` | App entry — QueryClientProvider, RouterProvider, Toaster |
+
+#### Pages
+| Page | Route | Notes |
+|------|-------|-------|
+| `LoginPage.tsx` | `/login` | 3 tabs: Sign In (credentials), Sign Up (self-register → no role), Google OAuth |
+| `DashboardPage.tsx` | `/dashboard` | Shows yellow "Contact admin" Alert when user has no roles |
+| `UserManagementPage.tsx` | `/users` | TanStack Table, search, pagination, deactivate, assign roles, **Create User button** |
+| `RoleManagementPage.tsx` | `/roles` | Roles table, create/edit/delete with permission selector |
+| `ProfilePage.tsx` | `/profile` | Current user profile display |
+| `OAuthCallback.tsx` | `/oauth/callback` | Exchanges OAuth code, redirects to dashboard |
+
+#### Components (non-UI)
+| Component | Purpose |
+|-----------|---------|
+| `components/layout/AppLayout.tsx` | Sidebar + Header shell |
+| `components/layout/Header.tsx` | Visible "Sign out" button + avatar dropdown |
+| `components/layout/Sidebar.tsx` | Permission-gated nav links |
+| `components/users/AssignRolesDialog.tsx` | Assign roles to existing user |
+| `components/users/CreateUserDialog.tsx` | Admin creates user with fullName/email/password + optional role |
+| `components/roles/RoleEditorDialog.tsx` | Create/edit role with permission selector |
+| `components/roles/PermissionSelector.tsx` | Grouped checkbox permission selector |
 
 ---
 
@@ -296,7 +364,7 @@ Docker:          docker-compose.yml (root), backend/Dockerfile
 | Member 1 — Facilities & Assets | Not started | `Location`, `Resource`, `ResourceAvailability`, `ResourceTag` entities; `ResourceService`, `LocationService`; `ResourceController`, `LocationController` |
 | Member 2 — Booking Management | Not started | `Booking`, `RecurringBookingGroup` entities; `BookingService`, `BookingValidationService`; `BookingController` |
 | Member 3 — Ticketing | Not started | `Ticket`, `TicketAttachment`, `TicketComment`, `TicketStatusHistory` entities; `TicketService`; `TicketController` |
-| All — Frontend | Not started | All React pages/hooks/stores — see `tasks.md` M4-F01 to M4-F14 |
+| All — Frontend (M1/M2/M3 domains) | Not started | Resource pages, Booking pages, Ticket pages — see `tasks.md` |
 | All — Integration tests | Not started | Testcontainers + REST Assured integration tests for all controllers |
 
 ### Integration Points (for Sprint 2/3)
@@ -304,38 +372,36 @@ Docker:          docker-compose.yml (root), backend/Dockerfile
 When implementing `BookingService` and `TicketService`, call `NotificationService.create()` to send notifications:
 
 ```java
-// Example in BookingService.approveBooking():
 notificationService.create(
     booking.getUserId(),
     "Booking Approved",
-    "Your booking for " + resource.getName() + " on " + booking.getBookingDate() + " has been approved.",
+    "Your booking for " + resource.getName() + " has been approved.",
     NotificationType.BOOKING_APPROVED,
     booking.getBookingId()
 );
 ```
 
-### Running the Stack (Docker)
+### Running the Full Stack
 
 ```bash
-# 1. Copy and edit environment variables
-cp .env.example .env
-# Fill in GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, DB_PASSWORD
+# Stop conflicting local postgres
+sudo systemctl stop postgresql
 
-# 2. Start all services
-docker compose up -d
+# Copy and fill in env files
+cp .env.example .env                      # set GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET
+cp frontend/.env.example frontend/.env   # set VITE_GOOGLE_CLIENT_ID
 
-# 3. Access points
-# Backend API:    http://localhost:8080/api/v1
-# Swagger UI:     http://localhost:8080/api/v1/swagger-ui.html
-# pgAdmin:        http://localhost:5050  (admin@smartcampus.local / admin)
-# PostgreSQL:     localhost:5432         (smartcampus / smartcampus)
+# Build and start backend + postgres
+docker compose up --build
+
+# In a separate terminal — start frontend dev server
+cd frontend && npm install && npm run dev
 ```
 
-### Running Backend Locally (No Docker for App)
-
-```bash
-# Requires PostgreSQL running (docker compose up postgres -d)
-cd backend
-./mvnw spring-boot:run
-```
+Access points:
+- Frontend: `http://localhost:5173`
+- Backend API: `http://localhost:8080/api/v1`
+- Swagger UI: `http://localhost:8080/api/v1/swagger-ui.html`
+- pgAdmin: `http://localhost:5050` (admin@smartcampus.local / admin)
+- PostgreSQL: `localhost:5432` (smartcampus / smartcampus)
 

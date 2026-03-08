@@ -1,6 +1,9 @@
 package com.smartcampus.backend.service;
 
+import com.smartcampus.backend.dto.auth.CreateRoleRequest;
+import com.smartcampus.backend.dto.auth.CreateUserRequest;
 import com.smartcampus.backend.dto.auth.RoleResponse;
+import com.smartcampus.backend.dto.auth.UpdateRoleRequest;
 import com.smartcampus.backend.dto.auth.UpdateRolesRequest;
 import com.smartcampus.backend.dto.auth.UserResponse;
 import com.smartcampus.backend.exception.ConflictException;
@@ -15,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +34,40 @@ public class UserService {
     private final UserRepository     userRepository;
     private final RoleRepository     roleRepository;
     private final UserRoleRepository userRoleRepository;
+    private final PasswordEncoder    passwordEncoder;
+
+    // ─── Create (admin) ─────────────────────────────────────────────────────
+
+    @Transactional
+    public UserResponse createUser(CreateUserRequest request) {
+        if (userRepository.existsByEmail(request.email())) {
+            throw new ConflictException("A user with this email already exists");
+        }
+
+        User user = User.builder()
+                .email(request.email())
+                .fullName(request.fullName())
+                .passwordHash(passwordEncoder.encode(request.password()))
+                .isActive(true)
+                .build();
+
+        User saved = userRepository.save(user);
+
+        if (request.roleId() != null) {
+            Role role = roleRepository.findById(request.roleId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Role", request.roleId()));
+            UserRole userRole = UserRole.builder()
+                    .userId(saved.getUserId())
+                    .roleId(role.getRoleId())
+                    .role(role)
+                    .assignedAt(OffsetDateTime.now())
+                    .build();
+            saved.getUserRoles().add(userRole);
+            saved = userRepository.save(saved);
+        }
+
+        return toUserResponse(userRepository.findByIdWithRoles(saved.getUserId()).orElseThrow());
+    }
 
     // ─── Read ────────────────────────────────────────────────────────────────
 
@@ -109,7 +147,46 @@ public class UserService {
         log.info("Deactivated user: {}", userId);
     }
 
+    // ─── Role CRUD ───────────────────────────────────────────────────────────
+
+    @Transactional
+    public RoleResponse createRole(CreateRoleRequest request) {
+        String normalizedName = request.roleName().toUpperCase().strip();
+        if (roleRepository.findByRoleName(normalizedName).isPresent()) {
+            throw new ConflictException("Role '" + normalizedName + "' already exists");
+        }
+        Role role = Role.builder()
+                .roleName(normalizedName)
+                .permissions(request.permissions())
+                .build();
+        Role saved = roleRepository.save(role);
+        log.info("Created role: {}", normalizedName);
+        return toRoleResponse(saved);
+    }
+
+    @Transactional
+    public RoleResponse updateRole(UUID roleId, UpdateRoleRequest request) {
+        Role role = roleRepository.findById(roleId)
+                .orElseThrow(() -> new ResourceNotFoundException("Role", roleId));
+        role.setPermissions(request.permissions());
+        Role saved = roleRepository.save(role);
+        log.info("Updated permissions for role: {}", role.getRoleName());
+        return toRoleResponse(saved);
+    }
+
+    @Transactional
+    public void deleteRole(UUID roleId) {
+        Role role = roleRepository.findById(roleId)
+                .orElseThrow(() -> new ResourceNotFoundException("Role", roleId));
+        roleRepository.delete(role);
+        log.info("Deleted role: {}", role.getRoleName());
+    }
+
     // ─── Mapper ──────────────────────────────────────────────────────────────
+
+    public RoleResponse toRoleResponse(Role role) {
+        return new RoleResponse(role.getRoleId(), role.getRoleName(), role.getPermissions());
+    }
 
     public UserResponse toUserResponse(User user) {
         List<String> roleNames = user.getUserRoles().stream()

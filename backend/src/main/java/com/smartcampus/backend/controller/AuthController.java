@@ -1,8 +1,10 @@
 package com.smartcampus.backend.controller;
 
 import com.smartcampus.backend.dto.auth.AuthResponse;
+import com.smartcampus.backend.dto.auth.CredentialsLoginRequest;
 import com.smartcampus.backend.dto.auth.LoginRequest;
 import com.smartcampus.backend.dto.auth.RefreshTokenRequest;
+import com.smartcampus.backend.dto.auth.RegisterRequest;
 import com.smartcampus.backend.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -22,6 +24,42 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
+
+    @Operation(summary = "Self-registration — creates account with no role assigned")
+    @PostMapping("/register")
+    public ResponseEntity<AuthResponse> register(
+            @Valid @RequestBody RegisterRequest request,
+            HttpServletResponse response) {
+
+        AuthResponse authResponse = authService.register(request);
+
+        Cookie refreshCookie = new Cookie("refreshToken", authResponse.refreshToken());
+        refreshCookie.setHttpOnly(true);
+        refreshCookie.setSecure(false);
+        refreshCookie.setPath("/auth/refresh");
+        refreshCookie.setMaxAge((int) (7 * 24 * 3600));
+        response.addCookie(refreshCookie);
+
+        return ResponseEntity.status(201).body(authResponse);
+    }
+
+    @Operation(summary = "Login with email and password (local accounts)")
+    @PostMapping("/login")
+    public ResponseEntity<AuthResponse> loginWithCredentials(
+            @Valid @RequestBody CredentialsLoginRequest request,
+            HttpServletResponse response) {
+
+        AuthResponse authResponse = authService.loginWithCredentials(request);
+
+        Cookie refreshCookie = new Cookie("refreshToken", authResponse.refreshToken());
+        refreshCookie.setHttpOnly(true);
+        refreshCookie.setSecure(false);
+        refreshCookie.setPath("/auth/refresh");
+        refreshCookie.setMaxAge((int) (7 * 24 * 3600));
+        response.addCookie(refreshCookie);
+
+        return ResponseEntity.ok(authResponse);
+    }
 
     @Operation(summary = "Exchange Google authorization code for JWT tokens")
     @PostMapping("/google")

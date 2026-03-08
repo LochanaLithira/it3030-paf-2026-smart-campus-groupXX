@@ -1,5 +1,6 @@
 package com.smartcampus.backend.controller;
 
+import com.smartcampus.backend.dto.auth.CreateUserRequest;
 import com.smartcampus.backend.dto.auth.RoleResponse;
 import com.smartcampus.backend.dto.auth.UpdateRolesRequest;
 import com.smartcampus.backend.dto.auth.UserResponse;
@@ -27,9 +28,16 @@ public class UserController {
 
     private final UserService userService;
 
+    @Operation(summary = "Create a user account (admin)")
+    @PostMapping
+    @PreAuthorize("hasAuthority('users.create')")
+    public ResponseEntity<UserResponse> createUser(@Valid @RequestBody CreateUserRequest request) {
+        return ResponseEntity.status(201).body(userService.createUser(request));
+    }
+
     @Operation(summary = "List all users (ADMIN only)")
     @GetMapping
-    @PreAuthorize("hasAuthority('MANAGE_USERS')")
+    @PreAuthorize("hasAuthority('users.read')")
     public ResponseEntity<PageResponse<UserResponse>> listUsers(
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String role,
@@ -49,14 +57,14 @@ public class UserController {
 
     @Operation(summary = "Get a specific user by ID (ADMIN only)")
     @GetMapping("/{userId}")
-    @PreAuthorize("hasAuthority('MANAGE_USERS')")
+    @PreAuthorize("hasAuthority('users.read')")
     public ResponseEntity<UserResponse> getUserById(@PathVariable UUID userId) {
         return ResponseEntity.ok(userService.getUserById(userId));
     }
 
     @Operation(summary = "Assign roles to a user (ADMIN only)")
     @PatchMapping("/{userId}/roles")
-    @PreAuthorize("hasAuthority('MANAGE_ROLES')")
+    @PreAuthorize("hasAuthority('users.manage_roles')")
     public ResponseEntity<UserResponse> updateRoles(
             @PathVariable UUID userId,
             @Valid @RequestBody UpdateRolesRequest request) {
@@ -66,7 +74,7 @@ public class UserController {
 
     @Operation(summary = "Deactivate a user (ADMIN only)")
     @PatchMapping("/{userId}/deactivate")
-    @PreAuthorize("hasAuthority('MANAGE_USERS')")
+    @PreAuthorize("hasAuthority('users.delete_soft')")
     public ResponseEntity<Void> deactivateUser(@PathVariable UUID userId) {
         userService.deactivateUser(userId);
         return ResponseEntity.noContent().build();
@@ -76,7 +84,7 @@ public class UserController {
 
     @Operation(summary = "List all roles with their permissions")
     @GetMapping("/roles")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAuthority('roles.read')")
     public ResponseEntity<List<RoleResponse>> listRoles() {
         return ResponseEntity.ok(userService.listAllRoles());
     }

@@ -1,8 +1,11 @@
 package com.smartcampus.backend.service;
 
 import com.smartcampus.backend.dto.auth.AuthResponse;
+import com.smartcampus.backend.dto.auth.CredentialsLoginRequest;
 import com.smartcampus.backend.dto.auth.LoginRequest;
 import com.smartcampus.backend.dto.auth.RefreshTokenRequest;
+import com.smartcampus.backend.dto.auth.RegisterRequest;
+import com.smartcampus.backend.exception.ConflictException;
 import com.smartcampus.backend.exception.ResourceNotFoundException;
 import com.smartcampus.backend.exception.UnauthorizedException;
 import com.smartcampus.backend.model.Role;
@@ -16,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -51,9 +55,57 @@ public class AuthService {
     private final RoleRepository     roleRepository;
     private final JwtTokenProvider   jwtTokenProvider;
     private final RestTemplate       restTemplate;
+    private final PasswordEncoder    passwordEncoder;
 
     /** In-memory blacklist of invalidated refresh-token JTIs. Replace with Redis in production. */
     private final Set<String> invalidatedTokens = ConcurrentHashMap.newKeySet();
+
+    // ─── Self-Registration (no role assigned) ──────────────────────────────
+
+    @Transactional
+    public AuthResponse register(RegisterRequest request) {
+        if (userRepository.existsByEmail(request.email())) {
+            throw new ConflictException("An account with this email already exists");
+        }
+
+        User newUser = User.builder()
+                .email(request.email())
+                .fullName(request.fullName())
+                .passwordHash(passwordEncoder.encode(request.password()))
+                .isActive(true)
+                .build();
+
+        User saved = userRepository.save(newUser);
+        log.info("New user registered (no role): {}", saved.getEmail());
+        // Return auth response so the user is logged in immediately after signup
+        return buildAuthResponse(saved);
+    }
+
+    // ─── Login via Email + Password ──────────────────────────────────────────
+
+    @Transactional(readOnly = true)
+    public AuthResponse loginWithCredentials(CredentialsLoginRequest request) {
+        User user = userRepository.findByEmail(request.email())
+                .orElseThrow(() -> new UnauthorizedException("Invalid email or password"));
+
+        if (user.getPasswordHash() == null) {
+            throw new UnauthorizedException("This account uses Google Sign-In. Please log in with Google.");
+        }
+
+        if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
+            throw new UnauthorizedException("Invalid email or password");
+        }
+
+        if (!user.isActive()) {
+            throw new UnauthorizedException("User account is deactivated");
+        }
+
+        // Eagerly load roles for token generation
+        User fullUser = userRepository.findByIdWithRoles(user.getUserId())
+                .orElseThrow();
+
+        return buildAuthResponse(fullUser);
+    }
 
     // ─── Login via Google Code ───────────────────────────────────────────────
 
