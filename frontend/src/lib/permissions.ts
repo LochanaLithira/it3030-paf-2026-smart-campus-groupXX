@@ -82,6 +82,17 @@ export const PERMISSIONS = {
   ROLES_DELETE: 'roles.delete',
   USERS_MANAGE_ROLES: 'users.manage_roles',
 
+  // Facilities & Assets
+  LOCATIONS_READ: 'locations.read',
+  LOCATIONS_CREATE: 'locations.create',
+  LOCATIONS_UPDATE: 'locations.update',
+  LOCATIONS_DELETE: 'locations.delete',
+  RESOURCES_READ: 'resources.read',
+  RESOURCES_CREATE: 'resources.create',
+  RESOURCES_UPDATE: 'resources.update',
+  RESOURCES_UPDATE_STATUS: 'resources.update_status',
+  RESOURCES_DELETE: 'resources.delete',
+
   // Settings & Configuration
   SETTINGS_VIEW: 'settings.view',
   ADMIN_UPDATE: 'admin.update',
@@ -121,6 +132,22 @@ export const PERMISSION_GROUPS = [
       { key: PERMISSIONS.ROLES_UPDATE, label: 'Update Roles', description: 'Edit roles' },
       { key: PERMISSIONS.ROLES_DELETE, label: 'Delete Roles', description: 'Delete roles' },
       { key: PERMISSIONS.USERS_MANAGE_ROLES, label: 'Manage User Roles', description: 'Assign and modify user roles' },
+    ],
+  },
+  {
+    id: 'facilities-assets',
+    label: 'Facilities & Assets',
+    description: 'Manage campus locations and resources',
+    permissions: [
+      { key: PERMISSIONS.LOCATIONS_READ, label: 'View Locations', description: 'View campus locations' },
+      { key: PERMISSIONS.LOCATIONS_CREATE, label: 'Create Locations', description: 'Create locations' },
+      { key: PERMISSIONS.LOCATIONS_UPDATE, label: 'Update Locations', description: 'Edit locations' },
+      { key: PERMISSIONS.LOCATIONS_DELETE, label: 'Delete Locations', description: 'Delete locations' },
+      { key: PERMISSIONS.RESOURCES_READ, label: 'View Resources', description: 'View resources' },
+      { key: PERMISSIONS.RESOURCES_CREATE, label: 'Create Resources', description: 'Create resources' },
+      { key: PERMISSIONS.RESOURCES_UPDATE, label: 'Update Resources', description: 'Edit resources' },
+      { key: PERMISSIONS.RESOURCES_UPDATE_STATUS, label: 'Update Resource Status', description: 'Change resource status' },
+      { key: PERMISSIONS.RESOURCES_DELETE, label: 'Delete Resources', description: 'Delete resources' },
     ],
   },
 ] as const;
