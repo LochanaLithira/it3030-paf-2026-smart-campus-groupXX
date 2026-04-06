@@ -15,6 +15,8 @@ import { UserManagementPage } from '@/pages/UserManagementPage';
 import { RoleManagementPage } from '@/pages/RoleManagementPage';
 import { ProfilePage } from '@/pages/ProfilePage';
 import { PERMISSIONS } from '@/lib/permissions';
+import { LocationManagementPage } from '@/pages/LocationManagementPage';
+import { ResourceManagementPage } from '@/pages/ResourceManagementPage';
 
 // ── Root Route ───────────────────────────────────────────────────
 
@@ -107,6 +109,30 @@ const profileRoute = createRoute({
   component: ProfilePage,
 });
 
+const locationsRoute = createRoute({
+  getParentRoute: () => protectedLayoutRoute,
+  path: '/locations',
+  component: LocationManagementPage,
+  beforeLoad: () => {
+    const { hasPermission } = useAuthStore.getState();
+    if (!hasPermission(PERMISSIONS.LOCATIONS_READ)) {
+      throw redirect({ to: '/dashboard' });
+    }
+  },
+});
+
+const resourcesRoute = createRoute({
+  getParentRoute: () => protectedLayoutRoute,
+  path: '/resources',
+  component: ResourceManagementPage,
+  beforeLoad: () => {
+    const { hasPermission } = useAuthStore.getState();
+    if (!hasPermission(PERMISSIONS.RESOURCES_READ)) {
+      throw redirect({ to: '/dashboard' });
+    }
+  },
+});
+
 // ── Router ───────────────────────────────────────────────────────
 
 const routeTree = rootRoute.addChildren([
@@ -117,6 +143,8 @@ const routeTree = rootRoute.addChildren([
     dashboardRoute,
     usersRoute,
     rolesRoute,
+    locationsRoute,
+    resourcesRoute,
     profileRoute,
   ]),
 ]);

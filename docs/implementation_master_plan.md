@@ -145,6 +145,11 @@ npm i -D vitest @testing-library/react @testing-library/jest-dom
 | 2.8 | Frontend: `LocationForm`, `LocationManagementPage` |
 | 2.9 | Unit + integration tests for resource service |
 
+Progress update (2026-04-06):
+- Completed: 2.1, 2.2, 2.3, 2.4, 2.5, 2.7, 2.8
+- Deferred to integration/testing sprints: 2.6, 2.9
+- Integration dependency 4.1 remains deferred until booking module (Member 2) is available.
+
 ### Member 2 — Booking Management
 
 | # | Task |

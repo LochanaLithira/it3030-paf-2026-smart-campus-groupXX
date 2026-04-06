@@ -195,7 +195,7 @@ List resources. Paginated with filters.
 &type=LAB
 &status=ACTIVE
 &locationId=...
-&tags=projector,whiteboard
+&tags=projector
 &search=physics
 &minCapacity=30
 ```
@@ -218,12 +218,15 @@ List resources. Paginated with filters.
         "floorNumber": 2,
         "roomNumber": "201A"
       },
-      "tags": ["projector", "computers"],
+      "tags": [
+        { "tagId": "uuid-projector", "tagName": "projector" },
+        { "tagId": "uuid-computers", "tagName": "computers" }
+      ],
       "availability": [
         { "dayOfWeek": "MON", "startTime": "08:00", "endTime": "18:00" },
         { "dayOfWeek": "TUE", "startTime": "08:00", "endTime": "18:00" }
       ],
-      "createdBy": { "userId": "...", "fullName": "Admin User" },
+      "createdBy": "550e8400-e29b-41d4-a716-446655440000",
       "createdAt": "2026-02-01T10:00:00Z"
     }
   ],
@@ -271,7 +274,9 @@ Change resource status (ADMIN only).
 { "status": "UNDER_MAINTENANCE" }
 ```
 
-**Response 200:** Updated resource. Side effect: pending/approved bookings may be auto-cancelled, notifications sent.
+**Response 200:** Updated resource.
+
+> Note: booking auto-cancel + notification side effects are deferred until the booking domain is implemented.
 
 ### DELETE `/resources/{resourceId}`
 
