@@ -1,0 +1,64 @@
+package com.smartcampus.backend.model;
+
+import com.smartcampus.backend.model.enums.BookingStatus;
+import jakarta.persistence.*;
+import lombok.*;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.util.UUID;
+
+@Entity
+@Table(name = "bookings")
+@EntityListeners(AuditingEntityListener.class)
+@Getter @Setter @Builder
+@NoArgsConstructor @AllArgsConstructor
+public class Booking {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(name = "booking_id", updatable = false, nullable = false)
+    private UUID bookingId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "resource_id", nullable = false)
+    private Resource resource;
+
+    @Column(name = "booking_date", nullable = false)
+    private LocalDate bookingDate;
+
+    @Column(name = "start_time", nullable = false)
+    private LocalTime startTime;
+
+    @Column(name = "end_time", nullable = false)
+    private LocalTime endTime;
+
+    @Column(name = "purpose", length = 500)
+    private String purpose;
+
+    @Column(name = "expected_attendees")
+    private Integer expectedAttendees;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private BookingStatus status;
+
+    @Column(name = "admin_reason", length = 500)
+    private String adminReason;
+
+    @CreatedDate
+    @Column(name = "created_at", updatable = false)
+    private OffsetDateTime createdAt;
+
+    @LastModifiedDate
+    @Column(name = "updated_at")
+    private OffsetDateTime updatedAt;
+}
