@@ -18,9 +18,12 @@ import type { LocationResponse } from '@/types/api';
 
 const schema = z.object({
   buildingName: z.string().min(1, 'Building name is required').max(100),
-  floorNumber: z.number(),
+  floorNumber: z.number()
+    .int('Floor number must be an integer')
+    .min(-10, 'Floor number cannot be less than -10')
+    .max(300, 'Floor number cannot be greater than 300'),
   roomNumber: z.string().max(20).optional().or(z.literal('')),
-  description: z.string().optional().or(z.literal('')),
+  description: z.string().max(2000, 'Description is too long').optional().or(z.literal('')),
 });
 
 type FormValues = z.infer<typeof schema>;

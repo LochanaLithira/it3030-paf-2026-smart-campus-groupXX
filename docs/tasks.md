@@ -1,7 +1,19 @@
 # Task Breakdown by Member
 
 > Smart Campus Resource Management Platform  
-> Last updated: 2026-03-04
+> Last updated: 2026-04-07
+
+---
+
+## Recent Updates
+
+### 2026-04-07: Post-PR#3 Code Review & Fixes
+- **Reviewed:** PR #3 (Facilities & Assets Management MVP)
+- **Fixed:** 12 critical issues, 8 high priority issues
+- **Added:** Input validation improvements, N+1 query optimization, race condition fixes
+- **Created:** docs/code_review_pr3.md with comprehensive review findings
+- **Status:** All Member 1 Sprint 2 backend tasks verified and corrected
+- **Technical Debt:** Tests still needed (M1-B17, M1-B18)
 
 ---
 

@@ -46,6 +46,32 @@ public interface ResourceRepository extends JpaRepository<Resource, UUID> {
             LEFT JOIN FETCH r.location
             LEFT JOIN FETCH r.createdBy
             LEFT JOIN FETCH r.availability
+            LEFT JOIN r.tagMappings tm
+            LEFT JOIN tm.tag t
+            WHERE (:type IS NULL OR r.type = :type)
+              AND (:status IS NULL OR r.status = :status)
+              AND (:locationId IS NULL OR r.location.locationId = :locationId)
+              AND (:minCapacity IS NULL OR r.capacity >= :minCapacity)
+              AND (:search IS NULL OR LOWER(r.name) LIKE LOWER(CONCAT('%', :search, '%'))
+                    OR LOWER(COALESCE(r.description, '')) LIKE LOWER(CONCAT('%', :search, '%')))
+              AND (:tagName IS NULL OR LOWER(t.tagName) = LOWER(:tagName))
+            """)
+    Page<Resource> findAllWithFiltersAndDetails(
+            @Param("type") ResourceType type,
+            @Param("status") ResourceStatus status,
+            @Param("locationId") UUID locationId,
+            @Param("minCapacity") Integer minCapacity,
+            @Param("search") String search,
+            @Param("tagName") String tagName,
+            Pageable pageable
+    );
+
+    @Query("""
+            SELECT DISTINCT r
+            FROM Resource r
+            LEFT JOIN FETCH r.location
+            LEFT JOIN FETCH r.createdBy
+            LEFT JOIN FETCH r.availability
             LEFT JOIN FETCH r.tagMappings tm
             LEFT JOIN FETCH tm.tag
             WHERE r.resourceId = :resourceId

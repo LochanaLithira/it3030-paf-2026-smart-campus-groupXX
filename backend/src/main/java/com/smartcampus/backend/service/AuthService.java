@@ -176,34 +176,46 @@ public class AuthService {
         params.add("redirect_uri",  redirectUri);
         params.add("grant_type",    "authorization_code");
 
-        ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
-                GOOGLE_TOKEN_URL,
-                HttpMethod.POST,
-                new HttpEntity<>(params, headers),
-                new ParameterizedTypeReference<>() {}
-        );
+        try {
+            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                    GOOGLE_TOKEN_URL,
+                    HttpMethod.POST,
+                    new HttpEntity<>(params, headers),
+                    new ParameterizedTypeReference<>() {}
+            );
 
-        if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
-            throw new UnauthorizedException("Failed to exchange authorization code with Google");
+            if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+                log.error("Google token exchange failed with status: {}", response.getStatusCode());
+                throw new UnauthorizedException("Failed to exchange authorization code with Google");
+            }
+            return response.getBody();
+        } catch (Exception e) {
+            log.error("Error exchanging code with Google", e);
+            throw new UnauthorizedException("Failed to exchange authorization code with Google: " + e.getMessage());
         }
-        return response.getBody();
     }
 
     private Map<String, Object> fetchGoogleUserInfo(String googleAccessToken) {
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(googleAccessToken);
 
-        ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
-                GOOGLE_USERINFO_URL,
-                HttpMethod.GET,
-                new HttpEntity<>(headers),
-                new ParameterizedTypeReference<>() {}
-        );
+        try {
+            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                    GOOGLE_USERINFO_URL,
+                    HttpMethod.GET,
+                    new HttpEntity<>(headers),
+                    new ParameterizedTypeReference<>() {}
+            );
 
-        if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
-            throw new UnauthorizedException("Failed to fetch user info from Google");
+            if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+                log.error("Google userinfo fetch failed with status: {}", response.getStatusCode());
+                throw new UnauthorizedException("Failed to fetch user info from Google");
+            }
+            return response.getBody();
+        } catch (Exception e) {
+            log.error("Error fetching user info from Google", e);
+            throw new UnauthorizedException("Failed to fetch user info from Google: " + e.getMessage());
         }
-        return response.getBody();
     }
 
     private User upsertUser(String email, String name, String picture,
@@ -240,9 +252,13 @@ public class AuthService {
         UserRole userRole = UserRole.builder()
                 .userId(saved.getUserId())
                 .roleId(defaultRole.getRoleId())
+                .resource(saved)
                 .role(defaultRole)
-                .assignedAt(OffsetDateTime.now())
                 .build();
+        
+        // Manually set assignedAt to avoid auditing issues
+        userRole.setAssignedAt(OffsetDateTime.now());
+        
         saved.getUserRoles().add(userRole);
         userRepository.save(saved);
 

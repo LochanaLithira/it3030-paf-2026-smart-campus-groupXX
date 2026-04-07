@@ -3,6 +3,7 @@ package com.smartcampus.backend.dto.resource;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 public record LocationRequest(
@@ -10,6 +11,7 @@ public record LocationRequest(
         @Size(max = 100, message = "Building name must be at most 100 characters")
         String buildingName,
 
+        @NotNull(message = "Floor number is required")
         @Min(value = -10, message = "Floor number is too small")
         @Max(value = 300, message = "Floor number is too large")
         Integer floorNumber,
@@ -17,5 +19,6 @@ public record LocationRequest(
         @Size(max = 20, message = "Room number must be at most 20 characters")
         String roomNumber,
 
+        @Size(max = 2000, message = "Description must be at most 2000 characters")
         String description
 ) {}
