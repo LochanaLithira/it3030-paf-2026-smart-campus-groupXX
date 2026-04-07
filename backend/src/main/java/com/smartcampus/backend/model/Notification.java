@@ -32,7 +32,7 @@ public class Notification {
     private String message;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "type", nullable = false, columnDefinition = "notification_type")
+    @Column(name = "type", nullable = false)
     private NotificationType type;
 
     @Column(name = "is_read", nullable = false)
