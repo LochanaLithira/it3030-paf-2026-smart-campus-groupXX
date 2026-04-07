@@ -252,7 +252,7 @@ public class AuthService {
         UserRole userRole = UserRole.builder()
                 .userId(saved.getUserId())
                 .roleId(defaultRole.getRoleId())
-                .resource(saved)
+                .user(saved)
                 .role(defaultRole)
                 .build();
         

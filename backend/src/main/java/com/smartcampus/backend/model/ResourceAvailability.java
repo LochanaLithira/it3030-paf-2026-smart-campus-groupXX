@@ -26,7 +26,7 @@ public class ResourceAvailability {
     private Resource resource;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "day_of_week", nullable = false, columnDefinition = "day_of_week")
+    @Column(name = "day_of_week", nullable = false)
     private DayOfWeek dayOfWeek;
 
     @Column(name = "start_time", nullable = false)

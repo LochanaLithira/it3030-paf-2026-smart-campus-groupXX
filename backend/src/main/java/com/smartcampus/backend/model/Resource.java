@@ -32,7 +32,7 @@ public class Resource {
     private String name;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "type", nullable = false, columnDefinition = "resource_type")
+    @Column(name = "type", nullable = false)
     private ResourceType type;
 
     @Column(name = "capacity")
@@ -43,7 +43,7 @@ public class Resource {
     private Location location;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false, columnDefinition = "resource_status")
+    @Column(name = "status", nullable = false)
     private ResourceStatus status;
 
     @Column(name = "description", columnDefinition = "TEXT")
