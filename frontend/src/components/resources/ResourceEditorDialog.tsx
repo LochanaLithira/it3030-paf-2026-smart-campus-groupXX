@@ -36,8 +36,12 @@ const schema = z.object({
   capacity: z.number().int().min(1, 'Capacity must be at least 1'),
   locationId: z.string().optional(),
   status: z.enum(['ACTIVE', 'OUT_OF_SERVICE', 'UNDER_MAINTENANCE']),
-  description: z.string().optional().or(z.literal('')),
-  imageUrl: z.string().url('Image URL must be valid').optional().or(z.literal('')),
+  description: z.string().max(5000, 'Description is too long').optional().or(z.literal('')),
+  imageUrl: z.union([
+    z.string().url('Image URL must be valid'),
+    z.literal(''),
+    z.undefined()
+  ]),
   dayOfWeek: z.enum(['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']).optional(),
   startTime: z.string().optional().or(z.literal('')),
   endTime: z.string().optional().or(z.literal('')),
@@ -153,7 +157,7 @@ export function ResourceEditorDialog({
       locationId: values.locationId || undefined,
       status: values.status,
       description: values.description?.trim() || undefined,
-      imageUrl: values.imageUrl?.trim() || undefined,
+      imageUrl: values.imageUrl?.trim() || undefined,  // Transform empty string to undefined
       tagIds: values.tagIds,
       availability,
     };
@@ -162,6 +166,9 @@ export function ResourceEditorDialog({
       createResource.mutate(payload, { onSuccess: onClose });
       return;
     }
+    // NOTE: This updates the resource but only supports editing/replacing with a single availability slot.
+    // If the resource has multiple availability slots, only the first is shown for editing,
+    // and updating will replace all slots with just one. Full multi-slot editing should be added.
     updateResource.mutate(
       { resourceId: resource.resourceId, request: payload },
       { onSuccess: onClose }

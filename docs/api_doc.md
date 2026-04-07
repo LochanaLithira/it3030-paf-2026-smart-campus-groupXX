@@ -3,7 +3,7 @@
 > Smart Campus Resource Management Platform  
 > Base URL: `http://localhost:8080/api/v1`  
 > Auth: Bearer JWT token in `Authorization` header  
-> Last updated: 2026-03-04
+> Last updated: 2026-04-07 (Post-PR#3 Code Review)
 
 ---
 

@@ -27,8 +27,11 @@ public record ResourceRequest(
 
         ResourceStatus status,
 
+        @Size(max = 5000, message = "Description must be at most 5000 characters")
         String description,
 
+        @org.hibernate.validator.constraints.URL(message = "Image URL must be a valid URL")
+        @Size(max = 2000, message = "Image URL must be at most 2000 characters")
         String imageUrl,
 
         List<UUID> tagIds,

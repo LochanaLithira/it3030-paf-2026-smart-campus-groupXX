@@ -3,6 +3,7 @@ package com.smartcampus.backend.service;
 import com.smartcampus.backend.dto.resource.*;
 import com.smartcampus.backend.exception.AppException;
 import com.smartcampus.backend.exception.ResourceNotFoundException;
+import com.smartcampus.backend.exception.UnauthorizedException;
 import com.smartcampus.backend.mapper.ResourceMapper;
 import com.smartcampus.backend.model.*;
 import com.smartcampus.backend.model.enums.ResourceStatus;
@@ -42,10 +43,12 @@ public class ResourceService {
             Pageable pageable
     ) {
         String tagName = extractSingleTag(tags);
-        return resourceRepository.findAllWithFilters(
-                        type, status, locationId, minCapacity, blankToNull(search), tagName, pageable
-                )
-                .map(this::toResourceResponse);
+        // Use query with JOIN FETCH to avoid N+1 problem
+        Page<Resource> resources = resourceRepository.findAllWithFiltersAndDetails(
+                type, status, locationId, minCapacity, blankToNull(search), tagName, pageable
+        );
+        
+        return resources.map(this::buildResourceResponse);
     }
 
     @Transactional(readOnly = true)
@@ -71,7 +74,10 @@ public class ResourceService {
         resource.setCreatedBy(resolveCurrentUser());
         Resource saved = resourceRepository.save(resource);
         replaceTags(saved, request.tagIds());
-        return toResourceResponse(resourceRepository.save(saved));
+        saved = resourceRepository.save(saved);
+        
+        // Return response without re-fetching (entity is already hydrated)
+        return buildResourceResponse(saved);
     }
 
     @Transactional
@@ -79,12 +85,19 @@ public class ResourceService {
         validateAvailability(request.availability());
 
         Resource resource = findResourceOrThrow(resourceId);
+        
+        // TODO: Validate that reducing capacity doesn't conflict with existing bookings
+        // This check should be added once the Booking domain is implemented
+        
         applyRequestToResource(resource, request);
         if (request.status() != null) {
             resource.setStatus(request.status());
         }
         replaceTags(resource, request.tagIds());
-        return toResourceResponse(resourceRepository.save(resource));
+        resource = resourceRepository.save(resource);
+        
+        // Return response without re-fetching (entity is already hydrated)
+        return buildResourceResponse(resource);
     }
 
     @Transactional
@@ -92,7 +105,10 @@ public class ResourceService {
         Resource resource = findResourceOrThrow(resourceId);
         resource.setStatus(request.status());
         // Integration hook: booking cancel + notification will be introduced when booking domain is implemented.
-        return toResourceResponse(resourceRepository.save(resource));
+        resource = resourceRepository.save(resource);
+        
+        // Return response without re-fetching (entity is already hydrated)
+        return buildResourceResponse(resource);
     }
 
     @Transactional
@@ -116,10 +132,14 @@ public class ResourceService {
     }
 
     private void replaceAvailability(Resource resource, List<ResourceAvailabilityRequest> availability) {
+        // Clear existing availability slots (cascade and orphan removal will handle deletion)
         resource.getAvailability().clear();
+        
         if (availability == null || availability.isEmpty()) {
             return;
         }
+        
+        // Add new availability slots
         for (ResourceAvailabilityRequest slot : availability) {
             ResourceAvailability mapped = ResourceAvailability.builder()
                     .resource(resource)
@@ -132,14 +152,25 @@ public class ResourceService {
     }
 
     private void replaceTags(Resource resource, List<UUID> tagIds) {
+        // Clear existing tag mappings (cascade and orphan removal will handle deletion)
         resource.getTagMappings().clear();
+        
         if (tagIds == null || tagIds.isEmpty()) {
             return;
         }
+        
+        // Validate all tag IDs exist before proceeding
         List<ResourceTag> tags = resourceTagRepository.findByTagIdIn(tagIds);
-        if (tags.size() != new HashSet<>(tagIds).size()) {
-            throw new ResourceNotFoundException("One or more tag IDs were not found");
+        Set<UUID> uniqueTagIds = new HashSet<>(tagIds);
+        if (tags.size() != uniqueTagIds.size()) {
+            List<UUID> foundIds = tags.stream().map(ResourceTag::getTagId).toList();
+            List<UUID> missingIds = uniqueTagIds.stream()
+                    .filter(id -> !foundIds.contains(id))
+                    .toList();
+            throw new ResourceNotFoundException("Tag IDs not found: " + missingIds);
         }
+        
+        // Add new tag mappings
         for (ResourceTag tag : tags) {
             ResourceTagMap mapping = ResourceTagMap.builder()
                     .resourceId(resource.getResourceId())
@@ -160,15 +191,25 @@ public class ResourceService {
     }
 
     private User resolveCurrentUser() {
-        UUID currentUserId = SecurityUtils.getCurrentUserId();
-        return userRepository.findById(currentUserId)
-                .orElseThrow(() -> new ResourceNotFoundException("User", currentUserId));
+        try {
+            UUID currentUserId = SecurityUtils.getCurrentUserId();
+            return userRepository.findById(currentUserId)
+                    .orElseThrow(() -> new ResourceNotFoundException("User", currentUserId));
+        } catch (IllegalStateException e) {
+            throw new UnauthorizedException("User must be authenticated to perform this operation");
+        }
     }
 
     private ResourceResponse toResourceResponse(Resource resource) {
+        // Re-fetch with all details if needed
         Resource hydrated = resourceRepository.findByIdWithDetails(resource.getResourceId())
                 .orElse(resource);
-        ResourceResponse base = resourceMapper.toResourceResponse(hydrated);
+        return buildResourceResponse(hydrated);
+    }
+    
+    private ResourceResponse buildResourceResponse(Resource resource) {
+        // Build response from already-hydrated entity
+        ResourceResponse base = resourceMapper.toResourceResponse(resource);
         return new ResourceResponse(
                 base.resourceId(),
                 base.name(),
@@ -179,13 +220,13 @@ public class ResourceService {
                 base.imageUrl(),
                 base.createdBy(),
                 base.createdAt(),
-                hydrated.getLocation() == null ? null : resourceMapper.toResourceLocationResponse(hydrated.getLocation()),
-                hydrated.getTagMappings().stream()
+                resource.getLocation() == null ? null : resourceMapper.toResourceLocationResponse(resource.getLocation()),
+                resource.getTagMappings().stream()
                         .map(ResourceTagMap::getTag)
                         .filter(Objects::nonNull)
                         .map(resourceMapper::toTagResponse)
                         .toList(),
-                hydrated.getAvailability().stream()
+                resource.getAvailability().stream()
                         .map(resourceMapper::toAvailabilityResponse)
                         .toList()
         );

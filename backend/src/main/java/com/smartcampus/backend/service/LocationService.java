@@ -58,10 +58,14 @@ public class LocationService {
 
     @Transactional
     public void deleteLocation(UUID locationId) {
-        if (resourceRepository.existsByLocation_LocationId(locationId)) {
+        Location location = findLocationOrThrow(locationId);
+        
+        // Let the database handle the constraint to avoid race conditions
+        try {
+            locationRepository.delete(location);
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
             throw new ConflictException("Location cannot be deleted because it is referenced by resources");
         }
-        locationRepository.delete(findLocationOrThrow(locationId));
     }
 
     private Location findLocationOrThrow(UUID locationId) {
