@@ -490,7 +490,7 @@ public class TicketService {
 
     private boolean hasPermission(User user, String permission) {
         return user.getUserRoles().stream()
-                .flatMap(ur -> Arrays.stream(ur.getRole().getPermissions()))
+                .flatMap(ur -> ur.getRole().getPermissions().stream())
                 .anyMatch(p -> p.equals(permission));
     }
 

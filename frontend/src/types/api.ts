@@ -212,3 +212,115 @@ export interface ResourcesListParams {
   size?: number;
   sort?: string;
 }
+
+// ── Tickets ──────────────────────────────────────────────────────
+
+export type TicketStatus = 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED' | 'REJECTED';
+export type TicketPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+export type TicketCategory = 
+  | 'ELECTRICAL' 
+  | 'PLUMBING' 
+  | 'HVAC' 
+  | 'IT' 
+  | 'FURNITURE' 
+  | 'GENERAL_MAINTENANCE' 
+  | 'OTHER';
+
+export interface TicketResourceResponse {
+  resourceId: string;
+  name: string;
+  type: ResourceType;
+  location: ResourceLocationResponse | null;
+}
+
+export interface TicketRequest {
+  resourceId: string;
+  category: TicketCategory;
+  description: string;
+  priority: TicketPriority;
+  preferredContactDetails?: string;
+  dueDate?: string; // ISO date string (yyyy-MM-dd)
+}
+
+export interface TicketResponse {
+  ticketId: string;
+  resource: TicketResourceResponse;
+  reporter: UserSummaryResponse;
+  assignedTech: UserSummaryResponse | null;
+  category: TicketCategory;
+  description: string;
+  priority: TicketPriority;
+  status: TicketStatus;
+  preferredContactDetails: string | null;
+  resolutionNotes: string | null;
+  dueDate: string | null; // ISO date string
+  resolvedAt: string | null; // ISO timestamp
+  createdAt: string; // ISO timestamp
+  updatedAt: string; // ISO timestamp
+  attachments: TicketAttachmentResponse[];
+  comments: TicketCommentResponse[];
+  statusHistory: StatusHistoryResponse[];
+}
+
+export interface TicketSummaryResponse {
+  ticketId: string;
+  resource: TicketResourceResponse;
+  reporter: UserSummaryResponse;
+  assignedTech: UserSummaryResponse | null;
+  category: TicketCategory;
+  description: string;
+  priority: TicketPriority;
+  status: TicketStatus;
+  dueDate: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TicketAttachmentResponse {
+  attachmentId: string;
+  fileName: string;
+  fileUrl: string;
+  fileSize: number;
+  mimeType: string;
+  uploadedAt: string;
+}
+
+export interface TicketCommentRequest {
+  content: string;
+}
+
+export interface TicketCommentResponse {
+  commentId: string;
+  author: UserSummaryResponse;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface StatusHistoryResponse {
+  historyId: string;
+  oldStatus: TicketStatus | null;
+  newStatus: TicketStatus;
+  changedBy: UserSummaryResponse;
+  notes: string | null;
+  changedAt: string;
+}
+
+export interface TicketAssignRequest {
+  technicianId: string;
+}
+
+export interface TicketStatusUpdateRequest {
+  newStatus: TicketStatus;
+  notes?: string;
+}
+
+export interface TicketsListParams {
+  status?: TicketStatus;
+  priority?: TicketPriority;
+  category?: TicketCategory;
+  resourceId?: string;
+  page?: number;
+  size?: number;
+  sort?: string;
+}
