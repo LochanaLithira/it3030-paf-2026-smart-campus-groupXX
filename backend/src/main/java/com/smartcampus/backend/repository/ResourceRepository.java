@@ -11,12 +11,14 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
+import java.util.List;
 import java.util.UUID;
 
 @Repository
 public interface ResourceRepository extends JpaRepository<Resource, UUID> {
 
-    @Query("""
+    // Step 1: Paginate on the base table only — no collection JOIN FETCH here
+    @Query(value = """
             SELECT DISTINCT r
             FROM Resource r
             LEFT JOIN r.location l
@@ -29,8 +31,22 @@ public interface ResourceRepository extends JpaRepository<Resource, UUID> {
               AND (:search IS NULL OR LOWER(r.name) LIKE LOWER(CONCAT('%', :search, '%'))
                     OR LOWER(COALESCE(r.description, '')) LIKE LOWER(CONCAT('%', :search, '%')))
               AND (:tagName IS NULL OR LOWER(t.tagName) = LOWER(:tagName))
+            """,
+            countQuery = """
+            SELECT COUNT(DISTINCT r)
+            FROM Resource r
+            LEFT JOIN r.location l
+            LEFT JOIN r.tagMappings tm
+            LEFT JOIN tm.tag t
+            WHERE (:type IS NULL OR r.type = :type)
+              AND (:status IS NULL OR r.status = :status)
+              AND (:locationId IS NULL OR l.locationId = :locationId)
+              AND (:minCapacity IS NULL OR r.capacity >= :minCapacity)
+              AND (:search IS NULL OR LOWER(r.name) LIKE LOWER(CONCAT('%', :search, '%'))
+                    OR LOWER(COALESCE(r.description, '')) LIKE LOWER(CONCAT('%', :search, '%')))
+              AND (:tagName IS NULL OR LOWER(t.tagName) = LOWER(:tagName))
             """)
-    Page<Resource> findAllWithFilters(
+    Page<Resource> findPagedWithFilters(
             @Param("type") ResourceType type,
             @Param("status") ResourceStatus status,
             @Param("locationId") UUID locationId,
@@ -40,32 +56,20 @@ public interface ResourceRepository extends JpaRepository<Resource, UUID> {
             Pageable pageable
     );
 
+    // Step 2: Hydrate a known set of IDs — safe to JOIN FETCH collections here
     @Query("""
             SELECT DISTINCT r
             FROM Resource r
             LEFT JOIN FETCH r.location
             LEFT JOIN FETCH r.createdBy
             LEFT JOIN FETCH r.availability
-            LEFT JOIN r.tagMappings tm
-            LEFT JOIN tm.tag t
-            WHERE (:type IS NULL OR r.type = :type)
-              AND (:status IS NULL OR r.status = :status)
-              AND (:locationId IS NULL OR r.location.locationId = :locationId)
-              AND (:minCapacity IS NULL OR r.capacity >= :minCapacity)
-              AND (:search IS NULL OR LOWER(r.name) LIKE LOWER(CONCAT('%', :search, '%'))
-                    OR LOWER(COALESCE(r.description, '')) LIKE LOWER(CONCAT('%', :search, '%')))
-              AND (:tagName IS NULL OR LOWER(t.tagName) = LOWER(:tagName))
+            LEFT JOIN FETCH r.tagMappings tm
+            LEFT JOIN FETCH tm.tag
+            WHERE r.resourceId IN :ids
             """)
-    Page<Resource> findAllWithFiltersAndDetails(
-            @Param("type") ResourceType type,
-            @Param("status") ResourceStatus status,
-            @Param("locationId") UUID locationId,
-            @Param("minCapacity") Integer minCapacity,
-            @Param("search") String search,
-            @Param("tagName") String tagName,
-            Pageable pageable
-    );
+    List<Resource> findAllWithDetailsByIds(@Param("ids") List<UUID> ids);
 
+    // Used by getById, update, delete — unchanged, correct as-is
     @Query("""
             SELECT DISTINCT r
             FROM Resource r
