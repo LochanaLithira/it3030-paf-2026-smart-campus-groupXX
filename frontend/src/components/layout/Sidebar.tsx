@@ -6,6 +6,8 @@ import {
   Settings,
   BookOpen,
   ChevronRight,
+  Building2,
+  MapPin,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/authStore';
@@ -36,6 +38,18 @@ const NAV_ITEMS: NavItem[] = [
     href: '/roles',
     icon: ShieldCheck,
     permission: PERMISSIONS.ROLES_READ,
+  },
+  {
+    label: 'Locations',
+    href: '/locations',
+    icon: Building2,
+    permission: PERMISSIONS.LOCATIONS_READ,
+  },
+  {
+    label: 'Resources',
+    href: '/resources',
+    icon: MapPin,
+    permission: PERMISSIONS.RESOURCES_READ,
   },
   {
     label: 'Profile',

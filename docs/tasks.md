@@ -1,7 +1,19 @@
 # Task Breakdown by Member
 
 > Smart Campus Resource Management Platform  
-> Last updated: 2026-03-04
+> Last updated: 2026-04-07
+
+---
+
+## Recent Updates
+
+### 2026-04-07: Post-PR#3 Code Review & Fixes
+- **Reviewed:** PR #3 (Facilities & Assets Management MVP)
+- **Fixed:** 12 critical issues, 8 high priority issues
+- **Added:** Input validation improvements, N+1 query optimization, race condition fixes
+- **Created:** docs/code_review_pr3.md with comprehensive review findings
+- **Status:** All Member 1 Sprint 2 backend tasks verified and corrected
+- **Technical Debt:** Tests still needed (M1-B17, M1-B18)
 
 ---
 
@@ -18,22 +30,22 @@
 
 | # | Task | Priority | Status | Sprint |
 |---|------|----------|--------|--------|
-| M1-B01 | Create `Location` JPA entity with auditing | P0 | `[ ]` | 1 |
-| M1-B02 | Create `Resource` JPA entity with enum mappings | P0 | `[ ]` | 1 |
-| M1-B03 | Create `ResourceAvailability` entity | P0 | `[ ]` | 1 |
-| M1-B04 | Create `ResourceTag` + `ResourceTagMap` entities | P1 | `[ ]` | 1 |
-| M1-B05 | Create `LocationRepository` with custom queries | P0 | `[ ]` | 1 |
-| M1-B06 | Create `ResourceRepository` with filtering (type, status, capacity, search) | P0 | `[ ]` | 2 |
-| M1-B07 | Create `ResourceAvailabilityRepository` | P0 | `[ ]` | 2 |
-| M1-B08 | Create `ResourceTagRepository` | P1 | `[ ]` | 2 |
-| M1-B09 | Implement `LocationService` — CRUD | P0 | `[ ]` | 2 |
-| M1-B10 | Implement `ResourceService` — CRUD + tag assignment + availability management | P0 | `[ ]` | 2 |
-| M1-B11 | Implement `ResourceController` — GET list (paginated, filtered), GET detail, POST, PUT, PATCH status, DELETE | P0 | `[ ]` | 2 |
-| M1-B12 | Implement `LocationController` — GET list, POST, PUT, DELETE | P0 | `[ ]` | 2 |
-| M1-B13 | GET `/resources/tags` endpoint | P1 | `[ ]` | 2 |
+| M1-B01 | Create `Location` JPA entity with auditing | P0 | `[x]` | 1 |
+| M1-B02 | Create `Resource` JPA entity with enum mappings | P0 | `[x]` | 1 |
+| M1-B03 | Create `ResourceAvailability` entity | P0 | `[x]` | 1 |
+| M1-B04 | Create `ResourceTag` + `ResourceTagMap` entities | P1 | `[x]` | 1 |
+| M1-B05 | Create `LocationRepository` with custom queries | P0 | `[x]` | 1 |
+| M1-B06 | Create `ResourceRepository` with filtering (type, status, capacity, search) | P0 | `[x]` | 2 |
+| M1-B07 | Create `ResourceAvailabilityRepository` | P0 | `[x]` | 2 |
+| M1-B08 | Create `ResourceTagRepository` | P1 | `[x]` | 2 |
+| M1-B09 | Implement `LocationService` — CRUD | P0 | `[x]` | 2 |
+| M1-B10 | Implement `ResourceService` — CRUD + tag assignment + availability management | P0 | `[x]` | 2 |
+| M1-B11 | Implement `ResourceController` — GET list (paginated, filtered), GET detail, POST, PUT, PATCH status, DELETE | P0 | `[x]` | 2 |
+| M1-B12 | Implement `LocationController` — GET list, POST, PUT, DELETE | P0 | `[x]` | 2 |
+| M1-B13 | GET `/resources/tags` endpoint | P1 | `[x]` | 2 |
 | M1-B14 | Resource status change → auto-cancel affected bookings (integrate with M2) | P1 | `[ ]` | 4 |
-| M1-B15 | `@PreAuthorize` on all admin-only endpoints | P0 | `[ ]` | 2 |
-| M1-B16 | Flyway migration `V1__initial_schema.sql` from schema.sql | P0 | `[ ]` | 0 |
+| M1-B15 | `@PreAuthorize` on all admin-only endpoints | P0 | `[x]` | 2 |
+| M1-B16 | Flyway migration `V1__initial_schema.sql` from schema.sql | P0 | `[x]` | 0 |
 | M1-B17 | Unit tests for `ResourceService` | P1 | `[ ]` | 2 |
 | M1-B18 | Integration tests for `ResourceController` (Testcontainers) | P1 | `[ ]` | 5 |
 
@@ -41,13 +53,13 @@
 
 | # | Task | Priority | Status | Sprint |
 |---|------|----------|--------|--------|
-| M1-F01 | `ResourceListPage` — card/table view with filters (type, building, tags, search) | P0 | `[ ]` | 2 |
-| M1-F02 | `useResources` hook — TanStack Query wrapper for resource API | P0 | `[ ]` | 2 |
+| M1-F01 | `ResourceListPage` — card/table view with filters (type, building, tags, search) | P0 | `[x]` | 2 |
+| M1-F02 | `useResources` hook — TanStack Query wrapper for resource API | P0 | `[x]` | 2 |
 | M1-F03 | `ResourceDetailPage` — description, capacity, location, image, availability grid | P0 | `[ ]` | 2 |
 | M1-F04 | `AvailabilityGrid` component — weekly time slots visualization | P1 | `[ ]` | 2 |
-| M1-F05 | `ResourceForm` — admin create/edit resource with tag selector + availability editor | P0 | `[ ]` | 2 |
-| M1-F06 | `LocationManagementPage` — admin CRUD locations table | P0 | `[ ]` | 2 |
-| M1-F07 | `LocationForm` — create/edit location dialog | P0 | `[ ]` | 2 |
+| M1-F05 | `ResourceForm` — admin create/edit resource with tag selector + availability editor | P0 | `[x]` | 2 |
+| M1-F06 | `LocationManagementPage` — admin CRUD locations table | P0 | `[x]` | 2 |
+| M1-F07 | `LocationForm` — create/edit location dialog | P0 | `[x]` | 2 |
 | M1-F08 | Resource status badge component | P2 | `[ ]` | 2 |
 | M1-F09 | Resource image upload integration | P2 | `[ ]` | 4 |
 | M1-F10 | Empty states and loading skeletons for resource pages | P2 | `[ ]` | 4 |
