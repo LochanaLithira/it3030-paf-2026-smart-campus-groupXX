@@ -30,23 +30,48 @@ import type {
   ResourceTagResponse,
 } from '@/types/api';
 
-const schema = z.object({
-  name: z.string().min(1, 'Resource name is required').max(150),
-  type: z.enum(['LECTURE_HALL', 'LAB', 'MEETING_ROOM', 'EQUIPMENT']),
-  capacity: z.number().int().min(1, 'Capacity must be at least 1'),
-  locationId: z.string().optional(),
-  status: z.enum(['ACTIVE', 'OUT_OF_SERVICE', 'UNDER_MAINTENANCE']),
-  description: z.string().max(5000, 'Description is too long').optional().or(z.literal('')),
-  imageUrl: z.union([
-    z.string().url('Image URL must be valid'),
-    z.literal(''),
-    z.undefined()
-  ]),
-  dayOfWeek: z.enum(['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']).optional(),
-  startTime: z.string().optional().or(z.literal('')),
-  endTime: z.string().optional().or(z.literal('')),
-  tagIds: z.array(z.string()),
-});
+const schema = z
+  .object({
+    name: z.string().min(1, 'Resource name is required').max(150),
+    type: z.enum(['LECTURE_HALL', 'LAB', 'MEETING_ROOM', 'EQUIPMENT']),
+    capacity: z.number().int().min(1, 'Capacity must be at least 1'),
+    locationId: z.string().optional(),
+    status: z.enum(['ACTIVE', 'OUT_OF_SERVICE', 'UNDER_MAINTENANCE']),
+    description: z.string().max(5000, 'Description is too long').optional().or(z.literal('')),
+    imageUrl: z.union([
+      z.string().url('Image URL must be valid'),
+      z.literal(''),
+      z.undefined()
+    ]),
+    dayOfWeek: z.enum(['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']).optional(),
+    startTime: z.string().optional().or(z.literal('')),
+    endTime: z.string().optional().or(z.literal('')),
+    tagIds: z.array(z.string()),
+  })
+  .superRefine((values, ctx) => {
+    const hasDay = Boolean(values.dayOfWeek);
+    const hasStart = Boolean(values.startTime);
+    const hasEnd = Boolean(values.endTime);
+    const anyAvailabilityValue = hasDay || hasStart || hasEnd;
+    const allAvailabilityValues = hasDay && hasStart && hasEnd;
+
+    if (anyAvailabilityValue && !allAvailabilityValues) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Provide day, start, and end time together',
+        path: ['dayOfWeek'],
+      });
+      return;
+    }
+
+    if (allAvailabilityValues && values.startTime! >= values.endTime!) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'End time must be after start time',
+        path: ['endTime'],
+      });
+    }
+  });
 
 type FormValues = z.infer<typeof schema>;
 
@@ -289,6 +314,11 @@ export function ResourceEditorDialog({
               <Input type="time" {...register('startTime')} />
               <Input type="time" {...register('endTime')} />
             </div>
+            {(errors.dayOfWeek || errors.endTime) && (
+              <p className="text-xs text-destructive">
+                {errors.dayOfWeek?.message || errors.endTime?.message}
+              </p>
+            )}
           </div>
 
           <DialogFooter>

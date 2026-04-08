@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { HTTPError } from 'ky';
 import { toast } from 'sonner';
 import { resourcesApi } from '@/api/resources';
 import type { ResourceRequest, ResourcesListParams, ResourceStatus } from '@/types/api';
@@ -10,6 +11,18 @@ export const resourceKeys = {
   detail: (id: string) => [...resourceKeys.all, id] as const,
   tags: () => [...resourceKeys.all, 'tags'] as const,
 };
+
+async function extractApiErrorMessage(error: unknown, fallback: string): Promise<string> {
+  if (error instanceof HTTPError) {
+    try {
+      const body = (await error.response.clone().json()) as { message?: string };
+      return body?.message || fallback;
+    } catch {
+      return fallback;
+    }
+  }
+  return fallback;
+}
 
 export function useResources(params: ResourcesListParams = {}) {
   return useQuery({
@@ -34,7 +47,7 @@ export function useCreateResource() {
       qc.invalidateQueries({ queryKey: resourceKeys.detail(created.resourceId) });
       toast.success(`Resource ${created.name} created`);
     },
-    onError: () => toast.error('Failed to create resource'),
+    onError: async (error) => toast.error(await extractApiErrorMessage(error, 'Failed to create resource')),
   });
 }
 
@@ -48,7 +61,7 @@ export function useUpdateResource() {
       qc.invalidateQueries({ queryKey: resourceKeys.detail(updated.resourceId) });
       toast.success('Resource updated');
     },
-    onError: () => toast.error('Failed to update resource'),
+    onError: async (error) => toast.error(await extractApiErrorMessage(error, 'Failed to update resource')),
   });
 }
 
@@ -61,7 +74,8 @@ export function useUpdateResourceStatus() {
       qc.invalidateQueries({ queryKey: resourceKeys.lists() });
       toast.success('Resource status updated');
     },
-    onError: () => toast.error('Failed to update resource status'),
+    onError: async (error) =>
+      toast.error(await extractApiErrorMessage(error, 'Failed to update resource status')),
   });
 }
 
@@ -73,6 +87,6 @@ export function useDeleteResource() {
       qc.invalidateQueries({ queryKey: resourceKeys.lists() });
       toast.success('Resource deleted');
     },
-    onError: () => toast.error('Failed to delete resource'),
+    onError: async (error) => toast.error(await extractApiErrorMessage(error, 'Failed to delete resource')),
   });
 }

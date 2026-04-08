@@ -48,6 +48,8 @@
 | M1-B16 | Flyway migration `V1__initial_schema.sql` from schema.sql | P0 | `[x]` | 0 |
 | M1-B17 | Unit tests for `ResourceService` | P1 | `[ ]` | 2 |
 | M1-B18 | Integration tests for `ResourceController` (Testcontainers) | P1 | `[ ]` | 5 |
+| M1-B19 | Stabilize facilities create flow: prevent `ResourceService` null-list 500 during availability/tag replacement | P0 | `[x]` | 2 |
+| M1-B20 | Map facilities constraint failures to deterministic API errors (`400`/`409`/`422`) | P0 | `[x]` | 2 |
 
 ### Frontend
 
@@ -63,6 +65,8 @@
 | M1-F08 | Resource status badge component | P2 | `[ ]` | 2 |
 | M1-F09 | Resource image upload integration | P2 | `[ ]` | 4 |
 | M1-F10 | Empty states and loading skeletons for resource pages | P2 | `[ ]` | 4 |
+| M1-F11 | Surface backend facilities mutation error messages in `useLocations`/`useResources` toasts | P1 | `[x]` | 2 |
+| M1-F12 | Enforce complete optional availability input in `ResourceEditorDialog` (all-or-none, valid time order) | P1 | `[x]` | 2 |
 
 ---
 
