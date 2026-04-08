@@ -18,6 +18,7 @@ import { PERMISSIONS } from '@/lib/permissions';
 import { LocationManagementPage } from '@/pages/LocationManagementPage';
 import { ResourceManagementPage } from '@/pages/ResourceManagementPage';
 import { TicketListPage } from '@/pages/TicketListPage';
+import { TicketDetailPage } from '@/pages/TicketDetailPage';
 
 // ── Root Route ───────────────────────────────────────────────────
 
@@ -151,6 +152,23 @@ const ticketsRoute = createRoute({
   },
 });
 
+const ticketDetailRoute = createRoute({
+  getParentRoute: () => protectedLayoutRoute,
+  path: '/tickets/$ticketId',
+  component: TicketDetailPage,
+  beforeLoad: () => {
+    const { hasPermission } = useAuthStore.getState();
+    // Allow access if user has any ticket-related permission
+    if (
+      !hasPermission(PERMISSIONS.VIEW_OWN_TICKETS) &&
+      !hasPermission(PERMISSIONS.VIEW_ALL_TICKETS) &&
+      !hasPermission(PERMISSIONS.VIEW_ASSIGNED_TICKETS)
+    ) {
+      throw redirect({ to: '/dashboard' });
+    }
+  },
+});
+
 // ── Router ───────────────────────────────────────────────────────
 
 const routeTree = rootRoute.addChildren([
@@ -164,6 +182,7 @@ const routeTree = rootRoute.addChildren([
     locationsRoute,
     resourcesRoute,
     ticketsRoute,
+    ticketDetailRoute,
     profileRoute,
   ]),
 ]);
