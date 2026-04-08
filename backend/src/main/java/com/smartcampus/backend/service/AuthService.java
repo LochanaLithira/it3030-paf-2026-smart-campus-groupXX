@@ -85,14 +85,20 @@ public class AuthService {
 
     @Transactional(readOnly = true)
     public AuthResponse loginWithCredentials(CredentialsLoginRequest request) {
+        log.debug("Login attempt for email: {}", request.email());
         User user = userRepository.findByEmail(request.email())
                 .orElseThrow(() -> new UnauthorizedException("Invalid email or password"));
 
+        log.debug("User found: {}, has password: {}", user.getEmail(), user.getPasswordHash() != null);
+        
         if (user.getPasswordHash() == null) {
             throw new UnauthorizedException("This account uses Google Sign-In. Please log in with Google.");
         }
 
-        if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
+        boolean passwordMatches = passwordEncoder.matches(request.password(), user.getPasswordHash());
+        log.debug("Password matches: {}", passwordMatches);
+        
+        if (!passwordMatches) {
             throw new UnauthorizedException("Invalid email or password");
         }
 
@@ -100,9 +106,11 @@ public class AuthService {
             throw new UnauthorizedException("User account is deactivated");
         }
 
+        log.debug("About to load roles for user: {}", user.getUserId());
         // Eagerly load roles for token generation
         User fullUser = userRepository.findByIdWithRoles(user.getUserId())
                 .orElseThrow();
+        log.debug("Roles loaded successfully");
 
         return buildAuthResponse(fullUser);
     }
