@@ -4,6 +4,8 @@ import com.smartcampus.backend.model.enums.ResourceStatus;
 import com.smartcampus.backend.model.enums.ResourceType;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -32,6 +34,7 @@ public class Resource {
     private String name;
 
     @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(name = "type", nullable = false)
     private ResourceType type;
 
@@ -43,6 +46,7 @@ public class Resource {
     private Location location;
 
     @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(name = "status", nullable = false)
     private ResourceStatus status;
 

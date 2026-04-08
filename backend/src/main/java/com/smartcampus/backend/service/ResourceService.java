@@ -68,7 +68,10 @@ public class ResourceService {
     public ResourceResponse createResource(ResourceRequest request) {
         validateAvailability(request.availability());
 
-        Resource resource = new Resource();
+        Resource resource = Resource.builder()
+                .availability(new ArrayList<>())
+                .tagMappings(new ArrayList<>())
+                .build();
         applyRequestToResource(resource, request);
         resource.setStatus(request.status() == null ? ResourceStatus.ACTIVE : request.status());
         resource.setCreatedBy(resolveCurrentUser());
@@ -132,6 +135,9 @@ public class ResourceService {
     }
 
     private void replaceAvailability(Resource resource, List<ResourceAvailabilityRequest> availability) {
+        if (resource.getAvailability() == null) {
+            resource.setAvailability(new ArrayList<>());
+        }
         // Clear existing availability slots (cascade and orphan removal will handle deletion)
         resource.getAvailability().clear();
         
@@ -152,6 +158,9 @@ public class ResourceService {
     }
 
     private void replaceTags(Resource resource, List<UUID> tagIds) {
+        if (resource.getTagMappings() == null) {
+            resource.setTagMappings(new ArrayList<>());
+        }
         // Clear existing tag mappings (cascade and orphan removal will handle deletion)
         resource.getTagMappings().clear();
         

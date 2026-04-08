@@ -1,8 +1,8 @@
 # Claude Context — Smart Campus Resource Management Platform
 
 > **Purpose:** This file provides AI assistants (Claude, Copilot, etc.) with complete project context for consistent, accurate code generation.  
-> **Date:** 2026-04-07  
-> **Last updated by:** GitHub Copilot CLI — Post-PR#3 Code Review: Applied critical fixes for SQL injection vulnerabilities, N+1 query problems, validation gaps, and race conditions. Improved error handling and frontend validation.
+> **Date:** 2026-04-08  
+> **Last updated by:** Cursor Agent — Facilities & Assets stabilization pass for intermittent create failures (`/locations`, `/resources`): fixed backend null-safety edge case, improved facilities constraint error mapping, strengthened frontend create validation, and surfaced API error messages in facilities hooks.
 
 ---
 
@@ -378,6 +378,15 @@ Docker:          docker-compose.yml (root), backend/Dockerfile
 | Facilities query hooks | `src/hooks/useLocations.ts`, `src/hooks/useResources.ts` |
 | Facilities pages + forms | `src/pages/LocationManagementPage.tsx`, `src/pages/ResourceManagementPage.tsx`, `src/components/resources/LocationEditorDialog.tsx`, `src/components/resources/ResourceEditorDialog.tsx` |
 | Router/sidebar/permission wiring | `src/router.tsx`, `src/components/layout/Sidebar.tsx`, `src/lib/permissions.ts`, `src/types/api.ts` |
+
+#### Facilities stabilization notes (2026-04-08)
+- `ResourceService#createResource()` now initializes collections safely to prevent intermittent null-pointer 500s when replacing availability/tag mappings.
+- Facilities DB constraint handling now returns domain-friendly client errors:
+  - duplicate location composite key -> `409 Conflict`
+  - invalid `locationId` or `tagIds` -> `400 Bad Request`
+  - invalid availability time order -> `422 Unprocessable Entity`
+- Facilities frontend hooks now show backend `message` values in toasts for create/update/delete failures (`useLocations`, `useResources`).
+- `ResourceEditorDialog` now blocks partial availability input and invalid time ranges before submitting.
 
 ---
 

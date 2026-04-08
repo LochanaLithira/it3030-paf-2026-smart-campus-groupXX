@@ -14,7 +14,7 @@ public interface LocationRepository extends JpaRepository<Location, UUID> {
 
     @Query("""
             SELECT l FROM Location l
-            WHERE (:building IS NULL OR LOWER(l.buildingName) LIKE LOWER(CONCAT('%', :building, '%')))
+            WHERE (:building IS NULL OR LOWER(l.buildingName) LIKE LOWER(CONCAT('%', CAST(:building AS string), '%')))
               AND (:floor IS NULL OR l.floorNumber = :floor)
             ORDER BY l.buildingName ASC, l.floorNumber ASC, l.roomNumber ASC
             """)

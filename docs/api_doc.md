@@ -173,6 +173,10 @@ Create a location (ADMIN only).
 
 **Response 201:** Created location object.
 
+**Facilities error behavior:**
+- `409 Conflict` when another record already exists with the same `(buildingName, floorNumber, roomNumber)` combination.
+- `400 Bad Request` when request validation fails (missing `buildingName` / `floorNumber`, invalid lengths, etc.).
+
 ### PUT `/locations/{locationId}`
 
 Update a location (ADMIN only). Full replacement.
@@ -260,6 +264,11 @@ Create a resource (ADMIN only).
 ```
 
 **Response 201:** Full resource object.
+
+**Facilities error behavior:**
+- `400 Bad Request` when `locationId` is invalid or one/more `tagIds` do not exist.
+- `422 Unprocessable Entity` when availability has invalid time order (`endTime <= startTime`) or duplicate slots.
+- `400 Bad Request` when payload validation fails (missing/invalid required fields).
 
 ### PUT `/resources/{resourceId}`
 

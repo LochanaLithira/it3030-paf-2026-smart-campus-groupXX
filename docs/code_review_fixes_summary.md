@@ -232,6 +232,29 @@ Conducted comprehensive code review of PR#3 (Facilities & Assets Management MVP)
 
 ---
 
+## Facilities Stabilization Addendum (2026-04-08)
+
+### Fixed
+
+1. **Intermittent 500 during resource creation**
+   - Root cause: `ResourceService#createResource()` created `Resource` with uninitialized `availability` / `tagMappings` lists, then attempted clear/replace operations.
+   - Fix: initialize collections explicitly and guard list replacement with null-safe initialization.
+
+2. **Facilities constraint errors surfaced as generic failures**
+   - Added specific exception mappings for:
+     - duplicate location composite key -> `409 Conflict`
+     - invalid resource `locationId` -> `400 Bad Request`
+     - invalid resource `tagIds` -> `400 Bad Request`
+     - invalid availability time order at DB constraint -> `422 Unprocessable Entity`
+
+3. **Frontend facilities mutation failures lacked actionable messages**
+   - `useLocations` and `useResources` now extract backend API error `message` values from HTTP responses and show those in toast notifications.
+
+4. **Resource availability form accepted partial invalid input**
+   - `ResourceEditorDialog` now enforces all-or-none availability fields and validates `endTime > startTime` client-side before submit.
+
+---
+
 ## Next Steps
 
 1. **Add Tests** - Priority P1 technical debt

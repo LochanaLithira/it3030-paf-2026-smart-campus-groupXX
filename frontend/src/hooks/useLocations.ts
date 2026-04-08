@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { HTTPError } from 'ky';
 import { toast } from 'sonner';
 import { locationsApi } from '@/api/locations';
 import type { LocationRequest, LocationsListParams } from '@/types/api';
@@ -9,6 +10,18 @@ export const locationKeys = {
   list: (params: LocationsListParams) => [...locationKeys.lists(), params] as const,
   detail: (id: string) => [...locationKeys.all, id] as const,
 };
+
+async function extractApiErrorMessage(error: unknown, fallback: string): Promise<string> {
+  if (error instanceof HTTPError) {
+    try {
+      const body = (await error.response.clone().json()) as { message?: string };
+      return body?.message || fallback;
+    } catch {
+      return fallback;
+    }
+  }
+  return fallback;
+}
 
 export function useLocations(params: LocationsListParams = {}) {
   return useQuery({
@@ -25,7 +38,7 @@ export function useCreateLocation() {
       qc.invalidateQueries({ queryKey: locationKeys.lists() });
       toast.success(`Location ${created.buildingName} saved`);
     },
-    onError: () => toast.error('Failed to create location'),
+    onError: async (error) => toast.error(await extractApiErrorMessage(error, 'Failed to create location')),
   });
 }
 
@@ -39,7 +52,7 @@ export function useUpdateLocation() {
       qc.invalidateQueries({ queryKey: locationKeys.detail(updated.locationId) });
       toast.success('Location updated');
     },
-    onError: () => toast.error('Failed to update location'),
+    onError: async (error) => toast.error(await extractApiErrorMessage(error, 'Failed to update location')),
   });
 }
 
@@ -51,6 +64,6 @@ export function useDeleteLocation() {
       qc.invalidateQueries({ queryKey: locationKeys.lists() });
       toast.success('Location deleted');
     },
-    onError: () => toast.error('Failed to delete location'),
+    onError: async (error) => toast.error(await extractApiErrorMessage(error, 'Failed to delete location')),
   });
 }
