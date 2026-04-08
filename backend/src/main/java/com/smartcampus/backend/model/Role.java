@@ -2,10 +2,9 @@ package com.smartcampus.backend.model;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -23,10 +22,23 @@ public class Role {
     @Column(name = "role_name", length = 50, unique = true, nullable = false)
     private String roleName;
 
-    @JdbcTypeCode(SqlTypes.ARRAY)
-    @Column(name = "permissions", columnDefinition = "text[]", nullable = false)
-    @Builder.Default
-    private List<String> permissions = new ArrayList<>();
+    @Column(name = "permissions", nullable = false, columnDefinition = "text")
+    private String permissionsStr = "";
+
+    @Transient
+    public List<String> getPermissions() {
+        if (permissionsStr == null || permissionsStr.isEmpty()) {
+            return new ArrayList<>();
+        }
+        return Arrays.asList(permissionsStr.split(","));
+    }
+
+    @Transient
+    public void setPermissions(List<String> permissions) {
+        this.permissionsStr = permissions == null || permissions.isEmpty() 
+            ? "" 
+            : String.join(",", permissions);
+    }
 
     @OneToMany(mappedBy = "role", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @Builder.Default

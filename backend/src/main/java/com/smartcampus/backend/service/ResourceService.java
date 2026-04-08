@@ -15,6 +15,7 @@ import com.smartcampus.backend.repository.UserRepository;
 import com.smartcampus.backend.security.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -44,29 +45,15 @@ public class ResourceService {
             Pageable pageable
     ) {
         String tagName = extractSingleTag(tags);
-
-        // Step 1: paginate safely on base table — no collection JOIN FETCH
-        Page<Resource> page = resourceRepository.findPagedWithFilters(
-                type, status, locationId, minCapacity, blankToNull(search), tagName, pageable
+        String typeStr = type != null ? type.name() : null;
+        String statusStr = status != null ? status.name() : null;
+        // Use PageRequest without Sort to avoid camelCase column name issues with native query
+        Pageable unsortedPageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
+        Page<Resource> resources = resourceRepository.findAllWithFilters(
+                typeStr, statusStr, locationId, minCapacity, blankToNull(search), tagName, unsortedPageable
         );
-
-        if (page.isEmpty()) {
-            return page.map(this::buildResourceResponse);
-        }
-
-        // Step 2: hydrate the current page's resources with all associations
-        List<UUID> ids = page.getContent().stream()
-                .map(Resource::getResourceId)
-                .toList();
-
-        Map<UUID, Resource> hydrated = resourceRepository.findAllWithDetailsByIds(ids)
-                .stream()
-                .collect(Collectors.toMap(Resource::getResourceId, r -> r));
-
-        // Step 3: map preserving original page metadata (total count, page number, etc.)
-        return page.map(r -> buildResourceResponse(
-                hydrated.getOrDefault(r.getResourceId(), r)
-        ));
+        
+        return resources.map(this::buildResourceResponse);
     }
 
     // ---- Everything below this line is UNCHANGED ----
