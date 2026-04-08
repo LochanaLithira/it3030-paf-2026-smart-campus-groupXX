@@ -9,6 +9,7 @@ import {
   Building2,
   MapPin,
   AlertCircle,
+  Wrench,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/authStore';
@@ -26,6 +27,12 @@ const NAV_ITEMS: NavItem[] = [
     label: 'Dashboard',
     href: '/dashboard',
     icon: LayoutDashboard,
+  },
+  {
+    label: 'My Tickets',
+    href: '/tech-dashboard',
+    icon: Wrench,
+    permission: PERMISSIONS.VIEW_ASSIGNED_TICKETS,
   },
   {
     label: 'User Management',

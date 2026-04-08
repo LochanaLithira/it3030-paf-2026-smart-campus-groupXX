@@ -240,6 +240,7 @@ export interface TicketRequest {
   priority: TicketPriority;
   preferredContactDetails?: string;
   dueDate?: string; // ISO date string (yyyy-MM-dd)
+  attachments?: File[]; // For frontend form only - sent separately
 }
 
 export interface TicketResponse {

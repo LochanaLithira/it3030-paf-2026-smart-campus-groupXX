@@ -12,6 +12,7 @@ import type {
   TicketAssignRequest,
   TicketStatusUpdateRequest,
   TicketsListParams,
+  TicketStatus,
 } from '@/types/api';
 import { toast } from 'sonner';
 
@@ -70,8 +71,8 @@ export function useTicketById(
 export function useUpdateTicketStatus() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ ticketId, request }: { ticketId: string; request: TicketStatusUpdateRequest }) =>
-      ticketsApi.updateStatus(ticketId, request),
+    mutationFn: ({ ticketId, status, notes }: { ticketId: string; status: TicketStatus; notes?: string }) =>
+      ticketsApi.updateStatus(ticketId, { status, notes }),
     onSuccess: (updated) => {
       qc.setQueryData(ticketKeys.detail(updated.ticketId), updated);
       qc.invalidateQueries({ queryKey: ticketKeys.lists() });
@@ -89,8 +90,8 @@ export function useUpdateTicketStatus() {
 export function useAssignTicket() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ ticketId, request }: { ticketId: string; request: TicketAssignRequest }) =>
-      ticketsApi.assign(ticketId, request),
+    mutationFn: ({ ticketId, technicianId }: { ticketId: string; technicianId: string }) =>
+      ticketsApi.assign(ticketId, { technicianId }),
     onSuccess: (updated) => {
       qc.setQueryData(ticketKeys.detail(updated.ticketId), updated);
       qc.invalidateQueries({ queryKey: ticketKeys.lists() });
@@ -107,11 +108,11 @@ export function useAssignTicket() {
 /**
  * Add a comment to a ticket
  */
-export function useAddTicketComment() {
+export function useAddComment() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ ticketId, request }: { ticketId: string; request: TicketCommentRequest }) =>
-      ticketsApi.addComment(ticketId, request),
+    mutationFn: ({ ticketId, comment }: { ticketId: string; comment: string }) =>
+      ticketsApi.addComment(ticketId, { comment }),
     onSuccess: (_comment, { ticketId }) => {
       qc.invalidateQueries({ queryKey: ticketKeys.detail(ticketId) });
       toast.success('Comment added');
@@ -125,18 +126,18 @@ export function useAddTicketComment() {
 /**
  * Update a ticket comment
  */
-export function useUpdateTicketComment() {
+export function useUpdateComment() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({
       ticketId,
       commentId,
-      request,
+      comment,
     }: {
       ticketId: string;
       commentId: string;
-      request: TicketCommentRequest;
-    }) => ticketsApi.updateComment(ticketId, commentId, request),
+      comment: string;
+    }) => ticketsApi.updateComment(ticketId, commentId, { comment }),
     onSuccess: (_comment, { ticketId }) => {
       qc.invalidateQueries({ queryKey: ticketKeys.detail(ticketId) });
       toast.success('Comment updated');
@@ -150,7 +151,7 @@ export function useUpdateTicketComment() {
 /**
  * Delete a ticket comment
  */
-export function useDeleteTicketComment() {
+export function useDeleteComment() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ ticketId, commentId }: { ticketId: string; commentId: string }) =>

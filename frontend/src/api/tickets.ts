@@ -14,10 +14,47 @@ import type {
 
 export const ticketsApi = {
   /**
-   * Create a new ticket
+   * Create a new ticket with optional file attachments
    */
-  create: async (request: TicketRequest): Promise<TicketResponse> =>
-    apiClient.post('tickets', { json: request }).json<TicketResponse>(),
+  create: async (request: TicketRequest): Promise<TicketResponse> => {
+    const formData = new FormData();
+    
+    // Build the ticket request JSON (without files)
+    const ticketData = {
+      resourceId: request.resourceId,
+      category: request.category,
+      description: request.description,
+      priority: request.priority,
+      preferredContactDetails: request.preferredContactDetails,
+      dueDate: request.dueDate,
+    };
+    
+    formData.append('request', new Blob([JSON.stringify(ticketData)], { type: 'application/json' }));
+    
+    // Add files if present
+    if (request.attachments && request.attachments.length > 0) {
+      request.attachments.forEach((file) => {
+        formData.append('files', file);
+      });
+    }
+    
+    // Use fetch directly for multipart/form-data (ky doesn't handle FormData well with Blob)
+    const token = localStorage.getItem('accessToken');
+    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1'}/tickets`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      body: formData,
+    });
+    
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: 'Failed to create ticket' }));
+      throw new Error(error.message || 'Failed to create ticket');
+    }
+    
+    return response.json();
+  },
 
   /**
    * List tickets with optional filters

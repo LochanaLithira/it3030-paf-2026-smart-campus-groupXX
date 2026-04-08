@@ -1,4 +1,5 @@
 import { useParams, Link } from '@tanstack/react-router';
+import { useState } from 'react';
 import { useTicketById } from '@/hooks/useTickets';
 import { useAuthStore } from '@/store/authStore';
 import { PERMISSIONS } from '@/lib/permissions';
@@ -6,6 +7,13 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import {
+  CommentThread,
+  AssignDialog,
+  StatusUpdateDialog,
+  StatusTimeline,
+  AttachmentUploader,
+} from '@/components/tickets';
 import {
   ArrowLeft,
   Loader2,
@@ -21,6 +29,8 @@ import {
   CheckCircle,
   XCircle,
   Ban,
+  UserPlus,
+  RefreshCw,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import type { TicketStatus, TicketPriority } from '@/types/api';
@@ -67,6 +77,10 @@ export function TicketDetailPage() {
   const { ticketId } = useParams({ from: '/tickets/$ticketId' });
   const { data: ticket, isLoading, error } = useTicketById(ticketId);
   const { user, hasPermission } = useAuthStore();
+
+  // Dialog states
+  const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+  const [statusDialogOpen, setStatusDialogOpen] = useState(false);
 
   const canAssign = hasPermission(PERMISSIONS.ASSIGN_TICKETS);
   const canUpdateStatus = hasPermission(PERMISSIONS.UPDATE_TICKET_STATUS);
@@ -126,21 +140,16 @@ export function TicketDetailPage() {
 
         {/* Action Buttons */}
         <div className="flex items-center gap-2">
-          {canAssign && !ticket.assignedTech && (
-            <Button size="sm" variant="outline">
-              <User className="h-4 w-4 mr-2" />
-              Assign Technician
+          {canAssign && (
+            <Button size="sm" variant="outline" onClick={() => setAssignDialogOpen(true)}>
+              <UserPlus className="h-4 w-4 mr-2" />
+              {ticket.assignedTech ? 'Reassign' : 'Assign'}
             </Button>
           )}
           {(canUpdateStatus || isAssignedTech) && ticket.status !== 'CLOSED' && (
-            <Button size="sm" variant="outline">
+            <Button size="sm" onClick={() => setStatusDialogOpen(true)}>
+              <RefreshCw className="h-4 w-4 mr-2" />
               Update Status
-            </Button>
-          )}
-          {canClose && ticket.status === 'RESOLVED' && (
-            <Button size="sm">
-              <CheckCircle className="h-4 w-4 mr-2" />
-              Close Ticket
             </Button>
           )}
         </div>
@@ -388,46 +397,63 @@ export function TicketDetailPage() {
             </CardContent>
           </Card>
 
-          {/* Status History */}
-          {ticket.statusHistory.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Status History</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {ticket.statusHistory.map((history, idx) => (
-                    <div key={history.historyId} className="relative">
-                      {idx !== ticket.statusHistory.length - 1 && (
-                        <div className="absolute left-2 top-6 bottom-0 w-0.5 bg-gray-200" />
-                      )}
-                      <div className="flex gap-3">
-                        <div className="relative z-10 mt-1">
-                          <div className="h-4 w-4 rounded-full border-2 border-blue-500 bg-white" />
-                        </div>
-                        <div className="flex-1 pb-3">
-                          <div className="flex items-center gap-2 mb-1">
-                            {getStatusBadge(history.newStatus)}
-                            <span className="text-xs text-gray-500">
-                              {format(new Date(history.changedAt), 'MMM d, h:mm a')}
-                            </span>
-                          </div>
-                          <p className="text-xs text-gray-600">
-                            by {history.changedBy.fullName}
-                          </p>
-                          {history.notes && (
-                            <p className="text-xs text-gray-500 mt-1 italic">"{history.notes}"</p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
+          {/* Status History - Using StatusTimeline Component */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Status Timeline</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <StatusTimeline history={ticket.statusHistory} />
+            </CardContent>
+          </Card>
         </div>
       </div>
+
+      {/* Comments Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MessageSquare className="h-5 w-5" />
+            Comments ({ticket.comments.length})
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <CommentThread ticketId={ticket.ticketId} comments={ticket.comments} />
+        </CardContent>
+      </Card>
+
+      {/* Attachments Section */}
+      {(isReporter || isAssignedTech || canAssign) && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <ImageIcon className="h-5 w-5" />
+              Add More Attachments
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <AttachmentUploader
+              ticketId={ticket.ticketId}
+              currentAttachmentCount={ticket.attachments.length}
+            />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Dialogs */}
+      <AssignDialog
+        ticketId={ticket.ticketId}
+        currentTechId={ticket.assignedTech?.userId}
+        open={assignDialogOpen}
+        onOpenChange={setAssignDialogOpen}
+      />
+
+      <StatusUpdateDialog
+        ticketId={ticket.ticketId}
+        currentStatus={ticket.status}
+        open={statusDialogOpen}
+        onOpenChange={setStatusDialogOpen}
+      />
     </div>
   );
 }
