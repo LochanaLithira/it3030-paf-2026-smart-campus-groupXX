@@ -51,7 +51,7 @@ export function DashboardPage() {
       {/* Stat cards — shown based on permissions */}
       {!hasNoRoles && (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {hasPermission(PERMISSIONS.MANAGE_USERS) && (
+          {hasPermission(PERMISSIONS.USERS_READ) && (
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">User Management</CardTitle>
@@ -63,7 +63,7 @@ export function DashboardPage() {
             </Card>
           )}
 
-          {hasPermission(PERMISSIONS.MANAGE_ROLES) && (
+          {hasPermission(PERMISSIONS.ROLES_READ) && (
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Role Management</CardTitle>

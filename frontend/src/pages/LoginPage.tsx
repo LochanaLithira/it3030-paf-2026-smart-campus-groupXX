@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { BookOpen, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { HTTPError } from 'ky';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -116,12 +117,26 @@ export function LoginPage() {
       toast.success('Account created! Contact an admin to have a role assigned.');
       navigate({ to: '/dashboard' });
     } catch (err: unknown) {
-      const msg = (err as { message?: string })?.message ?? '';
-      if (msg.includes('already exists') || msg.includes('409')) {
-        toast.error('An account with this email already exists.');
-      } else {
-        toast.error('Registration failed. Please try again.');
+      if (err instanceof HTTPError) {
+        let serverMessage = '';
+        try {
+          const body = await err.response.json<{ message?: string }>();
+          serverMessage = body?.message ?? '';
+        } catch {
+          // ignore JSON parse errors
+        }
+
+        if (err.response.status === 409) {
+          toast.error(serverMessage || 'An account with this email already exists.');
+          return;
+        }
+
+        toast.error(serverMessage || 'Registration failed. Please try again.');
+        return;
       }
+
+      const msg = (err as { message?: string })?.message ?? '';
+      toast.error(msg || 'Registration failed. Please try again.');
     }
   };
 

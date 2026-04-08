@@ -87,7 +87,7 @@ const usersRoute = createRoute({
   component: UserManagementPage,
   beforeLoad: () => {
     const { hasPermission } = useAuthStore.getState();
-    if (!hasPermission(PERMISSIONS.MANAGE_USERS)) {
+    if (!hasPermission(PERMISSIONS.USERS_READ)) {
       throw redirect({ to: '/dashboard' });
     }
   },
@@ -99,7 +99,7 @@ const rolesRoute = createRoute({
   component: RoleManagementPage,
   beforeLoad: () => {
     const { hasPermission } = useAuthStore.getState();
-    if (!hasPermission(PERMISSIONS.MANAGE_ROLES)) {
+    if (!hasPermission(PERMISSIONS.ROLES_READ)) {
       throw redirect({ to: '/dashboard' });
     }
   },
@@ -117,7 +117,7 @@ const locationsRoute = createRoute({
   component: LocationManagementPage,
   beforeLoad: () => {
     const { hasPermission } = useAuthStore.getState();
-    if (!hasPermission(PERMISSIONS.VIEW_RESOURCES)) {
+    if (!hasPermission(PERMISSIONS.LOCATIONS_READ)) {
       throw redirect({ to: '/dashboard' });
     }
   },
@@ -129,7 +129,7 @@ const resourcesRoute = createRoute({
   component: ResourceManagementPage,
   beforeLoad: () => {
     const { hasPermission } = useAuthStore.getState();
-    if (!hasPermission(PERMISSIONS.VIEW_RESOURCES)) {
+    if (!hasPermission(PERMISSIONS.RESOURCES_READ)) {
       throw redirect({ to: '/dashboard' });
     }
   },

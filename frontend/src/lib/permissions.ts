@@ -4,11 +4,38 @@
 // ================================================================
 
 export const PERMISSIONS = {
-  // User Management
+  // User Management (Granular)
+  USERS_READ: 'USERS_READ',
+  USERS_CREATE: 'USERS_CREATE',
+  USERS_UPDATE: 'USERS_UPDATE',
+  USERS_DELETE_SOFT: 'USERS_DELETE_SOFT',
+  USERS_MANAGE_ROLES: 'USERS_MANAGE_ROLES',
+  
+  // User Management (Coarse - Backend)
   MANAGE_USERS: 'MANAGE_USERS',
+  
+  // Role Management (Granular)
+  ROLES_READ: 'ROLES_READ',
+  ROLES_CREATE: 'ROLES_CREATE',
+  ROLES_UPDATE: 'ROLES_UPDATE',
+  ROLES_DELETE: 'ROLES_DELETE',
+  
+  // Role Management (Coarse - Backend)
   MANAGE_ROLES: 'MANAGE_ROLES',
   
-  // Resource Management
+  // Resource Management (Granular)
+  LOCATIONS_READ: 'LOCATIONS_READ',
+  LOCATIONS_CREATE: 'LOCATIONS_CREATE',
+  LOCATIONS_UPDATE: 'LOCATIONS_UPDATE',
+  LOCATIONS_DELETE: 'LOCATIONS_DELETE',
+  
+  RESOURCES_READ: 'RESOURCES_READ',
+  RESOURCES_CREATE: 'RESOURCES_CREATE',
+  RESOURCES_UPDATE: 'RESOURCES_UPDATE',
+  RESOURCES_UPDATE_STATUS: 'RESOURCES_UPDATE_STATUS',
+  RESOURCES_DELETE: 'RESOURCES_DELETE',
+  
+  // Resource Management (Coarse - Backend)
   MANAGE_RESOURCES: 'MANAGE_RESOURCES',
   MANAGE_LOCATIONS: 'MANAGE_LOCATIONS',
   VIEW_RESOURCES: 'VIEW_RESOURCES',
@@ -53,8 +80,22 @@ export const PERMISSION_GROUPS = [
     label: 'User Management',
     description: 'Manage user accounts and roles',
     permissions: [
-      { key: PERMISSIONS.MANAGE_USERS, label: 'Manage Users', description: 'Create, update, and deactivate users' },
-      { key: PERMISSIONS.MANAGE_ROLES, label: 'Manage Roles', description: 'Create and configure roles' },
+      { key: PERMISSIONS.USERS_READ, label: 'View Users', description: 'View user details and profiles' },
+      { key: PERMISSIONS.USERS_CREATE, label: 'Create Users', description: 'Create new user accounts' },
+      { key: PERMISSIONS.USERS_UPDATE, label: 'Update Users', description: 'Edit user information' },
+      { key: PERMISSIONS.USERS_DELETE_SOFT, label: 'Deactivate Users', description: 'Deactivate user accounts' },
+      { key: PERMISSIONS.USERS_MANAGE_ROLES, label: 'Manage User Roles', description: 'Assign and modify user roles' },
+    ],
+  },
+  {
+    id: 'role-management',
+    label: 'Role Management',
+    description: 'Manage roles and permissions',
+    permissions: [
+      { key: PERMISSIONS.ROLES_READ, label: 'View Roles', description: 'View roles' },
+      { key: PERMISSIONS.ROLES_CREATE, label: 'Create Roles', description: 'Create roles' },
+      { key: PERMISSIONS.ROLES_UPDATE, label: 'Update Roles', description: 'Edit roles' },
+      { key: PERMISSIONS.ROLES_DELETE, label: 'Delete Roles', description: 'Delete roles' },
     ],
   },
   {
@@ -62,9 +103,15 @@ export const PERMISSION_GROUPS = [
     label: 'Facilities & Assets',
     description: 'Manage campus locations and resources',
     permissions: [
-      { key: PERMISSIONS.VIEW_RESOURCES, label: 'View Resources', description: 'View resources and locations' },
-      { key: PERMISSIONS.MANAGE_RESOURCES, label: 'Manage Resources', description: 'Create, update, and delete resources' },
-      { key: PERMISSIONS.MANAGE_LOCATIONS, label: 'Manage Locations', description: 'Create, update, and delete locations' },
+      { key: PERMISSIONS.LOCATIONS_READ, label: 'View Locations', description: 'View campus locations' },
+      { key: PERMISSIONS.LOCATIONS_CREATE, label: 'Create Locations', description: 'Create locations' },
+      { key: PERMISSIONS.LOCATIONS_UPDATE, label: 'Update Locations', description: 'Edit locations' },
+      { key: PERMISSIONS.LOCATIONS_DELETE, label: 'Delete Locations', description: 'Delete locations' },
+      { key: PERMISSIONS.RESOURCES_READ, label: 'View Resources', description: 'View resources' },
+      { key: PERMISSIONS.RESOURCES_CREATE, label: 'Create Resources', description: 'Create resources' },
+      { key: PERMISSIONS.RESOURCES_UPDATE, label: 'Update Resources', description: 'Edit resources' },
+      { key: PERMISSIONS.RESOURCES_UPDATE_STATUS, label: 'Update Resource Status', description: 'Change resource status' },
+      { key: PERMISSIONS.RESOURCES_DELETE, label: 'Delete Resources', description: 'Delete resources' },
     ],
   },
   {
