@@ -75,9 +75,9 @@ export function UserManagementPage() {
 
   const deactivate = useDeactivateUser();
 
-  const canManageRoles = hasPermission(PERMISSIONS.USERS_MANAGE_ROLES);
-  const canDeactivate = hasPermission(PERMISSIONS.USERS_DELETE_SOFT);
-  const canCreate = hasPermission(PERMISSIONS.USERS_CREATE);
+  const canManageRoles = hasPermission(PERMISSIONS.MANAGE_ROLES);
+  const canDeactivate = hasPermission(PERMISSIONS.MANAGE_USERS);
+  const canCreate = hasPermission(PERMISSIONS.MANAGE_USERS);
 
   // Debounce search
   const handleSearchChange = useCallback((value: string) => {

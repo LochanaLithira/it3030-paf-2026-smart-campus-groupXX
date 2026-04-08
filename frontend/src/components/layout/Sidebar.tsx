@@ -8,6 +8,7 @@ import {
   ChevronRight,
   Building2,
   MapPin,
+  AlertCircle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/authStore';
@@ -25,31 +26,36 @@ const NAV_ITEMS: NavItem[] = [
     label: 'Dashboard',
     href: '/dashboard',
     icon: LayoutDashboard,
-    permission: PERMISSIONS.DASHBOARD_VIEW_ADMIN,
   },
   {
     label: 'User Management',
     href: '/users',
     icon: Users,
-    permission: PERMISSIONS.USERS_READ,
+    permission: PERMISSIONS.MANAGE_USERS,
   },
   {
     label: 'Role Management',
     href: '/roles',
     icon: ShieldCheck,
-    permission: PERMISSIONS.ROLES_READ,
+    permission: PERMISSIONS.MANAGE_ROLES,
   },
   {
     label: 'Locations',
     href: '/locations',
     icon: Building2,
-    permission: PERMISSIONS.LOCATIONS_READ,
+    permission: PERMISSIONS.VIEW_RESOURCES,
   },
   {
     label: 'Resources',
     href: '/resources',
     icon: MapPin,
-    permission: PERMISSIONS.RESOURCES_READ,
+    permission: PERMISSIONS.VIEW_RESOURCES,
+  },
+  {
+    label: 'Tickets',
+    href: '/tickets',
+    icon: AlertCircle,
+    permission: PERMISSIONS.VIEW_OWN_TICKETS,
   },
   {
     label: 'Profile',

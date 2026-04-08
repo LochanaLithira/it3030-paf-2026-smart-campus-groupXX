@@ -17,6 +17,7 @@ import { ProfilePage } from '@/pages/ProfilePage';
 import { PERMISSIONS } from '@/lib/permissions';
 import { LocationManagementPage } from '@/pages/LocationManagementPage';
 import { ResourceManagementPage } from '@/pages/ResourceManagementPage';
+import { TicketListPage } from '@/pages/TicketListPage';
 
 // ── Root Route ───────────────────────────────────────────────────
 
@@ -85,7 +86,7 @@ const usersRoute = createRoute({
   component: UserManagementPage,
   beforeLoad: () => {
     const { hasPermission } = useAuthStore.getState();
-    if (!hasPermission(PERMISSIONS.USERS_READ)) {
+    if (!hasPermission(PERMISSIONS.MANAGE_USERS)) {
       throw redirect({ to: '/dashboard' });
     }
   },
@@ -97,7 +98,7 @@ const rolesRoute = createRoute({
   component: RoleManagementPage,
   beforeLoad: () => {
     const { hasPermission } = useAuthStore.getState();
-    if (!hasPermission(PERMISSIONS.ROLES_READ)) {
+    if (!hasPermission(PERMISSIONS.MANAGE_ROLES)) {
       throw redirect({ to: '/dashboard' });
     }
   },
@@ -115,7 +116,7 @@ const locationsRoute = createRoute({
   component: LocationManagementPage,
   beforeLoad: () => {
     const { hasPermission } = useAuthStore.getState();
-    if (!hasPermission(PERMISSIONS.LOCATIONS_READ)) {
+    if (!hasPermission(PERMISSIONS.VIEW_RESOURCES)) {
       throw redirect({ to: '/dashboard' });
     }
   },
@@ -127,7 +128,24 @@ const resourcesRoute = createRoute({
   component: ResourceManagementPage,
   beforeLoad: () => {
     const { hasPermission } = useAuthStore.getState();
-    if (!hasPermission(PERMISSIONS.RESOURCES_READ)) {
+    if (!hasPermission(PERMISSIONS.VIEW_RESOURCES)) {
+      throw redirect({ to: '/dashboard' });
+    }
+  },
+});
+
+const ticketsRoute = createRoute({
+  getParentRoute: () => protectedLayoutRoute,
+  path: '/tickets',
+  component: TicketListPage,
+  beforeLoad: () => {
+    const { hasPermission } = useAuthStore.getState();
+    // Allow access if user has any ticket-related permission
+    if (
+      !hasPermission(PERMISSIONS.VIEW_OWN_TICKETS) &&
+      !hasPermission(PERMISSIONS.VIEW_ALL_TICKETS) &&
+      !hasPermission(PERMISSIONS.VIEW_ASSIGNED_TICKETS)
+    ) {
       throw redirect({ to: '/dashboard' });
     }
   },
@@ -145,6 +163,7 @@ const routeTree = rootRoute.addChildren([
     rolesRoute,
     locationsRoute,
     resourcesRoute,
+    ticketsRoute,
     profileRoute,
   ]),
 ]);
