@@ -112,9 +112,9 @@ const PRIORITY_LABELS: Record<TicketPriority, string> = {
 
 export function TicketForm({ onSubmit, onCancel, isLoading, defaultValues }: TicketFormProps) {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const { data: resourcesData, isLoading: resourcesLoading } = useResources({
+  const { data: resourcesData, isLoading: resourcesLoading, isError: resourcesError } = useResources({
     size: 1000,
-    status: 'AVAILABLE',
+    status: 'ACTIVE',
   });
 
   const form = useForm<TicketFormValues>({
@@ -168,19 +168,24 @@ export function TicketForm({ onSubmit, onCancel, isLoading, defaultValues }: Tic
                 </FormControl>
                 <SelectContent>
                   {resourcesLoading && (
-                    <SelectItem value="" disabled>
+                    <SelectItem value="_loading" disabled>
                       Loading resources...
                     </SelectItem>
                   )}
-                  {resources.length === 0 && !resourcesLoading && (
-                    <SelectItem value="" disabled>
+                  {resourcesError && (
+                    <SelectItem value="_error" disabled>
+                      ⚠ Permission error — please log out and log back in
+                    </SelectItem>
+                  )}
+                  {!resourcesError && resources.length === 0 && !resourcesLoading && (
+                    <SelectItem value="_empty" disabled>
                       No resources available
                     </SelectItem>
                   )}
                   {resources.map((resource) => (
                     <SelectItem key={resource.resourceId} value={resource.resourceId}>
-                      {resource.name} ({resource.type})
-                      {resource.location && ` — ${resource.location.building || ''}`}
+                      {resource.name} — {resource.type.replace('_', ' ')}
+                      {resource.location && ` (${resource.location.buildingName}, Floor ${resource.location.floorNumber}${resource.location.roomNumber ? `, Room ${resource.location.roomNumber}` : ''})`}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -281,20 +286,17 @@ export function TicketForm({ onSubmit, onCancel, isLoading, defaultValues }: Tic
             <FormItem className="flex flex-col">
               <FormLabel>Due Date (Optional)</FormLabel>
               <Popover>
-                <PopoverTrigger asChild>
-                  <FormControl>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        'w-full pl-3 text-left font-normal',
-                        !field.value && 'text-muted-foreground'
-                      )}
-                    >
-                      {field.value ? format(field.value, 'PPP') : <span>Pick a date</span>}
-                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                    </Button>
-                  </FormControl>
-                </PopoverTrigger>
+                <FormControl>
+                  <PopoverTrigger
+                    className={cn(
+                      'flex h-9 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors',
+                      !field.value && 'text-muted-foreground'
+                    )}
+                  >
+                    {field.value ? format(field.value, 'PPP') : <span>Pick a date</span>}
+                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                  </PopoverTrigger>
+                </FormControl>
                 <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
                     mode="single"

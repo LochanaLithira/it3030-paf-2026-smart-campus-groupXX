@@ -17,13 +17,14 @@ export function TicketCreatePage() {
         category: values.category,
         priority: values.priority,
         description: values.description,
-        preferredContactDetails: values.preferredContactDetails,
+        preferredContactEmail: values.preferredContactEmail || undefined,
+        preferredContactPhone: values.preferredContactPhone || undefined,
         dueDate: values.dueDate ? format(values.dueDate, 'yyyy-MM-dd') : undefined,
         attachments: values.attachments,
       });
 
       // Navigate to the created ticket
-      navigate({ to: `/tickets/${ticket.ticketId}` });
+      navigate({ to: '/tickets/$ticketId', params: { ticketId: ticket.ticketId } });
     } catch (error) {
       // Error is handled by the mutation's onError in useCreateTicket
       console.error('Failed to create ticket:', error);
