@@ -43,6 +43,10 @@ COPY --from=extractor /build/extracted/spring-boot-loader   ./
 COPY --from=extractor /build/extracted/snapshot-dependencies ./
 COPY --from=extractor /build/extracted/application          ./
 
+# Create upload directory and ensure appuser can write to it
+RUN mkdir -p /app/uploads/tickets && \
+    chown -R appuser:appgroup /app/uploads
+
 # Switch to non-root user
 USER appuser
 
