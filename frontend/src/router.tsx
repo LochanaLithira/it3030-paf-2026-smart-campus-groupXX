@@ -145,9 +145,9 @@ const ticketsRoute = createRoute({
     const { hasPermission } = useAuthStore.getState();
     // Allow access if user has any ticket-related permission
     if (
-      !hasPermission(PERMISSIONS.VIEW_OWN_TICKETS) &&
-      !hasPermission(PERMISSIONS.VIEW_ALL_TICKETS) &&
-      !hasPermission(PERMISSIONS.VIEW_ASSIGNED_TICKETS)
+      !hasPermission(PERMISSIONS.TICKETS_VIEW_OWN) &&
+      !hasPermission(PERMISSIONS.TICKETS_VIEW_ALL) &&
+      !hasPermission(PERMISSIONS.TICKETS_VIEW_ASSIGNED)
     ) {
       throw redirect({ to: '/dashboard' });
     }
@@ -162,9 +162,9 @@ const ticketDetailRoute = createRoute({
     const { hasPermission } = useAuthStore.getState();
     // Allow access if user has any ticket-related permission
     if (
-      !hasPermission(PERMISSIONS.VIEW_OWN_TICKETS) &&
-      !hasPermission(PERMISSIONS.VIEW_ALL_TICKETS) &&
-      !hasPermission(PERMISSIONS.VIEW_ASSIGNED_TICKETS)
+      !hasPermission(PERMISSIONS.TICKETS_VIEW_OWN) &&
+      !hasPermission(PERMISSIONS.TICKETS_VIEW_ALL) &&
+      !hasPermission(PERMISSIONS.TICKETS_VIEW_ASSIGNED)
     ) {
       throw redirect({ to: '/dashboard' });
     }
@@ -177,7 +177,7 @@ const ticketCreateRoute = createRoute({
   component: TicketCreatePage,
   beforeLoad: () => {
     const { hasPermission } = useAuthStore.getState();
-    if (!hasPermission(PERMISSIONS.CREATE_TICKET)) {
+    if (!hasPermission(PERMISSIONS.TICKETS_CREATE)) {
       throw redirect({ to: '/dashboard' });
     }
   },
@@ -190,7 +190,7 @@ const techDashboardRoute = createRoute({
   beforeLoad: () => {
     const { hasPermission } = useAuthStore.getState();
     // Only technicians with assigned ticket permissions
-    if (!hasPermission(PERMISSIONS.VIEW_ASSIGNED_TICKETS)) {
+    if (!hasPermission(PERMISSIONS.TICKETS_VIEW_ASSIGNED)) {
       throw redirect({ to: '/dashboard' });
     }
   },

@@ -8,6 +8,8 @@ import {
   ChevronRight,
   Building2,
   MapPin,
+  Ticket,
+  Wrench,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/authStore';
@@ -17,7 +19,7 @@ interface NavItem {
   label: string;
   href: string;
   icon: React.ElementType;
-  permission?: string;
+  permission?: string | string[];  // string[] = any of these (OR logic)
 }
 
 const NAV_ITEMS: NavItem[] = [
@@ -52,6 +54,23 @@ const NAV_ITEMS: NavItem[] = [
     permission: PERMISSIONS.RESOURCES_READ,
   },
   {
+    label: 'Tickets',
+    href: '/tickets',
+    icon: Ticket,
+    // Visible to any role with any ticket-view permission
+    permission: [
+      PERMISSIONS.TICKETS_VIEW_OWN,
+      PERMISSIONS.TICKETS_VIEW_ALL,
+      PERMISSIONS.TICKETS_VIEW_ASSIGNED,
+    ],
+  },
+  {
+    label: 'Tech Dashboard',
+    href: '/tech-dashboard',
+    icon: Wrench,
+    permission: PERMISSIONS.TICKETS_VIEW_ASSIGNED,
+  },
+  {
     label: 'Profile',
     href: '/profile',
     icon: Settings,
@@ -63,9 +82,13 @@ export function Sidebar() {
   const routerState = useRouterState();
   const currentPath = routerState.location.pathname;
 
-  const visibleItems = NAV_ITEMS.filter(
-    (item) => !item.permission || hasPermission(item.permission)
-  );
+  const visibleItems = NAV_ITEMS.filter((item) => {
+    if (!item.permission) return true;
+    if (Array.isArray(item.permission)) {
+      return item.permission.some((p) => hasPermission(p));
+    }
+    return hasPermission(item.permission);
+  });
 
   return (
     <aside className="hidden md:flex flex-col w-64 bg-sidebar border-r border-sidebar-border">

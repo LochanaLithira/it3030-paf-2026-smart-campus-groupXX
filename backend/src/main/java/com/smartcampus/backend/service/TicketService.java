@@ -62,8 +62,8 @@ public class TicketService {
         User currentUser = userRepository.findById(currentUserId)
                 .orElseThrow(() -> new ResourceNotFoundException("Current user not found"));
 
-        boolean canViewAll = hasPermission(currentUser, "VIEW_ALL_TICKETS");
-        boolean canViewAssigned = hasPermission(currentUser, "VIEW_ASSIGNED_TICKETS");
+        boolean canViewAll = hasPermission(currentUser, "tickets.view_all");
+        boolean canViewAssigned = hasPermission(currentUser, "tickets.view_assigned");
 
         UUID reporterId = null;
         UUID assignedTechId = null;
@@ -137,7 +137,7 @@ public class TicketService {
         Ticket ticket = findTicketOrThrow(ticketId);
 
         // Only admins can assign tickets
-        checkPermission("ASSIGN_TICKETS");
+        checkPermission("tickets.assign");
 
         User technician = userRepository.findById(request.assignedTechId())
                 .orElseThrow(() -> new ResourceNotFoundException("Technician not found"));
@@ -298,7 +298,13 @@ public class TicketService {
                 .orElseThrow(() -> new ResourceNotFoundException("Comment not found"));
 
         UUID currentUserId = SecurityUtils.getCurrentUserId();
-        if (!comment.getAuthor().getUserId().equals(currentUserId)) {
+        User currentUser = userRepository.findById(currentUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        boolean isAuthor = comment.getAuthor().getUserId().equals(currentUserId);
+        boolean isAdmin = hasPermission(currentUser, "tickets.view_all"); // admins can moderate any comment
+
+        if (!isAuthor && !isAdmin) {
             throw new ForbiddenException("You can only delete your own comments");
         }
 
@@ -405,7 +411,7 @@ public class TicketService {
         User currentUser = userRepository.findById(currentUserId)
                 .orElseThrow(() -> new ResourceNotFoundException("Current user not found"));
 
-        boolean canViewAll = hasPermission(currentUser, "VIEW_ALL_TICKETS");
+        boolean canViewAll = hasPermission(currentUser, "tickets.view_all");
         boolean isReporter = ticket.getReporter().getUserId().equals(currentUserId);
         boolean isAssignedTech = ticket.getAssignedTech() != null && 
                                  ticket.getAssignedTech().getUserId().equals(currentUserId);
@@ -420,8 +426,8 @@ public class TicketService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        boolean isAdmin = hasPermission(user, "CLOSE_TICKETS");
-        boolean isTech = hasPermission(user, "UPDATE_TICKET_STATUS");
+        boolean isAdmin = hasPermission(user, "tickets.close");
+        boolean isTech = hasPermission(user, "tickets.update_status");
 
         // Admin can reject from OPEN or IN_PROGRESS
         if (newStatus == TicketStatus.REJECTED) {
@@ -508,7 +514,7 @@ public class TicketService {
 
     private void notifyAdmins(String title, String message, NotificationType type, UUID relatedEntityId) {
         List<User> admins = userRepository.findAll().stream()
-                .filter(u -> hasPermission(u, "VIEW_ALL_TICKETS"))
+                .filter(u -> hasPermission(u, "tickets.view_all"))
                 .toList();
 
         for (User admin : admins) {

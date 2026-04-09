@@ -82,9 +82,9 @@ export function TicketDetailPage() {
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
 
-  const canAssign = hasPermission(PERMISSIONS.ASSIGN_TICKETS);
-  const canUpdateStatus = hasPermission(PERMISSIONS.UPDATE_TICKET_STATUS);
-  const canClose = hasPermission(PERMISSIONS.CLOSE_TICKETS);
+  const canAssign = hasPermission(PERMISSIONS.TICKETS_ASSIGN);
+  const canUpdateStatus = hasPermission(PERMISSIONS.TICKETS_UPDATE_STATUS);
+  const canClose = hasPermission(PERMISSIONS.TICKETS_CLOSE);
   const isReporter = ticket?.reporter.userId === user?.userId;
   const isAssignedTech = ticket?.assignedTech?.userId === user?.userId;
 
@@ -297,7 +297,7 @@ export function TicketDetailPage() {
               )}
 
               {/* Add Comment Button */}
-              {(isReporter || isAssignedTech || hasPermission(PERMISSIONS.VIEW_ALL_TICKETS)) && (
+              {(isReporter || isAssignedTech || hasPermission(PERMISSIONS.TICKETS_VIEW_ALL)) && (
                 <div className="mt-4 pt-4 border-t">
                   <Button variant="outline" size="sm" className="w-full">
                     <MessageSquare className="h-4 w-4 mr-2" />

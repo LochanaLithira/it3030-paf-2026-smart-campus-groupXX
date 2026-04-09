@@ -102,8 +102,8 @@ export function TicketListPage() {
     sort: sorting[0] ? `${sorting[0].id},${sorting[0].desc ? 'desc' : 'asc'}` : 'createdAt,desc',
   });
 
-  const canCreateTicket = hasPermission(PERMISSIONS.CREATE_TICKET);
-  const canViewAll = hasPermission(PERMISSIONS.VIEW_ALL_TICKETS);
+  const canCreateTicket = hasPermission(PERMISSIONS.TICKETS_CREATE);
+  const canViewAll = hasPermission(PERMISSIONS.TICKETS_VIEW_ALL);
 
   const columns = [
     columnHelper.accessor('ticketId', {
