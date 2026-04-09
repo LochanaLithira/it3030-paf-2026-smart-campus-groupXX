@@ -17,6 +17,7 @@ import com.smartcampus.backend.repository.UserRoleRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -73,11 +74,13 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public Page<UserResponse> listUsers(String search, String role, Boolean isActive, Pageable pageable) {
+        // Use PageRequest without Sort to avoid camelCase column name issues with native query
+        Pageable unsortedPageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
         if (role != null && !role.isBlank()) {
-            return userRepository.findAllByRoleName(role, pageable)
+            return userRepository.findAllByRoleName(role, unsortedPageable)
                     .map(this::toUserResponse);
         }
-        return userRepository.findAllWithFilters(search, isActive, pageable)
+        return userRepository.findAllWithFilters(search, isActive, unsortedPageable)
                 .map(this::toUserResponse);
     }
 
@@ -157,8 +160,8 @@ public class UserService {
         }
         Role role = Role.builder()
                 .roleName(normalizedName)
-                .permissions(request.permissions())
                 .build();
+        role.setPermissions(request.permissions());
         Role saved = roleRepository.save(role);
         log.info("Created role: {}", normalizedName);
         return toRoleResponse(saved);

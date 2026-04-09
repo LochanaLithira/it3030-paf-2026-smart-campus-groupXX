@@ -238,7 +238,8 @@ export interface TicketRequest {
   category: TicketCategory;
   description: string;
   priority: TicketPriority;
-  preferredContactDetails?: string;
+  preferredContactEmail?: string;  // PDF requirement (Member 3)
+  preferredContactPhone?: string;  // PDF requirement (Member 3)
   dueDate?: string; // ISO date string (yyyy-MM-dd)
   attachments?: File[]; // For frontend form only - sent separately
 }
@@ -252,7 +253,8 @@ export interface TicketResponse {
   description: string;
   priority: TicketPriority;
   status: TicketStatus;
-  preferredContactDetails: string | null;
+  preferredContactEmail: string | null;   // PDF requirement (Member 3)
+  preferredContactPhone: string | null;   // PDF requirement (Member 3)
   resolutionNotes: string | null;
   dueDate: string | null; // ISO date string
   resolvedAt: string | null; // ISO timestamp
@@ -272,6 +274,10 @@ export interface TicketSummaryResponse {
   description: string;
   priority: TicketPriority;
   status: TicketStatus;
+  preferredContactEmail: string | null;   // PDF requirement (Member 3)
+  preferredContactPhone: string | null;   // PDF requirement (Member 3)
+  attachmentCount: number;
+  commentCount: number;
   dueDate: string | null;
   createdAt: string;
   updatedAt: string;
@@ -308,12 +314,13 @@ export interface StatusHistoryResponse {
 }
 
 export interface TicketAssignRequest {
-  technicianId: string;
+  assignedTechId: string;
+  dueDate: string; // ISO date string (yyyy-MM-dd)
 }
 
 export interface TicketStatusUpdateRequest {
   newStatus: TicketStatus;
-  notes?: string;
+  note?: string;  // Backend uses 'note' not 'notes'
 }
 
 export interface TicketsListParams {

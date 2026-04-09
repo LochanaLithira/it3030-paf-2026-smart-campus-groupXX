@@ -8,8 +8,6 @@ import {
   ChevronRight,
   Building2,
   MapPin,
-  AlertCircle,
-  Wrench,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/authStore';
@@ -27,12 +25,7 @@ const NAV_ITEMS: NavItem[] = [
     label: 'Dashboard',
     href: '/dashboard',
     icon: LayoutDashboard,
-  },
-  {
-    label: 'My Tickets',
-    href: '/tech-dashboard',
-    icon: Wrench,
-    permission: PERMISSIONS.VIEW_ASSIGNED_TICKETS,
+    permission: PERMISSIONS.DASHBOARD_VIEW_ADMIN,
   },
   {
     label: 'User Management',
@@ -57,12 +50,6 @@ const NAV_ITEMS: NavItem[] = [
     href: '/resources',
     icon: MapPin,
     permission: PERMISSIONS.RESOURCES_READ,
-  },
-  {
-    label: 'Tickets',
-    href: '/tickets',
-    icon: AlertCircle,
-    permission: PERMISSIONS.VIEW_OWN_TICKETS,
   },
   {
     label: 'Profile',

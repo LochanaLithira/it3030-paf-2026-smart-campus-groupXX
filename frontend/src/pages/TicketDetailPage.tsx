@@ -373,12 +373,33 @@ export function TicketDetailPage() {
                 </>
               )}
 
-              {ticket.preferredContactDetails && (
+              {(ticket.preferredContactEmail || ticket.preferredContactPhone) && (
                 <>
                   <Separator />
-                  <div>
-                    <span className="text-sm font-medium text-gray-500">Contact Details</span>
-                    <p className="text-sm mt-1">{ticket.preferredContactDetails}</p>
+                  <div className="space-y-2">
+                    <span className="text-sm font-medium text-gray-500">Contact Information</span>
+                    {ticket.preferredContactEmail && (
+                      <p className="text-sm">
+                        <span className="text-gray-600">Email:</span>{' '}
+                        <a
+                          href={`mailto:${ticket.preferredContactEmail}`}
+                          className="text-blue-600 hover:underline"
+                        >
+                          {ticket.preferredContactEmail}
+                        </a>
+                      </p>
+                    )}
+                    {ticket.preferredContactPhone && (
+                      <p className="text-sm">
+                        <span className="text-gray-600">Phone:</span>{' '}
+                        <a
+                          href={`tel:${ticket.preferredContactPhone}`}
+                          className="text-blue-600 hover:underline"
+                        >
+                          {ticket.preferredContactPhone}
+                        </a>
+                      </p>
+                    )}
                   </div>
                 </>
               )}

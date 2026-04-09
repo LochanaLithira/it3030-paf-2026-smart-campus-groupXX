@@ -44,7 +44,6 @@ public class User {
     private String profilePictureUrl;
 
     @Column(name = "is_active", nullable = false)
-    @Builder.Default
     private boolean isActive = true;
 
     @CreatedDate

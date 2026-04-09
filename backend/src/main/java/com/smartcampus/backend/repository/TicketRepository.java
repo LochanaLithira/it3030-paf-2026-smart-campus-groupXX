@@ -45,9 +45,9 @@ public interface TicketRepository extends JpaRepository<Ticket, UUID> {
         LEFT JOIN FETCH r.location
         LEFT JOIN FETCH t.reporter rep
         LEFT JOIN FETCH t.assignedTech tech
-        WHERE (:status IS NULL OR t.status = :status)
-        AND (:priority IS NULL OR t.priority = :priority)
-        AND (:category IS NULL OR t.category = :category)
+        WHERE (:status IS NULL OR t.status = CAST(:status AS com.smartcampus.backend.model.enums.TicketStatus))
+        AND (:priority IS NULL OR t.priority = CAST(:priority AS com.smartcampus.backend.model.enums.TicketPriority))
+        AND (:category IS NULL OR t.category = CAST(:category AS com.smartcampus.backend.model.enums.TicketCategory))
         AND (:resourceId IS NULL OR t.resource.resourceId = :resourceId)
         AND (:reporterId IS NULL OR t.reporter.userId = :reporterId)
         AND (:assignedTechId IS NULL OR t.assignedTech.userId = :assignedTechId)

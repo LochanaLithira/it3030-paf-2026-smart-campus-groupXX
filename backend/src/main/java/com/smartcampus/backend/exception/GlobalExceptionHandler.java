@@ -76,6 +76,30 @@ public class GlobalExceptionHandler {
                             "The selected time slot is already booked",
                             request.getRequestURI()));
         }
+        if (msg != null && msg.contains("locations_building_name_floor_number_room_number_key")) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(ApiErrorResponse.of(409, "Conflict",
+                            "A location with the same building, floor, and room already exists",
+                            request.getRequestURI()));
+        }
+        if (msg != null && msg.contains("resource_tag_map_tag_id_fkey")) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiErrorResponse.of(400, "Bad Request",
+                            "One or more resource tags are invalid",
+                            request.getRequestURI()));
+        }
+        if (msg != null && msg.contains("resources_location_id_fkey")) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiErrorResponse.of(400, "Bad Request",
+                            "Selected location is invalid",
+                            request.getRequestURI()));
+        }
+        if (msg != null && msg.contains("ck_avail_time_order")) {
+            return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
+                    .body(ApiErrorResponse.of(422, "Unprocessable Entity",
+                            "Availability end time must be after start time",
+                            request.getRequestURI()));
+        }
         log.error("Data integrity violation", ex);
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(ApiErrorResponse.of(409, "Conflict",

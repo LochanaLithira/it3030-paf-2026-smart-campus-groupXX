@@ -20,14 +20,24 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     boolean existsByEmail(String email);
 
-    @Query("""
-            SELECT DISTINCT u FROM User u
-            LEFT JOIN FETCH u.userRoles ur
-            LEFT JOIN FETCH ur.role r
-            WHERE (:search IS NULL OR LOWER(u.email) LIKE LOWER(CONCAT('%', :search, '%'))
-                   OR LOWER(u.fullName) LIKE LOWER(CONCAT('%', :search, '%')))
-              AND (:isActive IS NULL OR u.isActive = :isActive)
-            """)
+    @Query(value = """
+            SELECT DISTINCT u.* FROM users u
+            LEFT JOIN user_roles ur ON u.user_id = ur.user_id
+            LEFT JOIN roles r ON r.role_id = ur.role_id
+            WHERE (:search IS NULL OR u.email ILIKE '%' || :search || '%'
+                   OR u.full_name ILIKE '%' || :search || '%')
+              AND (:isActive IS NULL OR u.is_active = :isActive)
+            ORDER BY u.created_at ASC
+            """, 
+            countQuery = """
+            SELECT COUNT(DISTINCT u.user_id) FROM users u
+            LEFT JOIN user_roles ur ON u.user_id = ur.user_id
+            LEFT JOIN roles r ON r.role_id = ur.role_id
+            WHERE (:search IS NULL OR u.email ILIKE '%' || :search || '%'
+                   OR u.full_name ILIKE '%' || :search || '%')
+              AND (:isActive IS NULL OR u.is_active = :isActive)
+            """,
+            nativeQuery = true)
     Page<User> findAllWithFilters(
             @Param("search") String search,
             @Param("isActive") Boolean isActive,

@@ -111,6 +111,8 @@ public class TicketService {
                 .description(request.description())
                 .priority(request.priority())
                 .status(TicketStatus.OPEN)
+                .preferredContactEmail(request.preferredContactEmail())    // PDF requirement
+                .preferredContactPhone(request.preferredContactPhone())    // PDF requirement
                 .build();
 
         Ticket savedTicket = ticketRepository.save(ticket);

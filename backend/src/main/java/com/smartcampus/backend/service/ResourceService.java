@@ -15,12 +15,14 @@ import com.smartcampus.backend.repository.UserRepository;
 import com.smartcampus.backend.security.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
+import java.util.stream.Collectors; // <-- ADD THIS
 
 @Service
 @RequiredArgsConstructor
@@ -43,13 +45,18 @@ public class ResourceService {
             Pageable pageable
     ) {
         String tagName = extractSingleTag(tags);
-        // Use query with JOIN FETCH to avoid N+1 problem
-        Page<Resource> resources = resourceRepository.findAllWithFiltersAndDetails(
-                type, status, locationId, minCapacity, blankToNull(search), tagName, pageable
+        String typeStr = type != null ? type.name() : null;
+        String statusStr = status != null ? status.name() : null;
+        // Use PageRequest without Sort to avoid camelCase column name issues with native query
+        Pageable unsortedPageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
+        Page<Resource> resources = resourceRepository.findAllWithFilters(
+                typeStr, statusStr, locationId, minCapacity, blankToNull(search), tagName, unsortedPageable
         );
         
         return resources.map(this::buildResourceResponse);
     }
+
+    // ---- Everything below this line is UNCHANGED ----
 
     @Transactional(readOnly = true)
     public ResourceResponse getResourceById(UUID resourceId) {
@@ -68,15 +75,17 @@ public class ResourceService {
     public ResourceResponse createResource(ResourceRequest request) {
         validateAvailability(request.availability());
 
-        Resource resource = new Resource();
+        Resource resource = Resource.builder()
+                .availability(new ArrayList<>())
+                .tagMappings(new ArrayList<>())
+                .build();
         applyRequestToResource(resource, request);
         resource.setStatus(request.status() == null ? ResourceStatus.ACTIVE : request.status());
         resource.setCreatedBy(resolveCurrentUser());
         Resource saved = resourceRepository.save(resource);
         replaceTags(saved, request.tagIds());
         saved = resourceRepository.save(saved);
-        
-        // Return response without re-fetching (entity is already hydrated)
+
         return buildResourceResponse(saved);
     }
 
@@ -85,18 +94,13 @@ public class ResourceService {
         validateAvailability(request.availability());
 
         Resource resource = findResourceOrThrow(resourceId);
-        
-        // TODO: Validate that reducing capacity doesn't conflict with existing bookings
-        // This check should be added once the Booking domain is implemented
-        
         applyRequestToResource(resource, request);
         if (request.status() != null) {
             resource.setStatus(request.status());
         }
         replaceTags(resource, request.tagIds());
         resource = resourceRepository.save(resource);
-        
-        // Return response without re-fetching (entity is already hydrated)
+
         return buildResourceResponse(resource);
     }
 
@@ -104,10 +108,8 @@ public class ResourceService {
     public ResourceResponse updateStatus(UUID resourceId, UpdateResourceStatusRequest request) {
         Resource resource = findResourceOrThrow(resourceId);
         resource.setStatus(request.status());
-        // Integration hook: booking cancel + notification will be introduced when booking domain is implemented.
         resource = resourceRepository.save(resource);
-        
-        // Return response without re-fetching (entity is already hydrated)
+
         return buildResourceResponse(resource);
     }
 
@@ -132,14 +134,15 @@ public class ResourceService {
     }
 
     private void replaceAvailability(Resource resource, List<ResourceAvailabilityRequest> availability) {
-        // Clear existing availability slots (cascade and orphan removal will handle deletion)
+        if (resource.getAvailability() == null) {
+            resource.setAvailability(new ArrayList<>());
+        }
         resource.getAvailability().clear();
-        
+
         if (availability == null || availability.isEmpty()) {
             return;
         }
-        
-        // Add new availability slots
+
         for (ResourceAvailabilityRequest slot : availability) {
             ResourceAvailability mapped = ResourceAvailability.builder()
                     .resource(resource)
@@ -152,14 +155,15 @@ public class ResourceService {
     }
 
     private void replaceTags(Resource resource, List<UUID> tagIds) {
-        // Clear existing tag mappings (cascade and orphan removal will handle deletion)
+        if (resource.getTagMappings() == null) {
+            resource.setTagMappings(new ArrayList<>());
+        }
         resource.getTagMappings().clear();
-        
+
         if (tagIds == null || tagIds.isEmpty()) {
             return;
         }
-        
-        // Validate all tag IDs exist before proceeding
+
         List<ResourceTag> tags = resourceTagRepository.findByTagIdIn(tagIds);
         Set<UUID> uniqueTagIds = new HashSet<>(tagIds);
         if (tags.size() != uniqueTagIds.size()) {
@@ -169,8 +173,7 @@ public class ResourceService {
                     .toList();
             throw new ResourceNotFoundException("Tag IDs not found: " + missingIds);
         }
-        
-        // Add new tag mappings
+
         for (ResourceTag tag : tags) {
             ResourceTagMap mapping = ResourceTagMap.builder()
                     .resourceId(resource.getResourceId())
@@ -201,14 +204,12 @@ public class ResourceService {
     }
 
     private ResourceResponse toResourceResponse(Resource resource) {
-        // Re-fetch with all details if needed
         Resource hydrated = resourceRepository.findByIdWithDetails(resource.getResourceId())
                 .orElse(resource);
         return buildResourceResponse(hydrated);
     }
-    
+
     private ResourceResponse buildResourceResponse(Resource resource) {
-        // Build response from already-hydrated entity
         ResourceResponse base = resourceMapper.toResourceResponse(resource);
         return new ResourceResponse(
                 base.resourceId(),
@@ -233,9 +234,7 @@ public class ResourceService {
     }
 
     private String trimToNull(String input) {
-        if (input == null) {
-            return null;
-        }
+        if (input == null) return null;
         String trimmed = input.trim();
         return trimmed.isEmpty() ? null : trimmed;
     }
@@ -246,25 +245,24 @@ public class ResourceService {
 
     private String extractSingleTag(String tagsParam) {
         String tags = blankToNull(tagsParam);
-        if (tags == null) {
-            return null;
-        }
+        if (tags == null) return null;
         String[] parts = tags.split(",");
         return parts.length == 0 ? null : blankToNull(parts[0]);
     }
 
     private void validateAvailability(List<ResourceAvailabilityRequest> availability) {
-        if (availability == null) {
-            return;
-        }
+        if (availability == null) return;
         Set<String> uniqueDayAndTime = new HashSet<>();
         for (ResourceAvailabilityRequest slot : availability) {
-            if (slot.startTime() != null && slot.endTime() != null && !slot.endTime().isAfter(slot.startTime())) {
-                throw new AppException("Availability end time must be after start time", HttpStatus.UNPROCESSABLE_ENTITY);
+            if (slot.startTime() != null && slot.endTime() != null
+                    && !slot.endTime().isAfter(slot.startTime())) {
+                throw new AppException("Availability end time must be after start time",
+                        HttpStatus.UNPROCESSABLE_ENTITY);
             }
             String key = slot.dayOfWeek() + "|" + slot.startTime() + "|" + slot.endTime();
             if (!uniqueDayAndTime.add(key)) {
-                throw new AppException("Duplicate availability slots are not allowed", HttpStatus.UNPROCESSABLE_ENTITY);
+                throw new AppException("Duplicate availability slots are not allowed",
+                        HttpStatus.UNPROCESSABLE_ENTITY);
             }
         }
     }

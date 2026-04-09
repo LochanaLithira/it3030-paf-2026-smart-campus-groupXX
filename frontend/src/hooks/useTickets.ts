@@ -66,13 +66,13 @@ export function useTicketById(
 }
 
 /**
- * Update ticket status (with optional notes)
+ * Update ticket status (with optional note)
  */
 export function useUpdateTicketStatus() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ ticketId, status, notes }: { ticketId: string; status: TicketStatus; notes?: string }) =>
-      ticketsApi.updateStatus(ticketId, { status, notes }),
+    mutationFn: ({ ticketId, newStatus, note }: { ticketId: string; newStatus: TicketStatus; note?: string }) =>
+      ticketsApi.updateStatus(ticketId, { newStatus, note }),
     onSuccess: (updated) => {
       qc.setQueryData(ticketKeys.detail(updated.ticketId), updated);
       qc.invalidateQueries({ queryKey: ticketKeys.lists() });
@@ -90,8 +90,8 @@ export function useUpdateTicketStatus() {
 export function useAssignTicket() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ ticketId, technicianId }: { ticketId: string; technicianId: string }) =>
-      ticketsApi.assign(ticketId, { technicianId }),
+    mutationFn: ({ ticketId, assignedTechId, dueDate }: { ticketId: string; assignedTechId: string; dueDate: string }) =>
+      ticketsApi.assign(ticketId, { assignedTechId, dueDate }),
     onSuccess: (updated) => {
       qc.setQueryData(ticketKeys.detail(updated.ticketId), updated);
       qc.invalidateQueries({ queryKey: ticketKeys.lists() });
@@ -111,8 +111,8 @@ export function useAssignTicket() {
 export function useAddComment() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ ticketId, comment }: { ticketId: string; comment: string }) =>
-      ticketsApi.addComment(ticketId, { comment }),
+    mutationFn: ({ ticketId, content }: { ticketId: string; content: string }) =>
+      ticketsApi.addComment(ticketId, { content }),
     onSuccess: (_comment, { ticketId }) => {
       qc.invalidateQueries({ queryKey: ticketKeys.detail(ticketId) });
       toast.success('Comment added');
@@ -132,12 +132,12 @@ export function useUpdateComment() {
     mutationFn: ({
       ticketId,
       commentId,
-      comment,
+      content,
     }: {
       ticketId: string;
       commentId: string;
-      comment: string;
-    }) => ticketsApi.updateComment(ticketId, commentId, { comment }),
+      content: string;
+    }) => ticketsApi.updateComment(ticketId, commentId, { content }),
     onSuccess: (_comment, { ticketId }) => {
       qc.invalidateQueries({ queryKey: ticketKeys.detail(ticketId) });
       toast.success('Comment updated');

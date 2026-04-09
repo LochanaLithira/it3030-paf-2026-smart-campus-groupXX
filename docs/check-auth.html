@@ -1,0 +1,75 @@
+<!-- 
+  QUICK CHECK: Open browser DevTools Console and paste this
+  This will show you what user you're logged in as and what permissions you have
+-->
+
+<script>
+// Check current auth state
+const accessToken = localStorage.getItem('sc_access_token');
+const refreshToken = localStorage.getItem('sc_refresh_token');
+
+if (!accessToken) {
+  console.log('❌ NO TOKEN FOUND — You are not logged in');
+  console.log('Solution: Go to /login and sign in');
+} else {
+  console.log('✅ Token found');
+  
+  // Decode JWT (simple base64 decode of middle part)
+  const parts = accessToken.split('.');
+  if (parts.length === 3) {
+    const payload = JSON.parse(atob(parts[1]));
+    
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('👤 CURRENT USER:');
+    console.log('Email:', payload.email || payload.sub);
+    console.log('User ID:', payload.sub);
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('🔑 PERMISSIONS:');
+    
+    if (payload.permissions && payload.permissions.length > 0) {
+      console.log('You have', payload.permissions.length, 'permissions:');
+      payload.permissions.forEach(p => console.log('  ✓', p));
+      
+      // Check required permissions
+      const required = ['VIEW_ALL_USERS', 'VIEW_ALL_ROLES'];
+      const missing = required.filter(p => !payload.permissions.includes(p));
+      
+      if (missing.length === 0) {
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log('✅ You have all required permissions!');
+        console.log('The 403 error is likely due to backend not running.');
+        console.log('Run: docker-compose up --build');
+      } else {
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log('❌ MISSING PERMISSIONS:');
+        missing.forEach(p => console.log('  ✗', p));
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log('SOLUTION:');
+        console.log('1. Logout and login with admin account:');
+        console.log('   Email: admin@smartcampus.local');
+        console.log('   Password: admin123');
+        console.log('2. OR assign ADMIN role to your user via SQL:');
+        console.log('   See TROUBLESHOOTING_403_FORBIDDEN.md');
+      }
+    } else {
+      console.log('❌ NO PERMISSIONS in token');
+      console.log('Your user account has no role assigned!');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('SOLUTION:');
+      console.log('1. Login with: admin@smartcampus.local / admin123');
+      console.log('2. Go to User Management');
+      console.log('3. Assign ADMIN role to your user');
+      console.log('4. Logout and login with your account');
+    }
+    
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('Token expires at:', new Date(payload.exp * 1000).toLocaleString());
+    
+    const now = Date.now() / 1000;
+    if (payload.exp < now) {
+      console.log('⚠️ TOKEN EXPIRED!');
+      console.log('Logout and login again.');
+    }
+  }
+}
+</script>

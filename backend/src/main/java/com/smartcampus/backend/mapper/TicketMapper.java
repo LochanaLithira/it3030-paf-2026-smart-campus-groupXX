@@ -35,6 +35,8 @@ public interface TicketMapper {
     @Mapping(target = "resolutionNotes", source = "resolutionNotes")
     @Mapping(target = "dueDate", source = "dueDate")
     @Mapping(target = "resolvedAt", source = "resolvedAt")
+    @Mapping(target = "preferredContactEmail", source = "preferredContactEmail")  // PDF requirement
+    @Mapping(target = "preferredContactPhone", source = "preferredContactPhone")  // PDF requirement
     @Mapping(target = "attachments", source = "attachments")
     @Mapping(target = "comments", source = "comments")
     @Mapping(target = "statusHistory", source = "statusHistory")
@@ -52,6 +54,8 @@ public interface TicketMapper {
     @Mapping(target = "description", source = "ticket.description")
     @Mapping(target = "priority", source = "ticket.priority")
     @Mapping(target = "status", source = "ticket.status")
+    @Mapping(target = "preferredContactEmail", source = "ticket.preferredContactEmail")  // PDF requirement
+    @Mapping(target = "preferredContactPhone", source = "ticket.preferredContactPhone")  // PDF requirement
     @Mapping(target = "attachmentCount", source = "attachmentCount")
     @Mapping(target = "commentCount", source = "commentCount")
     @Mapping(target = "createdAt", source = "ticket.createdAt")

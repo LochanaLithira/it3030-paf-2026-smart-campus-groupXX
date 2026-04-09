@@ -73,6 +73,13 @@ public class Ticket {
     @Column(name = "resolved_at")
     private Instant resolvedAt;
 
+    // Contact fields (PDF requirement - Member 3)
+    @Column(name = "preferred_contact_email", length = 150)
+    private String preferredContactEmail;
+
+    @Column(name = "preferred_contact_phone", length = 20)
+    private String preferredContactPhone;
+
     @OneToMany(mappedBy = "ticket", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<TicketAttachment> attachments = new ArrayList<>();

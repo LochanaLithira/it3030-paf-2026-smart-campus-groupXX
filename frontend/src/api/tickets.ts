@@ -25,7 +25,8 @@ export const ticketsApi = {
       category: request.category,
       description: request.description,
       priority: request.priority,
-      preferredContactDetails: request.preferredContactDetails,
+      preferredContactEmail: request.preferredContactEmail,
+      preferredContactPhone: request.preferredContactPhone,
       dueDate: request.dueDate,
     };
     

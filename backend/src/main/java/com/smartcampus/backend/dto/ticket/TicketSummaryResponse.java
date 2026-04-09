@@ -18,6 +18,8 @@ public record TicketSummaryResponse(
     String description,
     TicketPriority priority,
     TicketStatus status,
+    String preferredContactEmail,      // PDF requirement (Member 3)
+    String preferredContactPhone,      // PDF requirement (Member 3)
     int attachmentCount,
     int commentCount,
     Instant createdAt,

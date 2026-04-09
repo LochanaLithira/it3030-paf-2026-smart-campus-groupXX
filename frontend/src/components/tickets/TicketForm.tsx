@@ -57,7 +57,18 @@ const ticketFormSchema = z.object({
     .string()
     .min(10, 'Description must be at least 10 characters')
     .max(2000, 'Description must not exceed 2000 characters'),
-  preferredContactDetails: z.string().max(200).optional(),
+  // PDF requirement: separate email and phone fields
+  preferredContactEmail: z
+    .string()
+    .email('Invalid email format')
+    .max(150, 'Email must not exceed 150 characters')
+    .optional()
+    .or(z.literal('')),
+  preferredContactPhone: z
+    .string()
+    .regex(/^[+]?[0-9]{10,15}$/, 'Invalid phone format (10-15 digits, + optional)')
+    .optional()
+    .or(z.literal('')),
   dueDate: z.date().optional(),
   attachments: z
     .array(z.instanceof(File))
@@ -113,7 +124,8 @@ export function TicketForm({ onSubmit, onCancel, isLoading, defaultValues }: Tic
       category: defaultValues?.category || undefined,
       priority: defaultValues?.priority || 'MEDIUM',
       description: defaultValues?.description || '',
-      preferredContactDetails: defaultValues?.preferredContactDetails || '',
+      preferredContactEmail: defaultValues?.preferredContactEmail || '',
+      preferredContactPhone: defaultValues?.preferredContactPhone || '',
       dueDate: defaultValues?.dueDate || undefined,
       attachments: [],
     },
@@ -299,18 +311,44 @@ export function TicketForm({ onSubmit, onCancel, isLoading, defaultValues }: Tic
           )}
         />
 
-        {/* Preferred Contact Details */}
+        {/* Preferred Contact Email */}
         <FormField
           control={form.control}
-          name="preferredContactDetails"
+          name="preferredContactEmail"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Preferred Contact Details (Optional)</FormLabel>
+              <FormLabel>Preferred Contact Email (Optional)</FormLabel>
               <FormControl>
-                <Input placeholder="Email, phone, or office number..." {...field} />
+                <Input
+                  type="email"
+                  placeholder="your.email@university.edu"
+                  {...field}
+                />
               </FormControl>
               <FormDescription>
-                How should the technician contact you? (e.g., email, phone)
+                Email address for non-urgent follow-ups
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* Preferred Contact Phone */}
+        <FormField
+          control={form.control}
+          name="preferredContactPhone"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Preferred Contact Phone (Optional)</FormLabel>
+              <FormControl>
+                <Input
+                  type="tel"
+                  placeholder="+94771234567 or 0771234567"
+                  {...field}
+                />
+              </FormControl>
+              <FormDescription>
+                Phone number for urgent contact (10-15 digits)
               </FormDescription>
               <FormMessage />
             </FormItem>

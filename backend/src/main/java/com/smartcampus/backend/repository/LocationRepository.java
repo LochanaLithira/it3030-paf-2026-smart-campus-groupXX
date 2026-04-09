@@ -12,12 +12,12 @@ import java.util.UUID;
 @Repository
 public interface LocationRepository extends JpaRepository<Location, UUID> {
 
-    @Query("""
-            SELECT l FROM Location l
-            WHERE (:building IS NULL OR LOWER(l.buildingName) LIKE LOWER(CONCAT('%', :building, '%')))
-              AND (:floor IS NULL OR l.floorNumber = :floor)
-            ORDER BY l.buildingName ASC, l.floorNumber ASC, l.roomNumber ASC
-            """)
+    @Query(value = """
+            SELECT * FROM locations l
+            WHERE (:building IS NULL OR l.building_name ILIKE '%' || :building || '%')
+              AND (:floor IS NULL OR l.floor_number = :floor)
+            ORDER BY l.building_name ASC, l.floor_number ASC, l.room_number ASC
+            """, nativeQuery = true)
     List<Location> findAllByFilters(
             @Param("building") String building,
             @Param("floor") Integer floor

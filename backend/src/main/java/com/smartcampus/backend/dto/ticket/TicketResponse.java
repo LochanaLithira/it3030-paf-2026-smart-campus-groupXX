@@ -23,6 +23,8 @@ public record TicketResponse(
     String resolutionNotes,
     LocalDate dueDate,
     Instant resolvedAt,
+    String preferredContactEmail,      // PDF requirement (Member 3)
+    String preferredContactPhone,      // PDF requirement (Member 3)
     List<TicketAttachmentResponse> attachments,
     List<TicketCommentResponse> comments,
     List<StatusHistoryResponse> statusHistory,
