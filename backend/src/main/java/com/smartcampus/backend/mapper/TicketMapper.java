@@ -46,8 +46,7 @@ public interface TicketMapper {
 
     // Ticket summary response (for list views)
     @Mapping(target = "ticketId", source = "ticket.ticketId")
-    @Mapping(target = "resourceName", source = "ticket.resource.name")
-    @Mapping(target = "resourceId", source = "ticket.resource.resourceId")
+    @Mapping(target = "resource", source = "ticket.resource")
     @Mapping(target = "reporter", source = "ticket.reporter")
     @Mapping(target = "assignedTech", source = "ticket.assignedTech")
     @Mapping(target = "category", source = "ticket.category")
@@ -58,6 +57,7 @@ public interface TicketMapper {
     @Mapping(target = "preferredContactPhone", source = "ticket.preferredContactPhone")  // PDF requirement
     @Mapping(target = "attachmentCount", source = "attachmentCount")
     @Mapping(target = "commentCount", source = "commentCount")
+    @Mapping(target = "dueDate", source = "ticket.dueDate")
     @Mapping(target = "createdAt", source = "ticket.createdAt")
     @Mapping(target = "updatedAt", source = "ticket.updatedAt")
     TicketSummaryResponse toTicketSummaryResponse(Ticket ticket, int attachmentCount, int commentCount);

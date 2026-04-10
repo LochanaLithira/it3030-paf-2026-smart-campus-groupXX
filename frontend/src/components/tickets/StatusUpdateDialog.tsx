@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useAuthStore } from '@/store/authStore';
 import {
   Dialog,
   DialogContent,
@@ -27,7 +28,7 @@ interface StatusUpdateDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const STATUS_OPTIONS: { value: TicketStatus; label: string; description: string }[] = [
+const STATUS_OPTIONS: { value: TicketStatus; label: string; description: string; requireAdmin?: boolean }[] = [
   {
     value: 'OPEN',
     label: 'Open',
@@ -47,18 +48,20 @@ const STATUS_OPTIONS: { value: TicketStatus; label: string; description: string 
     value: 'CLOSED',
     label: 'Closed',
     description: 'Ticket is complete and verified',
+    requireAdmin: true,
   },
   {
     value: 'REJECTED',
     label: 'Rejected',
     description: 'Ticket was rejected (requires notes)',
+    requireAdmin: true,
   },
 ];
 
-// Valid state transitions
+// Valid state transitions mapped to match backend rules exactly
 const VALID_TRANSITIONS: Record<TicketStatus, TicketStatus[]> = {
-  OPEN: ['IN_PROGRESS', 'REJECTED'],
-  IN_PROGRESS: ['RESOLVED', 'REJECTED', 'CLOSED'],
+  OPEN: ['IN_PROGRESS', 'REJECTED', 'CLOSED'],
+  IN_PROGRESS: ['RESOLVED', 'CLOSED'],
   RESOLVED: ['CLOSED', 'IN_PROGRESS'],
   CLOSED: [],
   REJECTED: [],
@@ -72,7 +75,8 @@ export function StatusUpdateDialog({
 }: StatusUpdateDialogProps) {
   const [newStatus, setNewStatus] = useState<TicketStatus>(currentStatus);
   const [notes, setNotes] = useState('');
-
+  
+  const { isAdmin } = useAuthStore();
   const updateStatus = useUpdateTicketStatus();
 
   const handleUpdate = async () => {
@@ -89,8 +93,8 @@ export function StatusUpdateDialog({
 
     await updateStatus.mutateAsync({
       ticketId,
-      status: newStatus,
-      notes: notes.trim() || undefined,
+      newStatus,
+      note: notes.trim() || undefined,
     });
 
     onOpenChange(false);
@@ -99,7 +103,9 @@ export function StatusUpdateDialog({
 
   const validStatuses = VALID_TRANSITIONS[currentStatus];
   const availableStatuses = STATUS_OPTIONS.filter(
-    (option) => option.value === currentStatus || validStatuses.includes(option.value)
+    (option) => 
+      (option.value === currentStatus || validStatuses.includes(option.value)) &&
+      (!option.requireAdmin || isAdmin())
   );
 
   return (

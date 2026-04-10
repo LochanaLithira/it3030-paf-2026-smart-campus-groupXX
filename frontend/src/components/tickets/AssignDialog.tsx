@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { addDays, format } from 'date-fns';
 import {
   Dialog,
   DialogContent,
@@ -34,6 +36,10 @@ export function AssignDialog({
 }: AssignDialogProps) {
   const [selectedTechId, setSelectedTechId] = useState<string>(currentTechId || '');
   
+  // Default due date to tomorrow to satisfy the @Future validation
+  const defaultDueDate = format(addDays(new Date(), 1), 'yyyy-MM-dd');
+  const [dueDate, setDueDate] = useState<string>(defaultDueDate);
+  
   // Fetch users with TECHNICIAN role
   const { data: usersData, isLoading: usersLoading } = useUsers({
     role: 'TECHNICIAN',
@@ -43,11 +49,12 @@ export function AssignDialog({
   const assignTicket = useAssignTicket();
 
   const handleAssign = async () => {
-    if (!selectedTechId) return;
+    if (!selectedTechId || !dueDate) return;
 
     await assignTicket.mutateAsync({
       ticketId,
-      technicianId: selectedTechId,
+      assignedTechId: selectedTechId,
+      dueDate,
     });
 
     onOpenChange(false);
@@ -94,6 +101,19 @@ export function AssignDialog({
               The selected technician will be notified and can update the ticket status.
             </p>
           </div>
+
+          <div className="space-y-2 mt-4">
+            <label className="text-sm font-medium">Due Date</label>
+            <Input
+              type="date"
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+              min={format(addDays(new Date(), 1), 'yyyy-MM-dd')}
+            />
+            <p className="text-xs text-muted-foreground">
+              Set a deadline for this ticket (must be in the future).
+            </p>
+          </div>
         </div>
 
         <DialogFooter>
@@ -102,7 +122,7 @@ export function AssignDialog({
           </Button>
           <Button
             onClick={handleAssign}
-            disabled={!selectedTechId || assignTicket.isPending}
+            disabled={!selectedTechId || !dueDate || assignTicket.isPending}
           >
             <UserPlus className="h-4 w-4 mr-2" />
             {assignTicket.isPending ? 'Assigning...' : 'Assign Ticket'}
