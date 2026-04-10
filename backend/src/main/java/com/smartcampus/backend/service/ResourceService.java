@@ -22,7 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
-import java.util.stream.Collectors; // <-- ADD THIS
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -49,11 +49,38 @@ public class ResourceService {
         String statusStr = status != null ? status.name() : null;
         // Use PageRequest without Sort to avoid camelCase column name issues with native query
         Pageable unsortedPageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
-        Page<Resource> resources = resourceRepository.findAllWithFilters(
+
+        // Step 1: Get the paged IDs via native query (no lazy collections loaded here)
+        Page<Resource> idPage = resourceRepository.findAllWithFilters(
                 typeStr, statusStr, locationId, minCapacity, blankToNull(search), tagName, unsortedPageable
         );
-        
-        return resources.map(this::buildResourceResponse);
+
+        if (idPage.isEmpty()) {
+            return idPage.map(this::buildResourceResponse);
+        }
+
+        // Step 2: Hydrate full entity graph via two separate JPQL queries within the same
+        // transaction. Hibernate's 1st-level cache merges availability onto the same entity
+        // instances already loaded by findAllWithTagsByIds.
+        List<UUID> ids = idPage.getContent().stream()
+                .map(Resource::getResourceId)
+                .collect(Collectors.toList());
+        List<Resource> hydrated = resourceRepository.findAllWithTagsByIds(ids);
+        resourceRepository.findAllWithAvailabilityByIds(ids); // populates availability on cached entities
+
+
+        // Build a lookup map to preserve original page ordering
+        Map<UUID, Resource> hydratedMap = hydrated.stream()
+                .collect(Collectors.toMap(Resource::getResourceId, r -> r));
+
+        // Step 3: Map to responses in the same order as the original page
+        List<ResourceResponse> responses = ids.stream()
+                .map(id -> hydratedMap.getOrDefault(id, null))
+                .filter(Objects::nonNull)
+                .map(this::buildResourceResponse)
+                .collect(Collectors.toList());
+
+        return new org.springframework.data.domain.PageImpl<>(responses, unsortedPageable, idPage.getTotalElements());
     }
 
     // ---- Everything below this line is UNCHANGED ----
@@ -119,8 +146,10 @@ public class ResourceService {
     }
 
     private Resource findResourceOrThrow(UUID resourceId) {
-        return resourceRepository.findByIdWithDetails(resourceId)
+        Resource resource = resourceRepository.findByIdWithTags(resourceId)
                 .orElseThrow(() -> new ResourceNotFoundException("Resource", resourceId));
+        resourceRepository.findByIdWithAvailability(resourceId); // merges availability via 1st-level cache
+        return resource;
     }
 
     private void applyRequestToResource(Resource resource, ResourceRequest request) {
@@ -204,8 +233,9 @@ public class ResourceService {
     }
 
     private ResourceResponse toResourceResponse(Resource resource) {
-        Resource hydrated = resourceRepository.findByIdWithDetails(resource.getResourceId())
+        Resource hydrated = resourceRepository.findByIdWithTags(resource.getResourceId())
                 .orElse(resource);
+        resourceRepository.findByIdWithAvailability(resource.getResourceId()); // merges availability
         return buildResourceResponse(hydrated);
     }
 

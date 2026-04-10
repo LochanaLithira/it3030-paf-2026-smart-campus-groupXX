@@ -22,10 +22,10 @@ public interface ResourceRepository extends JpaRepository<Resource, UUID> {
             LEFT JOIN locations l ON l.location_id = r.location_id
             LEFT JOIN resource_tag_map tm ON r.resource_id = tm.resource_id
             LEFT JOIN resource_tags t ON t.tag_id = tm.tag_id
-            WHERE (CAST(:type AS VARCHAR) IS NULL OR r.type = CAST(:type AS VARCHAR))
-              AND (CAST(:status AS VARCHAR) IS NULL OR r.status = CAST(:status AS VARCHAR))
-              AND (CAST(:locationId AS UUID) IS NULL OR l.location_id = CAST(:locationId AS UUID))
-              AND (CAST(:minCapacity AS INT) IS NULL OR r.capacity >= CAST(:minCapacity AS INT))
+            WHERE (:type IS NULL OR r.type = CAST(:type AS resource_type))
+              AND (:status IS NULL OR r.status = CAST(:status AS resource_status))
+              AND (:locationId IS NULL OR l.location_id = CAST(CAST(:locationId AS TEXT) AS UUID))
+              AND (:minCapacity IS NULL OR r.capacity >= CAST(:minCapacity AS INT))
               AND (:search IS NULL OR r.name ILIKE '%' || :search || '%' OR COALESCE(r.description, '') ILIKE '%' || :search || '%')
               AND (:tagName IS NULL OR t.tag_name ILIKE :tagName)
             ORDER BY r.created_at ASC
@@ -35,10 +35,10 @@ public interface ResourceRepository extends JpaRepository<Resource, UUID> {
             LEFT JOIN locations l ON l.location_id = r.location_id
             LEFT JOIN resource_tag_map tm ON r.resource_id = tm.resource_id
             LEFT JOIN resource_tags t ON t.tag_id = tm.tag_id
-            WHERE (CAST(:type AS VARCHAR) IS NULL OR r.type = CAST(:type AS VARCHAR))
-              AND (CAST(:status AS VARCHAR) IS NULL OR r.status = CAST(:status AS VARCHAR))
-              AND (CAST(:locationId AS UUID) IS NULL OR l.location_id = CAST(:locationId AS UUID))
-              AND (CAST(:minCapacity AS INT) IS NULL OR r.capacity >= CAST(:minCapacity AS INT))
+            WHERE (:type IS NULL OR r.type = CAST(:type AS resource_type))
+              AND (:status IS NULL OR r.status = CAST(:status AS resource_status))
+              AND (:locationId IS NULL OR l.location_id = CAST(CAST(:locationId AS TEXT) AS UUID))
+              AND (:minCapacity IS NULL OR r.capacity >= CAST(:minCapacity AS INT))
               AND (:search IS NULL OR r.name ILIKE '%' || :search || '%' OR COALESCE(r.description, '') ILIKE '%' || :search || '%')
               AND (:tagName IS NULL OR t.tag_name ILIKE :tagName)
             """,
@@ -77,31 +77,48 @@ public interface ResourceRepository extends JpaRepository<Resource, UUID> {
             Pageable pageable
     );
 
-    // Step 2: Hydrate a known set of IDs — safe to JOIN FETCH collections here
+    // Hydration step A: fetch location + tagMappings for a known set of IDs
     @Query("""
             SELECT DISTINCT r
             FROM Resource r
             LEFT JOIN FETCH r.location
             LEFT JOIN FETCH r.createdBy
-            LEFT JOIN FETCH r.availability
             LEFT JOIN FETCH r.tagMappings tm
             LEFT JOIN FETCH tm.tag
             WHERE r.resourceId IN :ids
             """)
-    List<Resource> findAllWithDetailsByIds(@Param("ids") List<UUID> ids);
+    List<Resource> findAllWithTagsByIds(@Param("ids") List<UUID> ids);
 
-    // Used by getById, update, delete — unchanged, correct as-is
+    // Hydration step B: fetch availability for the same set of IDs
+    // (runs in the same transaction so Hibernate 1st-level cache merges the results)
+    @Query("""
+            SELECT DISTINCT r
+            FROM Resource r
+            LEFT JOIN FETCH r.availability
+            WHERE r.resourceId IN :ids
+            """)
+    List<Resource> findAllWithAvailabilityByIds(@Param("ids") List<UUID> ids);
+
+    // Single resource: step A — fetch location + tagMappings
     @Query("""
             SELECT DISTINCT r
             FROM Resource r
             LEFT JOIN FETCH r.location
             LEFT JOIN FETCH r.createdBy
-            LEFT JOIN FETCH r.availability
             LEFT JOIN FETCH r.tagMappings tm
             LEFT JOIN FETCH tm.tag
             WHERE r.resourceId = :resourceId
             """)
-    Optional<Resource> findByIdWithDetails(@Param("resourceId") UUID resourceId);
+    Optional<Resource> findByIdWithTags(@Param("resourceId") UUID resourceId);
+
+    // Single resource: step B — fetch availability
+    @Query("""
+            SELECT DISTINCT r
+            FROM Resource r
+            LEFT JOIN FETCH r.availability
+            WHERE r.resourceId = :resourceId
+            """)
+    Optional<Resource> findByIdWithAvailability(@Param("resourceId") UUID resourceId);
 
     boolean existsByLocation_LocationId(UUID locationId);
 }
