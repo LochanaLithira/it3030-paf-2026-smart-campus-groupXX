@@ -6,12 +6,12 @@ import com.smartcampus.backend.model.enums.TicketPriority;
 import com.smartcampus.backend.model.enums.TicketStatus;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.UUID;
 
 public record TicketSummaryResponse(
     UUID ticketId,
-    String resourceName,
-    UUID resourceId,
+    TicketResourceResponse resource,
     UserSummaryResponse reporter,
     UserSummaryResponse assignedTech,
     TicketCategory category,
@@ -22,6 +22,7 @@ public record TicketSummaryResponse(
     String preferredContactPhone,      // PDF requirement (Member 3)
     int attachmentCount,
     int commentCount,
+    LocalDate dueDate,
     Instant createdAt,
     Instant updatedAt
 ) {}

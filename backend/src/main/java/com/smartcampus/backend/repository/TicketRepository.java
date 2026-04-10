@@ -19,16 +19,11 @@ public interface TicketRepository extends JpaRepository<Ticket, UUID> {
      * Find ticket by ID with all associations eagerly loaded.
      */
     @Query("""
-        SELECT DISTINCT t FROM Ticket t
+        SELECT t FROM Ticket t
         LEFT JOIN FETCH t.resource r
         LEFT JOIN FETCH r.location
         LEFT JOIN FETCH t.reporter rep
         LEFT JOIN FETCH t.assignedTech tech
-        LEFT JOIN FETCH t.attachments
-        LEFT JOIN FETCH t.comments c
-        LEFT JOIN FETCH c.author
-        LEFT JOIN FETCH t.statusHistory sh
-        LEFT JOIN FETCH sh.changedBy
         WHERE t.ticketId = :ticketId
     """)
     Optional<Ticket> findByIdWithDetails(@Param("ticketId") UUID ticketId);

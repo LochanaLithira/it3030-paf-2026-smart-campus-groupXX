@@ -450,21 +450,21 @@ public class TicketService {
         boolean isAdmin = hasPermission(user, "tickets.close");
         boolean isTech = hasPermission(user, "tickets.update_status");
 
-        // Admin can reject from OPEN or IN_PROGRESS
+        // Admin can reject from OPEN only
         if (newStatus == TicketStatus.REJECTED) {
             if (!isAdmin) {
                 throw new ForbiddenException("Only admins can reject tickets");
             }
-            if (currentStatus != TicketStatus.OPEN && currentStatus != TicketStatus.IN_PROGRESS) {
-                throw new AppException("Can only reject tickets that are OPEN or IN_PROGRESS", HttpStatus.BAD_REQUEST);
+            if (currentStatus != TicketStatus.OPEN) {
+                throw new AppException("Can only reject tickets that are OPEN", HttpStatus.BAD_REQUEST);
             }
             return;
         }
 
         // Validate state machine transitions
         boolean isValidTransition = switch (currentStatus) {
-            case OPEN -> newStatus == TicketStatus.IN_PROGRESS || newStatus == TicketStatus.REJECTED;
-            case IN_PROGRESS -> newStatus == TicketStatus.RESOLVED || newStatus == TicketStatus.REJECTED;
+            case OPEN -> newStatus == TicketStatus.IN_PROGRESS || newStatus == TicketStatus.REJECTED || newStatus == TicketStatus.CLOSED;
+            case IN_PROGRESS -> newStatus == TicketStatus.RESOLVED || newStatus == TicketStatus.CLOSED;
             case RESOLVED -> newStatus == TicketStatus.CLOSED || newStatus == TicketStatus.IN_PROGRESS;
             case CLOSED, REJECTED -> false; // Terminal states
         };
