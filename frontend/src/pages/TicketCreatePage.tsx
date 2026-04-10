@@ -24,7 +24,7 @@ export function TicketCreatePage() {
       });
 
       // Navigate to the created ticket
-      navigate({ to: '/tickets/$ticketId', params: { ticketId: ticket.ticketId } });
+      navigate({ to: '/tickets/$ticketId', params: { ticketId: String(ticket.ticketId) } });
     } catch (error) {
       // Error is handled by the mutation's onError in useCreateTicket
       console.error('Failed to create ticket:', error);

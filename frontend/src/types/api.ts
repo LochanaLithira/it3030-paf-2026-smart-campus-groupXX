@@ -328,6 +328,7 @@ export interface TicketsListParams {
   priority?: TicketPriority;
   category?: TicketCategory;
   resourceId?: string;
+  assignedTechId?: string;
   page?: number;
   size?: number;
   sort?: string;

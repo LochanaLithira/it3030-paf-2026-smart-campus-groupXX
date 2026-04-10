@@ -8,6 +8,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
 public record TicketRequest(
@@ -30,5 +31,8 @@ public record TicketRequest(
     String preferredContactEmail,
 
     @Pattern(regexp = "^[+]?[0-9]{10,15}$", message = "Invalid phone number format. Must be 10-15 digits, optionally starting with +")
-    String preferredContactPhone
+    String preferredContactPhone,
+
+    // Optional due date requested by reporter
+    LocalDate dueDate
 ) {}
