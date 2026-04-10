@@ -48,10 +48,10 @@ const ticketFormSchema = z.object({
     'GENERAL_MAINTENANCE',
     'OTHER',
   ] as const, {
-    required_error: 'Category is required',
+    message: 'Category is required',
   }),
   priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'] as const, {
-    required_error: 'Priority is required',
+    message: 'Priority is required',
   }),
   description: z
     .string()

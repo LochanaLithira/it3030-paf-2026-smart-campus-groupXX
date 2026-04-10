@@ -74,7 +74,7 @@ function getPriorityBadge(priority: TicketPriority) {
 }
 
 export function TicketDetailPage() {
-  const { ticketId } = useParams({ from: '/tickets/$ticketId' });
+  const { ticketId } = useParams({ strict: false }) as { ticketId: string };
   const { data: ticket, isLoading, error } = useTicketById(ticketId);
   const { user, hasPermission } = useAuthStore();
 

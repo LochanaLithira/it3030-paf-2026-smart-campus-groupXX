@@ -32,7 +32,8 @@ public class Notification {
     private String message;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "type", nullable = false)
+    @Column(name = "type", nullable = false, columnDefinition = "notification_type")
+    @org.hibernate.annotations.ColumnTransformer(write = "CAST(? AS notification_type)")
     private NotificationType type;
 
     @Column(name = "is_read", nullable = false)

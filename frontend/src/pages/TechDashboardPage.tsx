@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useTickets, useUpdateTicketStatus } from '@/hooks/useTickets';
-import { useAuthStore } from '@/store/authStore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -56,14 +55,14 @@ const STATUS_CONFIG = {
 
 export default function TechDashboardPage() {
   const navigate = useNavigate();
-  const user = useAuthStore((s) => s.user);
   const [statusFilter, setStatusFilter] = useState<TicketStatus | 'all'>('all');
   
   // Fetch tickets assigned to current technician
-  const { data: tickets = [], isLoading } = useTickets({
-    assignedTechId: user?.userId,
+  // Backend auto-scopes results to the logged-in technician's assigned tickets via JWT role
+  const { data: ticketsPage, isLoading } = useTickets({
     status: statusFilter === 'all' ? undefined : statusFilter,
   });
+  const tickets = ticketsPage?.content ?? [];
 
   const updateStatus = useUpdateTicketStatus();
 
@@ -93,8 +92,8 @@ export default function TechDashboardPage() {
 
     updateStatus.mutate({
       ticketId,
-      status: newStatus,
-      notes: `Status updated from ${currentStatus} to ${newStatus}`,
+      newStatus,
+      note: `Status updated from ${currentStatus} to ${newStatus}`,
     });
   };
 
@@ -240,8 +239,8 @@ export default function TechDashboardPage() {
                             <span className="font-mono text-sm text-muted-foreground">
                               #{ticket.ticketId.slice(0, 8)}
                             </span>
-                            <Badge className={statusConfig.color}>
-                              {statusConfig.label}
+                            <Badge className={statusConfig?.color}>
+                              {statusConfig?.label ?? ticket.status}
                             </Badge>
                             <Badge variant="outline">{ticket.category}</Badge>
                           </div>
@@ -251,7 +250,7 @@ export default function TechDashboardPage() {
                           <div className="flex items-center gap-4 text-sm text-muted-foreground">
                             <span>
                               Resource: <span className="font-medium text-foreground">
-                                {ticket.resource.name}
+                                {ticket.resource?.name ?? 'Unknown'}
                               </span>
                             </span>
                             <span>•</span>
@@ -265,6 +264,7 @@ export default function TechDashboardPage() {
                               </>
                             )}
                           </div>
+
                         </div>
 
                         {/* Right: Quick Actions */}

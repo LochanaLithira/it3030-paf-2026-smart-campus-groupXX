@@ -26,6 +26,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.time.Instant;
 import java.util.*;
+import org.springframework.data.domain.PageRequest;
 
 @Slf4j
 @Service
@@ -78,8 +79,16 @@ public class TicketService {
             }
         }
 
+        // Strip sort from pageable: the native query already sorts by priority DESC, created_at DESC.
+        // If we pass a Pageable with sort, Spring Data JPA appends the Java field name (e.g. "createdAt")
+        // directly to the SQL, which PostgreSQL rejects because the column is "created_at".
+        Pageable unsortedPageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
+
         Page<Ticket> tickets = ticketRepository.findAllWithFilters(
-                status, priority, category, resourceId, reporterId, assignedTechId, pageable
+                status  == null ? null : status.name(),
+                priority == null ? null : priority.name(),
+                category == null ? null : category.name(),
+                resourceId, reporterId, assignedTechId, unsortedPageable
         );
 
         return tickets.map(ticketMapper::toTicketSummaryResponse);
@@ -96,7 +105,7 @@ public class TicketService {
     }
 
     @Transactional
-    public TicketResponse createTicket(TicketRequest request) {
+    public TicketResponse createTicket(TicketRequest request, List<MultipartFile> files) throws IOException {
         UUID currentUserId = SecurityUtils.getCurrentUserId();
         User reporter = userRepository.findById(currentUserId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
@@ -113,15 +122,25 @@ public class TicketService {
                 .status(TicketStatus.OPEN)
                 .preferredContactEmail(request.preferredContactEmail())    // PDF requirement
                 .preferredContactPhone(request.preferredContactPhone())    // PDF requirement
+                .dueDate(request.dueDate())                                // optional due date
                 .build();
 
         Ticket savedTicket = ticketRepository.save(ticket);
 
+        // Process optional file attachments uploaded with the create request
+        if (files != null) {
+            for (MultipartFile file : files) {
+                if (!file.isEmpty()) {
+                    uploadAttachment(savedTicket.getTicketId(), file);
+                }
+            }
+        }
+
         // Notify all admins about new ticket
         notifyAdmins("New Ticket Created",
-                String.format("Ticket #%s: %s - %s", 
+                String.format("Ticket #%s: %s - %s",
                     savedTicket.getTicketId().toString().substring(0, 8),
-                    savedTicket.getCategory(), 
+                    savedTicket.getCategory(),
                     savedTicket.getDescription().substring(0, Math.min(50, savedTicket.getDescription().length()))),
                 NotificationType.TICKET_CREATED,
                 savedTicket.getTicketId());
@@ -168,10 +187,10 @@ public class TicketService {
         }
 
         // Notify the assigned technician
-        notificationService.create(
+        sendNotificationSafe(
                 technician.getUserId(),
                 "Ticket Assigned",
-                String.format("You have been assigned ticket #%s: %s", 
+                String.format("You have been assigned ticket #%s: %s",
                     ticket.getTicketId().toString().substring(0, 8),
                     ticket.getDescription().substring(0, Math.min(50, ticket.getDescription().length()))),
                 NotificationType.TICKET_ASSIGNED,
@@ -217,7 +236,8 @@ public class TicketService {
             default -> "Your ticket status has been updated to " + request.newStatus();
         };
 
-        notificationService.create(
+        // Notify reporter about status change
+        sendNotificationSafe(
                 ticket.getReporter().getUserId(),
                 "Ticket Status Updated",
                 statusMessage,
@@ -258,11 +278,12 @@ public class TicketService {
             recipientId = ticket.getReporter().getUserId();
         }
 
+        // Notify other party about comment
         if (recipientId != null) {
-            notificationService.create(
+            sendNotificationSafe(
                     recipientId,
                     "New Comment on Ticket",
-                    String.format("%s commented: %s", author.getFullName(), 
+                    String.format("%s commented: %s", author.getFullName(),
                         request.content().substring(0, Math.min(50, request.content().length()))),
                     NotificationType.TICKET_UPDATED,
                     ticket.getTicketId()
@@ -518,7 +539,20 @@ public class TicketService {
                 .toList();
 
         for (User admin : admins) {
-            notificationService.create(admin.getUserId(), title, message, type, relatedEntityId);
+            sendNotificationSafe(admin.getUserId(), title, message, type, relatedEntityId);
+        }
+    }
+
+    /**
+     * Send a notification, swallowing any exception so notification failures
+     * never roll back the parent ticket transaction.
+     */
+    private void sendNotificationSafe(UUID userId, String title, String message,
+                                      NotificationType type, UUID relatedEntityId) {
+        try {
+            notificationService.create(userId, title, message, type, relatedEntityId);
+        } catch (Exception ex) {
+            log.warn("Failed to send {} notification to user {}: {}", type, userId, ex.getMessage());
         }
     }
 }

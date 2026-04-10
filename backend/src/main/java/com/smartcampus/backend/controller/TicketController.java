@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -57,11 +58,14 @@ public class TicketController {
         return ResponseEntity.ok(ticket);
     }
 
-    @PostMapping
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAuthority('tickets.create')")
-    @Operation(summary = "Create ticket", description = "Create a new maintenance or incident ticket")
-    public ResponseEntity<TicketResponse> createTicket(@Valid @RequestBody TicketRequest request) {
-        TicketResponse ticket = ticketService.createTicket(request);
+    @Operation(summary = "Create ticket", description = "Create a new maintenance or incident ticket with optional file attachments")
+    public ResponseEntity<TicketResponse> createTicket(
+            @RequestPart("request") @Valid TicketRequest request,
+            @RequestPart(value = "files", required = false) List<MultipartFile> files
+    ) throws IOException {
+        TicketResponse ticket = ticketService.createTicket(request, files);
         return ResponseEntity.status(HttpStatus.CREATED).body(ticket);
     }
 

@@ -39,23 +39,11 @@ export const ticketsApi = {
       });
     }
     
-    // Use fetch directly for multipart/form-data (ky doesn't handle FormData well with Blob)
-    const token = localStorage.getItem('accessToken');
-    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1'}/tickets`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-      body: formData,
-    });
-    
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: 'Failed to create ticket' }));
-      throw new Error(error.message || 'Failed to create ticket');
-    }
-    
-    return response.json();
+    // Use apiClient so the request goes through the Vite proxy (relative URL)
+    // and the JWT is injected automatically via the beforeRequest hook.
+    return apiClient.post('tickets', { body: formData }).json<TicketResponse>();
   },
+
 
   /**
    * List tickets with optional filters
@@ -67,6 +55,7 @@ export const ticketsApi = {
     if (params.priority) searchParams.set('priority', params.priority);
     if (params.category) searchParams.set('category', params.category);
     if (params.resourceId) searchParams.set('resourceId', params.resourceId);
+    if (params.assignedTechId) searchParams.set('assignedTechId', params.assignedTechId);
     if (params.page !== undefined) searchParams.set('page', String(params.page));
     if (params.size !== undefined) searchParams.set('size', String(params.size));
     if (params.sort) searchParams.set('sort', params.sort);

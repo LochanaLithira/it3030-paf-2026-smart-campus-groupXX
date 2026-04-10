@@ -124,9 +124,9 @@ export function TicketListPage() {
         const resource = info.getValue();
         return (
           <div className="max-w-[200px]">
-            <div className="font-medium truncate">{resource.name}</div>
+            <div className="font-medium truncate">{resource?.name ?? 'N/A'}</div>
             <div className="text-xs text-gray-500">
-              {resource.location?.buildingName} {resource.location?.roomNumber}
+              {resource?.location?.buildingName} {resource?.location?.roomNumber}
             </div>
           </div>
         );
@@ -160,7 +160,7 @@ export function TicketListPage() {
       header: 'Reporter',
       cell: (info) => (
         <div className="text-sm">
-          <div className="font-medium">{info.getValue().fullName}</div>
+          <div className="font-medium">{info.getValue()?.fullName ?? 'System'}</div>
         </div>
       ),
     }),
