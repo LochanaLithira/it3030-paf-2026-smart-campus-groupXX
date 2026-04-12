@@ -4,6 +4,7 @@ import com.smartcampus.backend.dto.BookingRequestDto;
 import com.smartcampus.backend.dto.BookingResponseDto;
 import com.smartcampus.backend.exception.AppException;
 import com.smartcampus.backend.model.Booking;
+import com.smartcampus.backend.model.Location;
 import com.smartcampus.backend.model.Resource;
 import com.smartcampus.backend.model.User;
 import com.smartcampus.backend.model.enums.BookingStatus;
@@ -27,15 +28,18 @@ public class BookingService {
     private final UserRepository userRepository;
 
     private BookingResponseDto toDto(Booking b) {
+        Location location = b.getResource().getLocation();
+        String locationString = location.getBuildingName() + " - Floor " + location.getFloorNumber() + 
+                                (location.getRoomNumber() != null ? " - Room " + location.getRoomNumber() : "");
         return new BookingResponseDto(
             b.getBookingId(),
             b.getResource().getResourceId(),
             b.getResource().getName(),
-            b.getResource().getLocation(),
+            locationString,
             b.getUser().getUserId(),
             b.getUser().getFullName(),
             b.getBookingDate(),
-            b.getStartTime(),
+            b.getStartTime(),   
             b.getEndTime(),
             b.getPurpose(),
             b.getExpectedAttendees(),
