@@ -7,6 +7,7 @@ import {
 } from '@tanstack/react-router';
 import { TanStackRouterDevtools } from '@tanstack/router-devtools';
 import { useAuthStore } from '@/store/authStore';
+import { tokenStorage } from '@/api/client';
 import { LoginPage } from '@/pages/LoginPage';
 import { OAuthCallback } from '@/pages/OAuthCallback';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -41,7 +42,8 @@ const loginRoute = createRoute({
   component: LoginPage,
   beforeLoad: () => {
     const { isAuthenticated } = useAuthStore.getState();
-    if (isAuthenticated) {
+    const hasToken = Boolean(tokenStorage.getAccess());
+    if (isAuthenticated && hasToken) {
       throw redirect({ to: '/dashboard' });
     }
   },
@@ -61,7 +63,11 @@ const protectedLayoutRoute = createRoute({
   component: AppLayout,
   beforeLoad: () => {
     const { isAuthenticated } = useAuthStore.getState();
-    if (!isAuthenticated) {
+    const hasToken = Boolean(tokenStorage.getAccess());
+
+    if (!isAuthenticated || !hasToken) {
+      // Keep store consistent when persisted auth state exists but JWTs are missing.
+      useAuthStore.setState({ user: null, isAuthenticated: false });
       throw redirect({ to: '/login' });
     }
   },
