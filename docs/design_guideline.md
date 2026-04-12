@@ -95,6 +95,13 @@
 7. **Lazy Loading** — Route-based code splitting via TanStack Router's `lazy()`.
 8. **Accessible** — All Shadcn components are Radix-based (WAI-ARIA compliant). Use semantic HTML.
 
+### 3.3 Facilities & Assets Stability Rules
+
+1. **Collection Safety in Services** — When mutating `Resource.availability` or `Resource.tagMappings`, initialize lists defensively in service layer before clear/replace logic.
+2. **Deterministic Error Mapping** — Facilities DB constraint failures must map to meaningful client responses (`400`, `409`, `422`) instead of generic `500`.
+3. **Optional Availability Input Contract** — UI must submit availability only when `dayOfWeek`, `startTime`, and `endTime` are all provided; partial entries are invalid.
+4. **User-Facing Error Transparency** — Facilities mutations should surface backend `message` values in toast notifications for easier admin troubleshooting.
+
 ---
 
 ## 4. Coding Conventions

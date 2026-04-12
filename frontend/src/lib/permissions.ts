@@ -93,6 +93,17 @@ export const PERMISSIONS = {
   RESOURCES_UPDATE_STATUS: 'resources.update_status',
   RESOURCES_DELETE: 'resources.delete',
 
+  // Maintenance & Ticketing (Module C)
+  TICKETS_CREATE: 'tickets.create',
+  TICKETS_VIEW_OWN: 'tickets.view_own',
+  TICKETS_VIEW_ALL: 'tickets.view_all',
+  TICKETS_VIEW_ASSIGNED: 'tickets.view_assigned',
+  TICKETS_ASSIGN: 'tickets.assign',
+  TICKETS_UPDATE_STATUS: 'tickets.update_status',
+  TICKETS_CLOSE: 'tickets.close',
+  TICKETS_COMMENT_OWN: 'tickets.comment_own',
+  TICKETS_COMMENT_ASSIGNED: 'tickets.comment_assigned',
+
   // Settings & Configuration
   SETTINGS_VIEW: 'settings.view',
   ADMIN_UPDATE: 'admin.update',
@@ -148,6 +159,22 @@ export const PERMISSION_GROUPS = [
       { key: PERMISSIONS.RESOURCES_UPDATE, label: 'Update Resources', description: 'Edit resources' },
       { key: PERMISSIONS.RESOURCES_UPDATE_STATUS, label: 'Update Resource Status', description: 'Change resource status' },
       { key: PERMISSIONS.RESOURCES_DELETE, label: 'Delete Resources', description: 'Delete resources' },
+    ],
+  },
+  {
+    id: 'maintenance-ticketing',
+    label: 'Maintenance & Ticketing',
+    description: 'Manage incident tickets and maintenance workflows',
+    permissions: [
+      { key: PERMISSIONS.TICKETS_CREATE,           label: 'Create Tickets',             description: 'Submit new maintenance/incident tickets (USER)' },
+      { key: PERMISSIONS.TICKETS_VIEW_OWN,         label: 'View Own Tickets',           description: 'View tickets you submitted (USER)' },
+      { key: PERMISSIONS.TICKETS_VIEW_ALL,         label: 'View All Tickets',           description: 'View every ticket in the system (ADMIN)' },
+      { key: PERMISSIONS.TICKETS_VIEW_ASSIGNED,    label: 'View Assigned Tickets',      description: 'View tickets assigned to you (TECHNICIAN)' },
+      { key: PERMISSIONS.TICKETS_ASSIGN,           label: 'Assign Tickets',             description: 'Assign tickets to technicians (ADMIN)' },
+      { key: PERMISSIONS.TICKETS_UPDATE_STATUS,    label: 'Update Ticket Status',       description: 'Update in-progress ticket status (TECHNICIAN / ADMIN)' },
+      { key: PERMISSIONS.TICKETS_CLOSE,            label: 'Close / Reject Tickets',     description: 'Close or reject any ticket (ADMIN)' },
+      { key: PERMISSIONS.TICKETS_COMMENT_OWN,      label: 'Comment on Own Tickets',     description: 'Add comments to tickets you submitted (USER)' },
+      { key: PERMISSIONS.TICKETS_COMMENT_ASSIGNED, label: 'Comment on Assigned Tickets',description: 'Add comments to tickets assigned to you (TECHNICIAN / ADMIN)' },
     ],
   },
 ] as const;

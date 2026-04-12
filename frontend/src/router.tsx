@@ -17,6 +17,10 @@ import { ProfilePage } from '@/pages/ProfilePage';
 import { PERMISSIONS } from '@/lib/permissions';
 import { LocationManagementPage } from '@/pages/LocationManagementPage';
 import { ResourceManagementPage } from '@/pages/ResourceManagementPage';
+import { TicketListPage } from '@/pages/TicketListPage';
+import { TicketDetailPage } from '@/pages/TicketDetailPage';
+import { TicketCreatePage } from '@/pages/TicketCreatePage';
+import TechDashboardPage from '@/pages/TechDashboardPage';
 
 // ── Root Route ───────────────────────────────────────────────────
 
@@ -133,6 +137,65 @@ const resourcesRoute = createRoute({
   },
 });
 
+const ticketsRoute = createRoute({
+  getParentRoute: () => protectedLayoutRoute,
+  path: '/tickets',
+  component: TicketListPage,
+  beforeLoad: () => {
+    const { hasPermission } = useAuthStore.getState();
+    // Allow access if user has any ticket-related permission
+    if (
+      !hasPermission(PERMISSIONS.TICKETS_VIEW_OWN) &&
+      !hasPermission(PERMISSIONS.TICKETS_VIEW_ALL) &&
+      !hasPermission(PERMISSIONS.TICKETS_VIEW_ASSIGNED)
+    ) {
+      throw redirect({ to: '/dashboard' });
+    }
+  },
+});
+
+const ticketDetailRoute = createRoute({
+  getParentRoute: () => protectedLayoutRoute,
+  path: '/tickets/$ticketId',
+  component: TicketDetailPage,
+  beforeLoad: () => {
+    const { hasPermission } = useAuthStore.getState();
+    // Allow access if user has any ticket-related permission
+    if (
+      !hasPermission(PERMISSIONS.TICKETS_VIEW_OWN) &&
+      !hasPermission(PERMISSIONS.TICKETS_VIEW_ALL) &&
+      !hasPermission(PERMISSIONS.TICKETS_VIEW_ASSIGNED)
+    ) {
+      throw redirect({ to: '/dashboard' });
+    }
+  },
+});
+
+const ticketCreateRoute = createRoute({
+  getParentRoute: () => protectedLayoutRoute,
+  path: '/tickets/new',
+  component: TicketCreatePage,
+  beforeLoad: () => {
+    const { hasPermission } = useAuthStore.getState();
+    if (!hasPermission(PERMISSIONS.TICKETS_CREATE)) {
+      throw redirect({ to: '/dashboard' });
+    }
+  },
+});
+
+const techDashboardRoute = createRoute({
+  getParentRoute: () => protectedLayoutRoute,
+  path: '/tech-dashboard',
+  component: TechDashboardPage,
+  beforeLoad: () => {
+    const { hasPermission } = useAuthStore.getState();
+    // Only technicians with assigned ticket permissions
+    if (!hasPermission(PERMISSIONS.TICKETS_VIEW_ASSIGNED)) {
+      throw redirect({ to: '/dashboard' });
+    }
+  },
+});
+
 // ── Router ───────────────────────────────────────────────────────
 
 const routeTree = rootRoute.addChildren([
@@ -145,6 +208,10 @@ const routeTree = rootRoute.addChildren([
     rolesRoute,
     locationsRoute,
     resourcesRoute,
+    ticketsRoute,
+    ticketCreateRoute,
+    ticketDetailRoute,
+    techDashboardRoute,
     profileRoute,
   ]),
 ]);
