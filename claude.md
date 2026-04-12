@@ -1,8 +1,8 @@
 # Claude Context — Smart Campus Resource Management Platform
 
 > **Purpose:** This file provides AI assistants (Claude, Copilot, etc.) with complete project context for consistent, accurate code generation.  
-> **Date:** 2026-03-08  
-> **Last updated by:** GitHub Copilot (Claude Sonnet 4.6) — Sprint 1 complete: Auth, Roles, Notifications, Docker, Frontend infrastructure, Credential login, Sign-up, Create User, Role Management UI
+> **Date:** 2026-04-07  
+> **Last updated by:** GitHub Copilot CLI — Post-PR#3 Code Review: Applied critical fixes for SQL injection vulnerabilities, N+1 query problems, validation gaps, and race conditions. Improved error handling and frontend validation.
 
 ---
 
@@ -63,16 +63,18 @@
 
 ```
 frontend/src/
-├── api/            HTTP layer: auth.ts, users.ts, roles.ts, notifications.ts
+├── api/            HTTP layer: auth.ts, users.ts, roles.ts, notifications.ts, locations.ts, resources.ts
 ├── components/
 │   ├── layout/     AppLayout.tsx, Header.tsx, Sidebar.tsx
 │   ├── ui/         All shadcn/ui generated components
 │   ├── roles/      RoleEditorDialog.tsx, PermissionSelector.tsx
+│   ├── resources/  LocationEditorDialog.tsx, ResourceEditorDialog.tsx
 │   └── users/      AssignRolesDialog.tsx, CreateUserDialog.tsx
-├── hooks/          useUsers.ts, useRoles.ts (TanStack Query wrappers)
+├── hooks/          useUsers.ts, useRoles.ts, useLocations.ts, useResources.ts
 ├── lib/            permissions.ts (PERMISSIONS + PERMISSION_GROUPS), utils.ts
 ├── pages/          DashboardPage.tsx, LoginPage.tsx, UserManagementPage.tsx,
-│                   RoleManagementPage.tsx, ProfilePage.tsx, OAuthCallback.tsx
+│                   RoleManagementPage.tsx, LocationManagementPage.tsx,
+│                   ResourceManagementPage.tsx, ProfilePage.tsx, OAuthCallback.tsx
 ├── router.tsx      Code-based TanStack Router (createRoute / createRootRoute)
 ├── store/          authStore.ts (Zustand, persisted)
 └── types/          api.ts (mirrors all backend DTOs)
@@ -357,11 +359,33 @@ Docker:          docker-compose.yml (root), backend/Dockerfile
 
 ---
 
+### ✅ Completed — Sprint 2: Facilities & Assets MVP (Member 1)
+
+#### Backend
+| Task | File(s) |
+|------|---------|
+| Facilities entities (`Location`, `Resource`, `ResourceAvailability`, `ResourceTag`, `ResourceTagMap`) | `model/Location.java`, `model/Resource.java`, `model/ResourceAvailability.java`, `model/ResourceTag.java`, `model/ResourceTagMap.java`, `model/ResourceTagMapId.java` |
+| Facilities repositories + filtered resource listing/detail loading | `repository/LocationRepository.java`, `repository/ResourceRepository.java`, `repository/ResourceAvailabilityRepository.java`, `repository/ResourceTagRepository.java`, `repository/ResourceTagMapRepository.java` |
+| Facilities DTOs + MapStruct mapper | `dto/resource/*`, `mapper/ResourceMapper.java` |
+| Facilities business services | `service/LocationService.java`, `service/ResourceService.java` |
+| Facilities controllers with permission guards | `controller/LocationController.java`, `controller/ResourceController.java` |
+| Permissions migration for facilities endpoints | `backend/src/main/resources/db/migration/V3__add_facilities_permissions.sql` |
+
+#### Frontend
+| Task | File(s) |
+|------|---------|
+| Facilities API client layer | `src/api/locations.ts`, `src/api/resources.ts` |
+| Facilities query hooks | `src/hooks/useLocations.ts`, `src/hooks/useResources.ts` |
+| Facilities pages + forms | `src/pages/LocationManagementPage.tsx`, `src/pages/ResourceManagementPage.tsx`, `src/components/resources/LocationEditorDialog.tsx`, `src/components/resources/ResourceEditorDialog.tsx` |
+| Router/sidebar/permission wiring | `src/router.tsx`, `src/components/layout/Sidebar.tsx`, `src/lib/permissions.ts`, `src/types/api.ts` |
+
+---
+
 ### ⏳ Remaining — Sprint 2+ (Other Members)
 
 | Domain | Status | Key classes to create |
 |--------|--------|-----------------------|
-| Member 1 — Facilities & Assets | Not started | `Location`, `Resource`, `ResourceAvailability`, `ResourceTag` entities; `ResourceService`, `LocationService`; `ResourceController`, `LocationController` |
+| Member 1 — Facilities & Assets | MVP complete (integration + tests pending) | Sprint 4: booking/ticket integration hooks; Sprint 5: unit/integration tests |
 | Member 2 — Booking Management | Not started | `Booking`, `RecurringBookingGroup` entities; `BookingService`, `BookingValidationService`; `BookingController` |
 | Member 3 — Ticketing | Not started | `Ticket`, `TicketAttachment`, `TicketComment`, `TicketStatusHistory` entities; `TicketService`; `TicketController` |
 | All — Frontend (M1/M2/M3 domains) | Not started | Resource pages, Booking pages, Ticket pages — see `tasks.md` |
