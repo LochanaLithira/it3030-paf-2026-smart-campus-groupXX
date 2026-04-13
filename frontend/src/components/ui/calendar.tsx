@@ -1,5 +1,5 @@
 import * as React from "react"
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from "lucide-react"
+import { ChevronLeft, ChevronRight } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -14,7 +14,7 @@ export interface CalendarProps {
 }
 
 function Calendar({
-  mode = "single",
+  mode: _mode = "single",
   selected,
   onSelect,
   disabled,

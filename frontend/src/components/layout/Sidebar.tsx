@@ -10,6 +10,7 @@ import {
   MapPin,
   Ticket,
   Wrench,
+  CalendarDays,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/authStore';
@@ -52,6 +53,18 @@ const NAV_ITEMS: NavItem[] = [
     href: '/resources',
     icon: MapPin,
     permission: PERMISSIONS.RESOURCES_READ,
+  },
+  {
+    label: 'My Bookings',
+    href: '/bookings',
+    icon: CalendarDays,
+    permission: PERMISSIONS.BOOKINGS_VIEW_OWN,
+  },
+  {
+    label: 'Booking Approvals',
+    href: '/admin/bookings',
+    icon: CalendarDays,
+    permission: PERMISSIONS.BOOKINGS_VIEW_ALL,
   },
   {
     label: 'Tickets',

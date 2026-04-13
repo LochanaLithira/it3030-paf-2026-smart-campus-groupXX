@@ -8,9 +8,6 @@ import { ticketsApi } from '@/api/tickets';
 import type {
   TicketRequest,
   TicketResponse,
-  TicketCommentRequest,
-  TicketAssignRequest,
-  TicketStatusUpdateRequest,
   TicketsListParams,
   TicketStatus,
 } from '@/types/api';

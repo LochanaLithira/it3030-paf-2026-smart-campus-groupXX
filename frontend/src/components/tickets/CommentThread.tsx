@@ -29,7 +29,7 @@ export function CommentThread({ ticketId, comments }: CommentThreadProps) {
 
     await addComment.mutateAsync({
       ticketId,
-      comment: newComment,
+      content: newComment,
     });
 
     setNewComment('');
@@ -37,7 +37,7 @@ export function CommentThread({ ticketId, comments }: CommentThreadProps) {
 
   const handleEditComment = (comment: TicketCommentResponse) => {
     setEditingId(comment.commentId);
-    setEditText(comment.comment);
+    setEditText(comment.content);
   };
 
   const handleSaveEdit = async (commentId: string) => {
@@ -46,7 +46,7 @@ export function CommentThread({ ticketId, comments }: CommentThreadProps) {
     await updateComment.mutateAsync({
       ticketId,
       commentId,
-      comment: editText,
+      content: editText,
     });
 
     setEditingId(null);
@@ -68,7 +68,7 @@ export function CommentThread({ ticketId, comments }: CommentThreadProps) {
   };
 
   const canEditComment = (comment: TicketCommentResponse) => {
-    return comment.commenter.userId === user?.userId;
+    return comment.author.userId === user?.userId;
   };
 
   const sortedComments = [...comments].sort(
@@ -92,7 +92,7 @@ export function CommentThread({ ticketId, comments }: CommentThreadProps) {
                 <div className="flex items-start gap-3">
                   <Avatar className="h-8 w-8">
                     <div className="flex h-full w-full items-center justify-center bg-primary text-primary-foreground text-sm font-medium">
-                      {comment.commenter.fullName.charAt(0).toUpperCase()}
+                      {comment.author.fullName.charAt(0).toUpperCase()}
                     </div>
                   </Avatar>
 
@@ -100,7 +100,7 @@ export function CommentThread({ ticketId, comments }: CommentThreadProps) {
                     <div className="flex items-center justify-between gap-2">
                       <div>
                         <span className="font-medium text-sm">
-                          {comment.commenter.fullName}
+                          {comment.author.fullName}
                         </span>
                         <span className="text-xs text-muted-foreground ml-2">
                           {formatDistanceToNow(new Date(comment.createdAt), {
@@ -159,7 +159,7 @@ export function CommentThread({ ticketId, comments }: CommentThreadProps) {
                       </div>
                     ) : (
                       <p className="mt-1 text-sm text-gray-700 whitespace-pre-wrap">
-                        {comment.comment}
+                        {comment.content}
                       </p>
                     )}
                   </div>

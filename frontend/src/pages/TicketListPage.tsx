@@ -38,7 +38,6 @@ import {
   AlertCircle,
   Clock,
   CheckCircle,
-  XCircle,
   Ban,
 } from 'lucide-react';
 import { format } from 'date-fns';
@@ -84,7 +83,7 @@ function getPriorityBadge(priority: TicketPriority) {
 }
 
 export function TicketListPage() {
-  const { hasPermission, user } = useAuthStore();
+  const { hasPermission } = useAuthStore();
   const [sorting, setSorting] = useState<SortingState>([{ id: 'createdAt', desc: true }]);
   const [page, setPage] = useState(0);
   

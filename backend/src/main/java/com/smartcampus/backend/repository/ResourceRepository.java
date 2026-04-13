@@ -121,4 +121,10 @@ public interface ResourceRepository extends JpaRepository<Resource, UUID> {
     Optional<Resource> findByIdWithAvailability(@Param("resourceId") UUID resourceId);
 
     boolean existsByLocation_LocationId(UUID locationId);
+
+    List<Resource> findTop8ByTypeAndStatusAndResourceIdNotOrderByNameAsc(
+            ResourceType type,
+            ResourceStatus status,
+            UUID resourceId
+    );
 }

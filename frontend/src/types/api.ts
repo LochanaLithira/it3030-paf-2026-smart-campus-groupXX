@@ -20,6 +20,7 @@ export interface ApiError {
   message: string;
   path: string;
   timestamp: string;
+  details?: Record<string, unknown>;
 }
 
 // ── Auth ─────────────────────────────────────────────────────────
@@ -122,6 +123,56 @@ export interface NotificationResponse {
 export type ResourceType = 'LECTURE_HALL' | 'LAB' | 'MEETING_ROOM' | 'EQUIPMENT';
 export type ResourceStatus = 'ACTIVE' | 'OUT_OF_SERVICE' | 'UNDER_MAINTENANCE';
 export type DayOfWeek = 'MON' | 'TUE' | 'WED' | 'THU' | 'FRI' | 'SAT' | 'SUN';
+
+// -- Bookings ----------------------------------------------------------------
+
+export type BookingStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
+
+export interface BookingCreateRequest {
+  resourceId: string;
+  bookingDate: string; // YYYY-MM-DD
+  startTime: string; // HH:mm
+  endTime: string; // HH:mm
+  purpose: string;
+  expectedAttendees: number;
+}
+
+export interface BookingResourceSummary {
+  resourceId: string;
+  name: string;
+  type: ResourceType;
+}
+
+export interface BookingUserSummary {
+  userId: string;
+  fullName: string;
+  email: string;
+}
+
+export interface BookingResponse {
+  bookingId: string;
+  resource: BookingResourceSummary;
+  user: BookingUserSummary;
+  bookingDate: string;
+  startTime: string;
+  endTime: string;
+  purpose: string;
+  expectedAttendees: number;
+  status: BookingStatus;
+  rejectionReason: string | null;
+  reviewedBy: string | null;
+  reviewedAt: string | null;
+  recurringGroupId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface BookingAvailabilityResponse {
+  date: string;
+  dayOfWeek: DayOfWeek;
+  resourceAvailability: { startTime: string; endTime: string } | null;
+  bookedSlots: { startTime: string; endTime: string; status: BookingStatus }[];
+}
 
 export interface LocationRequest {
   buildingName: string;
