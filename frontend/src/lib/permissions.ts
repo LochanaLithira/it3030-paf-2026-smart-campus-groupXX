@@ -101,6 +101,7 @@ export const PERMISSIONS = {
   TICKETS_ASSIGN: 'tickets.assign',
   TICKETS_UPDATE_STATUS: 'tickets.update_status',
   TICKETS_CLOSE: 'tickets.close',
+  TICKETS_DELETE: 'tickets.delete',
   TICKETS_COMMENT_OWN: 'tickets.comment_own',
   TICKETS_COMMENT_ASSIGNED: 'tickets.comment_assigned',
 
@@ -173,6 +174,7 @@ export const PERMISSION_GROUPS = [
       { key: PERMISSIONS.TICKETS_ASSIGN,           label: 'Assign Tickets',             description: 'Assign tickets to technicians (ADMIN)' },
       { key: PERMISSIONS.TICKETS_UPDATE_STATUS,    label: 'Update Ticket Status',       description: 'Update in-progress ticket status (TECHNICIAN / ADMIN)' },
       { key: PERMISSIONS.TICKETS_CLOSE,            label: 'Close / Reject Tickets',     description: 'Close or reject any ticket (ADMIN)' },
+      { key: PERMISSIONS.TICKETS_DELETE,           label: 'Delete Tickets',             description: 'Delete OPEN or REJECTED tickets (ADMIN)' },
       { key: PERMISSIONS.TICKETS_COMMENT_OWN,      label: 'Comment on Own Tickets',     description: 'Add comments to tickets you submitted (USER)' },
       { key: PERMISSIONS.TICKETS_COMMENT_ASSIGNED, label: 'Comment on Assigned Tickets',description: 'Add comments to tickets assigned to you (TECHNICIAN / ADMIN)' },
     ],

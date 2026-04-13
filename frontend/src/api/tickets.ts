@@ -130,4 +130,11 @@ export const ticketsApi = {
   deleteAttachment: async (ticketId: string, attachmentId: string): Promise<void> => {
     await apiClient.delete(`tickets/${ticketId}/attachments/${attachmentId}`);
   },
+
+  /**
+   * Delete a ticket (admin only)
+   */
+  delete: async (ticketId: string): Promise<void> => {
+    await apiClient.delete(`tickets/${ticketId}`);
+  },
 };

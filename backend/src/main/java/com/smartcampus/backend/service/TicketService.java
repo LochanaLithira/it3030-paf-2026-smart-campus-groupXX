@@ -420,6 +420,18 @@ public class TicketService {
         log.info("Deleted attachment {} by user {}", attachmentId, currentUserId);
     }
 
+    @Transactional
+    public void deleteTicket(UUID ticketId) {
+        Ticket ticket = findTicketOrThrow(ticketId);
+
+        if (ticket.getStatus() != TicketStatus.OPEN && ticket.getStatus() != TicketStatus.REJECTED) {
+            throw new AppException("Only OPEN or REJECTED tickets can be deleted", HttpStatus.BAD_REQUEST);
+        }
+
+        ticketRepository.delete(ticket);
+        log.info("Deleted ticket {} in status {}", ticketId, ticket.getStatus());
+    }
+
     // Helper methods
 
     private Ticket findTicketOrThrow(UUID ticketId) {
