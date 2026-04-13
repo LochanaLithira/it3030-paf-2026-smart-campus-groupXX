@@ -146,4 +146,12 @@ public class TicketController {
         ticketService.deleteAttachment(attachmentId);
         return ResponseEntity.noContent().build();
     }
+
+    @DeleteMapping("/{ticketId}")
+    @PreAuthorize("hasAuthority('tickets.delete')")
+    @Operation(summary = "Delete ticket", description = "Delete a ticket (ADMIN only). Allowed only for OPEN or REJECTED tickets.")
+    public ResponseEntity<Void> deleteTicket(@PathVariable UUID ticketId) {
+        ticketService.deleteTicket(ticketId);
+        return ResponseEntity.noContent().build();
+    }
 }

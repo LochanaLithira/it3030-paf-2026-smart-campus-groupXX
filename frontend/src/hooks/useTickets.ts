@@ -199,3 +199,20 @@ export function useDeleteTicketAttachment() {
     },
   });
 }
+
+/**
+ * Delete ticket (admin only)
+ */
+export function useDeleteTicket() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (ticketId: string) => ticketsApi.delete(ticketId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ticketKeys.lists() });
+      toast.success('Ticket deleted');
+    },
+    onError: () => {
+      toast.error('Failed to delete ticket');
+    },
+  });
+}

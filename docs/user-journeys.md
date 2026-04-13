@@ -18,9 +18,9 @@
 
 | Role | Key Permissions |
 |------|----------------|
-| **ADMIN** | Manage users & roles, manage resources & locations, approve/reject bookings, assign tickets, view reports, system settings |
+| **ADMIN** | Manage users & roles, manage resources & locations, approve/reject bookings, assign tickets, delete OPEN/REJECTED tickets, view reports, system settings |
 | **USER** | View resources, create/cancel own bookings, create tickets, comment on own tickets, view notifications |
-| **TECHNICIAN** | View assigned tickets, update ticket status, add resolution notes, comment on assigned tickets, create tickets |
+| **TECHNICIAN** | View assigned tickets, update ticket status, add resolution notes, comment on assigned tickets |
 
 ---
 
@@ -378,7 +378,7 @@ Browser → GET /oauth2/authorization/google → Google Login
 | All Tickets | `/admin/tickets` | ADMIN |
 | Assigned Tickets | `/tech/tickets` | TECHNICIAN |
 | Ticket Detail | `/tickets/:id` | USER, ADMIN, TECHNICIAN |
-| Create Ticket | `/tickets/new?resource=:id` | USER, TECHNICIAN |
+| Create Ticket | `/tickets/new?resource=:id` | USER |
 | Manage Resources | `/admin/resources` | ADMIN |
 | Manage Locations | `/admin/locations` | ADMIN |
 | User Management | `/admin/users` | ADMIN |

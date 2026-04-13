@@ -1,6 +1,6 @@
-import { useParams, Link } from '@tanstack/react-router';
+import { useParams, Link, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
-import { useTicketById } from '@/hooks/useTickets';
+import { useDeleteTicket, useTicketById } from '@/hooks/useTickets';
 import { useAuthStore } from '@/store/authStore';
 import { PERMISSIONS } from '@/lib/permissions';
 import { Button } from '@/components/ui/button';
@@ -30,6 +30,7 @@ import {
   Ban,
   UserPlus,
   RefreshCw,
+  Trash2,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import type { TicketStatus, TicketPriority } from '@/types/api';
@@ -74,8 +75,10 @@ function getPriorityBadge(priority: TicketPriority) {
 
 export function TicketDetailPage() {
   const { ticketId } = useParams({ strict: false }) as { ticketId: string };
+  const navigate = useNavigate();
   const { data: ticket, isLoading, error } = useTicketById(ticketId);
   const { user, hasPermission } = useAuthStore();
+  const deleteTicket = useDeleteTicket();
 
   // Dialog states
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
@@ -83,8 +86,17 @@ export function TicketDetailPage() {
 
   const canAssign = hasPermission(PERMISSIONS.TICKETS_ASSIGN);
   const canUpdateStatus = hasPermission(PERMISSIONS.TICKETS_UPDATE_STATUS);
+  const canDelete = hasPermission(PERMISSIONS.TICKETS_DELETE);
   const isReporter = ticket?.reporter.userId === user?.userId;
   const isAssignedTech = ticket?.assignedTech?.userId === user?.userId;
+  const canDeleteThisTicket = canDelete && (ticket?.status === 'OPEN' || ticket?.status === 'REJECTED');
+
+  const handleDeleteTicket = async () => {
+    if (!ticket || !canDeleteThisTicket) return;
+    if (!confirm('Delete this ticket permanently? This action cannot be undone.')) return;
+    await deleteTicket.mutateAsync(ticket.ticketId);
+    navigate({ to: '/tickets' });
+  };
 
   if (isLoading) {
     return (
@@ -148,6 +160,17 @@ export function TicketDetailPage() {
             <Button size="sm" onClick={() => setStatusDialogOpen(true)}>
               <RefreshCw className="h-4 w-4 mr-2" />
               Update Status
+            </Button>
+          )}
+          {canDeleteThisTicket && (
+            <Button
+              size="sm"
+              variant="destructive"
+              onClick={handleDeleteTicket}
+              disabled={deleteTicket.isPending}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              {deleteTicket.isPending ? 'Deleting...' : 'Delete Ticket'}
             </Button>
           )}
         </div>

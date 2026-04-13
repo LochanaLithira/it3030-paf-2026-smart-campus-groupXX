@@ -634,6 +634,16 @@ Update ticket status (TECHNICIAN for assigned tickets, ADMIN for any).
 
 **Response 200:** Updated ticket. Side effect: status history row created, notifications sent.
 
+### DELETE `/tickets/{ticketId}`
+
+Delete a ticket (**ADMIN only**).
+
+**Rules:**
+- Requires `tickets.delete` permission.
+- Only tickets in `OPEN` or `REJECTED` status can be deleted.
+
+**Response 204:** Ticket deleted.
+
 ### POST `/tickets/{ticketId}/comments`
 
 Add a comment to a ticket.

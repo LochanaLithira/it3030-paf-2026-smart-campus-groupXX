@@ -4,7 +4,7 @@
 --  Date: 2026-04-09
 -- ================================================================
 
--- ADMIN: gets all ticket permissions (view all, assign, close, update status, comment on any)
+-- ADMIN: gets all ticket permissions (view all, assign, close, delete, update status, comment on any)
 UPDATE roles
 SET permissions = ARRAY(
     SELECT DISTINCT p
@@ -13,6 +13,7 @@ SET permissions = ARRAY(
             'tickets.view_all',
             'tickets.assign',
             'tickets.close',
+            'tickets.delete',
             'tickets.update_status',
             'tickets.comment_own',
             'tickets.comment_assigned'
