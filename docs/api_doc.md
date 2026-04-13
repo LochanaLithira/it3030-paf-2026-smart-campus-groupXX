@@ -386,6 +386,27 @@ Create a booking.
 
 **Error 409:** Conflict — time slot already booked.
 
+**Conflict UX (Module B extra feature):**
+- When a booking conflict happens, the API returns the standard error body plus `details.suggestions` (if available) with alternative time slots/resources.
+  - `details.suggestions[]`: `{ kind: "SAME_RESOURCE" | "OTHER_RESOURCE", resourceId, resourceName, startTime, endTime }`
+
+**Example 409 response:**
+```json
+{
+  "timestamp": "2026-04-13T10:12:00Z",
+  "status": 409,
+  "error": "Conflict",
+  "message": "This resource is already booked for the selected time slot",
+  "path": "/api/v1/bookings",
+  "details": {
+    "suggestions": [
+      { "kind": "SAME_RESOURCE", "resourceId": "...", "resourceName": "Physics Lab 3", "startTime": "13:00", "endTime": "15:00" },
+      { "kind": "OTHER_RESOURCE", "resourceId": "...", "resourceName": "Physics Lab 2", "startTime": "09:00", "endTime": "11:00" }
+    ]
+  }
+}
+```
+
 ### POST `/bookings/recurring`
 
 Create a recurring booking series.

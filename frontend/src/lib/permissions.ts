@@ -93,6 +93,14 @@ export const PERMISSIONS = {
   RESOURCES_UPDATE_STATUS: 'resources.update_status',
   RESOURCES_DELETE: 'resources.delete',
 
+  // Booking Management (Module B)
+  BOOKINGS_CREATE: 'bookings.create',
+  BOOKINGS_VIEW_OWN: 'bookings.view_own',
+  BOOKINGS_VIEW_ALL: 'bookings.view_all',
+  BOOKINGS_APPROVE: 'bookings.approve',
+  BOOKINGS_CANCEL_OWN: 'bookings.cancel_own',
+  BOOKINGS_CANCEL_ANY: 'bookings.cancel_any',
+
   // Maintenance & Ticketing (Module C)
   TICKETS_CREATE: 'tickets.create',
   TICKETS_VIEW_OWN: 'tickets.view_own',
@@ -159,6 +167,19 @@ export const PERMISSION_GROUPS = [
       { key: PERMISSIONS.RESOURCES_UPDATE, label: 'Update Resources', description: 'Edit resources' },
       { key: PERMISSIONS.RESOURCES_UPDATE_STATUS, label: 'Update Resource Status', description: 'Change resource status' },
       { key: PERMISSIONS.RESOURCES_DELETE, label: 'Delete Resources', description: 'Delete resources' },
+    ],
+  },
+  {
+    id: 'bookings',
+    label: 'Bookings',
+    description: 'Request, view, and manage resource bookings',
+    permissions: [
+      { key: PERMISSIONS.BOOKINGS_CREATE, label: 'Create Booking', description: 'Request a new booking (USER)' },
+      { key: PERMISSIONS.BOOKINGS_VIEW_OWN, label: 'View Own Bookings', description: 'View bookings you created (USER)' },
+      { key: PERMISSIONS.BOOKINGS_CANCEL_OWN, label: 'Cancel Own Booking', description: 'Cancel your own pending/approved booking (USER)' },
+      { key: PERMISSIONS.BOOKINGS_VIEW_ALL, label: 'View All Bookings', description: 'View all bookings (ADMIN)' },
+      { key: PERMISSIONS.BOOKINGS_APPROVE, label: 'Approve/Reject Bookings', description: 'Approve or reject pending bookings (ADMIN)' },
+      { key: PERMISSIONS.BOOKINGS_CANCEL_ANY, label: 'Cancel Any Booking', description: 'Cancel any booking (ADMIN)' },
     ],
   },
   {

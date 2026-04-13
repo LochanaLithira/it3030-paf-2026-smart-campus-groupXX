@@ -76,18 +76,18 @@
 
 | # | Task | Priority | Status | Sprint |
 |---|------|----------|--------|--------|
-| M2-B01 | Create `Booking` JPA entity (with exclusion constraint mapping) | P0 | `[ ]` | 1 |
+| M2-B01 | Create `Booking` JPA entity (with exclusion constraint mapping) | P0 | `[x]` | 1 |
 | M2-B02 | Create `RecurringBookingGroup` entity | P2 | `[ ]` | 1 |
-| M2-B03 | Create `BookingRepository` with custom queries (by user, resource, date range, status) | P0 | `[ ]` | 2 |
-| M2-B04 | `BookingValidationService` — check availability window, overlap, capacity, resource status | P0 | `[ ]` | 2 |
-| M2-B05 | `BookingService` — create booking (validates + saves + notifies admins) | P0 | `[ ]` | 2 |
-| M2-B06 | `BookingService` — cancel booking (owner or admin) + notification | P0 | `[ ]` | 2 |
-| M2-B07 | `BookingService` — approve/reject (admin) + notification | P0 | `[ ]` | 2 |
-| M2-B08 | `BookingService` — list with pagination + filtering | P0 | `[ ]` | 2 |
-| M2-B09 | `BookingController` — GET list, GET detail, POST create, PATCH approve/reject/cancel | P0 | `[ ]` | 2 |
-| M2-B10 | GET `/bookings/availability` — available slots for resource+date | P1 | `[ ]` | 2 |
+| M2-B03 | Create `BookingRepository` with custom queries (by user, resource, date range, status) | P0 | `[x]` | 2 |
+| M2-B04 | `BookingValidationService` — check availability window, overlap, capacity, resource status | P0 | `[x]` | 2 |
+| M2-B05 | `BookingService` — create booking (validates + saves + notifies admins) | P0 | `[x]` | 2 |
+| M2-B06 | `BookingService` — cancel booking (owner or admin) + notification | P0 | `[x]` | 2 |
+| M2-B07 | `BookingService` — approve/reject (admin) + notification | P0 | `[x]` | 2 |
+| M2-B08 | `BookingService` — list with pagination + filtering | P0 | `[x]` | 2 |
+| M2-B09 | `BookingController` — GET list, GET detail, POST create, PATCH approve/reject/cancel | P0 | `[x]` | 2 |
+| M2-B10 | GET `/bookings/availability` — available slots for resource+date | P1 | `[x]` | 2 |
 | M2-B11 | POST `/bookings/recurring` — create recurring booking series | P2 | `[ ]` | 2 |
-| M2-B12 | Handle double-booking conflict gracefully (catch DB exclusion constraint, return 409) | P0 | `[ ]` | 2 |
+| M2-B12 | Handle double-booking conflict gracefully (catch DB exclusion constraint, return 409) | P0 | `[x]` | 2 |
 | M2-B13 | `@PreAuthorize` on all endpoints | P0 | `[ ]` | 2 |
 | M2-B14 | Unit tests for `BookingValidationService` | P1 | `[ ]` | 2 |
 | M2-B15 | Integration tests for `BookingController` | P1 | `[ ]` | 5 |
@@ -96,11 +96,11 @@
 
 | # | Task | Priority | Status | Sprint |
 |---|------|----------|--------|--------|
-| M2-F01 | `BookingForm` — date picker, time selector (constrained), purpose, attendees | P0 | `[ ]` | 2 |
-| M2-F02 | `useBookings` hook — TanStack Query wrapper | P0 | `[ ]` | 2 |
-| M2-F03 | `BookingListPage` ("My Bookings") — status-filtered table with cancel action | P0 | `[ ]` | 2 |
-| M2-F04 | `BookingDetailPage` — full booking info with status badge | P0 | `[ ]` | 2 |
-| M2-F05 | `BookingApprovalQueue` — admin queue with approve/reject buttons + reason dialog | P0 | `[ ]` | 2 |
+| M2-F01 | `BookingForm` — date picker, time selector (constrained), purpose, attendees | P0 | `[x]` | 2 |
+| M2-F02 | `useBookings` hook — TanStack Query wrapper | P0 | `[x]` | 2 |
+| M2-F03 | `BookingListPage` ("My Bookings") — status-filtered table with cancel action | P0 | `[x]` | 2 |
+| M2-F04 | `BookingDetailPage` — full booking info with status badge | P0 | `[x]` | 2 |
+| M2-F05 | `BookingApprovalQueue` — admin queue with approve/reject buttons + reason dialog | P0 | `[x]` | 2 |
 | M2-F06 | Availability slot picker component (visual time blocks) | P1 | `[ ]` | 2 |
 | M2-F07 | Optimistic UI update for booking cancellation | P2 | `[ ]` | 4 |
 | M2-F08 | Recurring booking form (RRULE builder) | P3 | `[ ]` | 4 |

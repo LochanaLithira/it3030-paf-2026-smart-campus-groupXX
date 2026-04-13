@@ -1,5 +1,5 @@
 import { format } from 'date-fns';
-import { CheckCircle, Clock, XCircle, AlertCircle, Ban } from 'lucide-react';
+import { CheckCircle, Clock, AlertCircle, Ban } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import type { StatusHistoryResponse, TicketStatus } from '@/types/api';
 

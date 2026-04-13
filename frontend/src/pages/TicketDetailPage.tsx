@@ -27,7 +27,6 @@ import {
   Image as ImageIcon,
   Download,
   CheckCircle,
-  XCircle,
   Ban,
   UserPlus,
   RefreshCw,
@@ -84,7 +83,6 @@ export function TicketDetailPage() {
 
   const canAssign = hasPermission(PERMISSIONS.TICKETS_ASSIGN);
   const canUpdateStatus = hasPermission(PERMISSIONS.TICKETS_UPDATE_STATUS);
-  const canClose = hasPermission(PERMISSIONS.TICKETS_CLOSE);
   const isReporter = ticket?.reporter.userId === user?.userId;
   const isAssignedTech = ticket?.assignedTech?.userId === user?.userId;
 

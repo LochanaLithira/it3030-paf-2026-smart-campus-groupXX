@@ -1,6 +1,7 @@
 package com.smartcampus.backend.exception;
 
 import com.smartcampus.backend.dto.common.ApiErrorResponse;
+import com.smartcampus.backend.exception.BookingConflictException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @RestControllerAdvice
@@ -105,6 +107,20 @@ public class GlobalExceptionHandler {
                 .body(ApiErrorResponse.of(409, "Conflict",
                         "A database constraint was violated",
                         request.getRequestURI()));
+    }
+
+    @ExceptionHandler(BookingConflictException.class)
+    public ResponseEntity<ApiErrorResponse> handleBookingConflict(
+            BookingConflictException ex, HttpServletRequest request
+    ) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiErrorResponse.of(
+                        409,
+                        "Conflict",
+                        ex.getMessage(),
+                        request.getRequestURI(),
+                        Map.of("suggestions", ex.getSuggestions())
+                ));
     }
 
     // ─── Catch-all ───
