@@ -2,7 +2,7 @@
 
 > **Purpose:** This file provides AI assistants (Claude, Copilot, etc.) with complete project context for consistent, accurate code generation.  
 > **Date:** 2026-04-08  
-> **Last updated by:** Cursor Agent — Facilities & Assets stabilization pass for intermittent create failures (`/locations`, `/resources`): fixed backend null-safety edge case, improved facilities constraint error mapping, strengthened frontend create validation, and surfaced API error messages in facilities hooks.
+> **Last updated by:** Cursor Agent — Module B (Booking Management) implementation: booking workflow (PENDING→APPROVED/REJECTED→CANCELLED), conflict prevention + smart alternative slot suggestions, booking permissions migration, notifications wiring, and booking frontend pages/hooks/routes.
 
 ---
 
@@ -395,7 +395,7 @@ Docker:          docker-compose.yml (root), backend/Dockerfile
 | Domain | Status | Key classes to create |
 |--------|--------|-----------------------|
 | Member 1 — Facilities & Assets | MVP complete (integration + tests pending) | Sprint 4: booking/ticket integration hooks; Sprint 5: unit/integration tests |
-| Member 2 — Booking Management | Not started | `Booking`, `RecurringBookingGroup` entities; `BookingService`, `BookingValidationService`; `BookingController` |
+| Member 2 — Booking Management | Core implemented | Optional: recurring groups + recurring endpoint; add unit/integration tests |
 | Member 3 — Ticketing | Not started | `Ticket`, `TicketAttachment`, `TicketComment`, `TicketStatusHistory` entities; `TicketService`; `TicketController` |
 | All — Frontend (M1/M2/M3 domains) | Not started | Resource pages, Booking pages, Ticket pages — see `tasks.md` |
 | All — Integration tests | Not started | Testcontainers + REST Assured integration tests for all controllers |

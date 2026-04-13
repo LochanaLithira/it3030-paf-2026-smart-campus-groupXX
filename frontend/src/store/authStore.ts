@@ -79,7 +79,7 @@ export const useAuthStore = create<AuthState>()(
       },
     }),
     {
-      name: 'sc-auth',
+      name: 'smartcampus-auth-v2',
       storage: createJSONStorage(() => localStorage),
       // Only persist user, not loading state
       partialize: (state) => ({

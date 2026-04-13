@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -67,4 +68,12 @@ public interface UserRepository extends JpaRepository<User, UUID> {
             WHERE r.roleName = :roleName
             """)
     Page<User> findAllByRoleName(@Param("roleName") String roleName, Pageable pageable);
+
+    @Query("""
+            SELECT DISTINCT u.userId FROM User u
+            JOIN u.userRoles ur
+            JOIN ur.role r
+            WHERE r.roleName = 'ADMIN'
+            """)
+    List<UUID> findAllAdminUserIds();
 }

@@ -9,8 +9,8 @@ const API_BASE = '/api/v1';
 
 // ── Token storage helpers ────────────────────────────────────────
 
-const TOKEN_KEY = 'sc_access_token';
-const REFRESH_KEY = 'sc_refresh_token';
+const TOKEN_KEY = 'smartcampus_access_token_v2';
+const REFRESH_KEY = 'smartcampus_refresh_token_v2';
 
 export const tokenStorage = {
   getAccess: () => localStorage.getItem(TOKEN_KEY),

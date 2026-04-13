@@ -75,7 +75,7 @@ export function AssignDialog({
         <div className="py-4">
           <div className="space-y-2">
             <label className="text-sm font-medium">Technician</label>
-            <Select value={selectedTechId} onValueChange={setSelectedTechId}>
+            <Select value={selectedTechId} onValueChange={(value) => setSelectedTechId(value ?? '')}>
               <SelectTrigger>
                 <SelectValue placeholder="Select a technician" />
               </SelectTrigger>

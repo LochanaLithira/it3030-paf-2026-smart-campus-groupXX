@@ -51,8 +51,18 @@ public class Booking {
     @Column(name = "status", nullable = false)
     private BookingStatus status;
 
-    @Column(name = "admin_reason", length = 500)
-    private String adminReason;
+    @Column(name = "rejection_reason", length = 255)
+    private String rejectionReason;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "reviewed_by")
+    private User reviewedBy;
+
+    @Column(name = "reviewed_at")
+    private OffsetDateTime reviewedAt;
+
+    @Column(name = "recurring_group_id")
+    private UUID recurringGroupId;
 
     @CreatedDate
     @Column(name = "created_at", updatable = false)

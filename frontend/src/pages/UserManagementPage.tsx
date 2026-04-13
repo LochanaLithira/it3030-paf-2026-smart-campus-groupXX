@@ -28,6 +28,7 @@ import {
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -153,23 +154,25 @@ export function UserManagementPage() {
               <span className="sr-only">Open menu</span>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {canManageRoles && (
-                <DropdownMenuItem onClick={() => setSelectedUser(row)}>
-                  <Shield className="mr-2 h-4 w-4" />
-                  Assign Roles
-                </DropdownMenuItem>
-              )}
-              {canDeactivate && row.active && (
-                <DropdownMenuItem
-                  className="text-destructive focus:text-destructive"
-                  onClick={() => deactivate.mutate(row.userId)}
-                >
-                  <UserX className="mr-2 h-4 w-4" />
-                  Deactivate
-                </DropdownMenuItem>
-              )}
+              <DropdownMenuGroup>
+                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {canManageRoles && (
+                  <DropdownMenuItem onClick={() => setSelectedUser(row)}>
+                    <Shield className="mr-2 h-4 w-4" />
+                    Assign Roles
+                  </DropdownMenuItem>
+                )}
+                {canDeactivate && row.active && (
+                  <DropdownMenuItem
+                    className="text-destructive focus:text-destructive"
+                    onClick={() => deactivate.mutate(row.userId)}
+                  >
+                    <UserX className="mr-2 h-4 w-4" />
+                    Deactivate
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuGroup>
             </DropdownMenuContent>
           </DropdownMenu>
         );

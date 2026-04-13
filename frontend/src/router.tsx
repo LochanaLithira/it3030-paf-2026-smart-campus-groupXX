@@ -7,6 +7,7 @@ import {
 } from '@tanstack/react-router';
 import { TanStackRouterDevtools } from '@tanstack/router-devtools';
 import { useAuthStore } from '@/store/authStore';
+import { tokenStorage } from '@/api/client';
 import { LoginPage } from '@/pages/LoginPage';
 import { OAuthCallback } from '@/pages/OAuthCallback';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -21,6 +22,10 @@ import { TicketListPage } from '@/pages/TicketListPage';
 import { TicketDetailPage } from '@/pages/TicketDetailPage';
 import { TicketCreatePage } from '@/pages/TicketCreatePage';
 import TechDashboardPage from '@/pages/TechDashboardPage';
+import { BookingListPage } from '@/pages/BookingListPage';
+import { BookingDetailPage } from '@/pages/BookingDetailPage';
+import { BookingCreatePage } from '@/pages/BookingCreatePage';
+import { AdminBookingQueuePage } from '@/pages/AdminBookingQueuePage';
 
 // ── Root Route ───────────────────────────────────────────────────
 
@@ -41,7 +46,8 @@ const loginRoute = createRoute({
   component: LoginPage,
   beforeLoad: () => {
     const { isAuthenticated } = useAuthStore.getState();
-    if (isAuthenticated) {
+    const hasToken = Boolean(tokenStorage.getAccess());
+    if (isAuthenticated && hasToken) {
       throw redirect({ to: '/dashboard' });
     }
   },
@@ -61,7 +67,11 @@ const protectedLayoutRoute = createRoute({
   component: AppLayout,
   beforeLoad: () => {
     const { isAuthenticated } = useAuthStore.getState();
-    if (!isAuthenticated) {
+    const hasToken = Boolean(tokenStorage.getAccess());
+
+    if (!isAuthenticated || !hasToken) {
+      // Keep store consistent when persisted auth state exists but JWTs are missing.
+      useAuthStore.setState({ user: null, isAuthenticated: false });
       throw redirect({ to: '/login' });
     }
   },
@@ -132,6 +142,54 @@ const resourcesRoute = createRoute({
   beforeLoad: () => {
     const { hasPermission } = useAuthStore.getState();
     if (!hasPermission(PERMISSIONS.RESOURCES_READ)) {
+      throw redirect({ to: '/dashboard' });
+    }
+  },
+});
+
+const bookingsRoute = createRoute({
+  getParentRoute: () => protectedLayoutRoute,
+  path: '/bookings',
+  component: BookingListPage,
+  beforeLoad: () => {
+    const { hasPermission } = useAuthStore.getState();
+    if (!hasPermission(PERMISSIONS.BOOKINGS_VIEW_OWN)) {
+      throw redirect({ to: '/dashboard' });
+    }
+  },
+});
+
+const bookingCreateRoute = createRoute({
+  getParentRoute: () => protectedLayoutRoute,
+  path: '/bookings/new',
+  component: BookingCreatePage,
+  beforeLoad: () => {
+    const { hasPermission } = useAuthStore.getState();
+    if (!hasPermission(PERMISSIONS.BOOKINGS_CREATE)) {
+      throw redirect({ to: '/dashboard' });
+    }
+  },
+});
+
+const bookingDetailRoute = createRoute({
+  getParentRoute: () => protectedLayoutRoute,
+  path: '/bookings/$bookingId',
+  component: BookingDetailPage,
+  beforeLoad: () => {
+    const { hasPermission } = useAuthStore.getState();
+    if (!hasPermission(PERMISSIONS.BOOKINGS_VIEW_OWN) && !hasPermission(PERMISSIONS.BOOKINGS_VIEW_ALL)) {
+      throw redirect({ to: '/dashboard' });
+    }
+  },
+});
+
+const adminBookingsRoute = createRoute({
+  getParentRoute: () => protectedLayoutRoute,
+  path: '/admin/bookings',
+  component: AdminBookingQueuePage,
+  beforeLoad: () => {
+    const { hasPermission } = useAuthStore.getState();
+    if (!hasPermission(PERMISSIONS.BOOKINGS_VIEW_ALL)) {
       throw redirect({ to: '/dashboard' });
     }
   },
@@ -208,6 +266,10 @@ const routeTree = rootRoute.addChildren([
     rolesRoute,
     locationsRoute,
     resourcesRoute,
+    bookingsRoute,
+    bookingCreateRoute,
+    bookingDetailRoute,
+    adminBookingsRoute,
     ticketsRoute,
     ticketCreateRoute,
     ticketDetailRoute,
