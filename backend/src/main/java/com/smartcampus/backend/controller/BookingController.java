@@ -4,6 +4,8 @@ import com.smartcampus.backend.dto.booking.BookingAvailabilityResponse;
 import com.smartcampus.backend.dto.booking.BookingCreateRequest;
 import com.smartcampus.backend.dto.booking.BookingRejectRequest;
 import com.smartcampus.backend.dto.booking.BookingResponse;
+import com.smartcampus.backend.dto.booking.RecurringBookingCreateRequest;
+import com.smartcampus.backend.dto.booking.RecurringBookingCreateResponse;
 import com.smartcampus.backend.dto.common.PageResponse;
 import com.smartcampus.backend.model.enums.BookingStatus;
 import com.smartcampus.backend.service.BookingService;
@@ -36,6 +38,15 @@ public class BookingController {
     @Operation(summary = "Create booking request", description = "Create a booking request. New bookings start as PENDING.")
     public ResponseEntity<BookingResponse> createBooking(@Valid @RequestBody BookingCreateRequest request) {
         return ResponseEntity.status(201).body(bookingService.createBooking(request));
+    }
+
+    @PostMapping("/recurring")
+    @PreAuthorize("hasAuthority('bookings.create')")
+    @Operation(summary = "Create recurring booking series", description = "Create weekly recurring booking requests.")
+    public ResponseEntity<RecurringBookingCreateResponse> createRecurringBooking(
+            @Valid @RequestBody RecurringBookingCreateRequest request
+    ) {
+        return ResponseEntity.status(201).body(bookingService.createRecurringBooking(request));
     }
 
     @GetMapping

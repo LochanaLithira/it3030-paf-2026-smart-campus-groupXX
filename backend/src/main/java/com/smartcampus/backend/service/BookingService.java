@@ -6,16 +6,20 @@ import com.smartcampus.backend.dto.booking.BookingRejectRequest;
 import com.smartcampus.backend.dto.booking.BookingResponse;
 import com.smartcampus.backend.dto.booking.BookingResourceSummary;
 import com.smartcampus.backend.dto.booking.BookingUserSummary;
+import com.smartcampus.backend.dto.booking.RecurringBookingCreateRequest;
+import com.smartcampus.backend.dto.booking.RecurringBookingCreateResponse;
 import com.smartcampus.backend.dto.common.PageResponse;
 import com.smartcampus.backend.exception.AppException;
 import com.smartcampus.backend.exception.BookingConflictException;
 import com.smartcampus.backend.model.Booking;
+import com.smartcampus.backend.model.RecurringBookingGroup;
 import com.smartcampus.backend.model.Resource;
 import com.smartcampus.backend.model.User;
 import com.smartcampus.backend.model.enums.BookingStatus;
 import com.smartcampus.backend.model.enums.DayOfWeek;
 import com.smartcampus.backend.model.enums.NotificationType;
 import com.smartcampus.backend.repository.BookingRepository;
+import com.smartcampus.backend.repository.RecurringBookingGroupRepository;
 import com.smartcampus.backend.repository.ResourceAvailabilityRepository;
 import com.smartcampus.backend.repository.ResourceRepository;
 import com.smartcampus.backend.repository.UserRepository;
@@ -29,7 +33,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -37,6 +46,7 @@ import java.util.UUID;
 public class BookingService {
 
     private final BookingRepository bookingRepository;
+    private final RecurringBookingGroupRepository recurringBookingGroupRepository;
     private final ResourceRepository resourceRepository;
     private final UserRepository userRepository;
     private final ResourceAvailabilityRepository availabilityRepository;
@@ -125,6 +135,84 @@ public class BookingService {
         }
 
         return toResponse(saved);
+    }
+
+    @Transactional
+    public RecurringBookingCreateResponse createRecurringBooking(RecurringBookingCreateRequest req) {
+        UUID userId = SecurityUtils.getCurrentUserId();
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND));
+        Resource resource = resourceRepository.findById(req.resourceId())
+                .orElseThrow(() -> new AppException("Resource not found", HttpStatus.NOT_FOUND));
+
+        validateRecurringRequest(req);
+        Set<java.time.DayOfWeek> allowedDays = parseWeeklyRule(req.recurrenceRule());
+        List<LocalDate> occurrenceDates = generateOccurrenceDates(req.startDate(), req.endDate(), allowedDays);
+
+        for (LocalDate date : occurrenceDates) {
+            bookingValidationService.validateCreate(
+                    resource,
+                    date,
+                    req.startTime(),
+                    req.endTime(),
+                    req.expectedAttendees()
+            );
+
+            boolean conflict = bookingValidationService.hasConflict(
+                    req.resourceId(),
+                    date,
+                    req.startTime(),
+                    req.endTime()
+            );
+            if (conflict) {
+                throw new BookingConflictException(
+                        "This resource is already booked for one or more selected recurring time slots",
+                        bookingSuggestionService.suggest(resource, date, req.startTime(), req.endTime())
+                );
+            }
+        }
+
+        RecurringBookingGroup group = recurringBookingGroupRepository.save(
+                RecurringBookingGroup.builder()
+                        .user(user)
+                        .resource(resource)
+                        .recurrenceRule(req.recurrenceRule().trim())
+                        .startDate(req.startDate())
+                        .endDate(req.endDate())
+                        .startTime(req.startTime())
+                        .endTime(req.endTime())
+                        .purpose(req.purpose())
+                        .build()
+        );
+
+        List<Booking> bookings = occurrenceDates.stream()
+                .map(date -> Booking.builder()
+                        .user(user)
+                        .resource(resource)
+                        .bookingDate(date)
+                        .startTime(req.startTime())
+                        .endTime(req.endTime())
+                        .purpose(req.purpose())
+                        .expectedAttendees(req.expectedAttendees())
+                        .status(BookingStatus.PENDING)
+                        .recurringGroupId(group.getGroupId())
+                        .build())
+                .toList();
+
+        bookingRepository.saveAll(bookings);
+
+        for (UUID adminId : userRepository.findAllAdminUserIds()) {
+            notificationService.create(
+                    adminId,
+                    "Recurring Booking Requested",
+                    user.getFullName() + " requested recurring bookings for " + resource.getName()
+                            + " from " + req.startDate() + " to " + req.endDate() + ".",
+                    NotificationType.BOOKING_CREATED,
+                    group.getGroupId()
+            );
+        }
+
+        return new RecurringBookingCreateResponse(group.getGroupId(), bookings.size());
     }
 
     @Transactional(readOnly = true)
@@ -302,5 +390,89 @@ public class BookingService {
             case SATURDAY -> DayOfWeek.SAT;
             case SUNDAY -> DayOfWeek.SUN;
         };
+    }
+
+    private void validateRecurringRequest(RecurringBookingCreateRequest req) {
+        if (req.endDate().isBefore(req.startDate())) {
+            throw new AppException("End date must be on or after start date", HttpStatus.BAD_REQUEST);
+        }
+        if (!req.endTime().isAfter(req.startTime())) {
+            throw new AppException("End time must be after start time", HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    private Set<java.time.DayOfWeek> parseWeeklyRule(String recurrenceRule) {
+        Map<String, String> parts = new HashMap<>();
+        for (String token : recurrenceRule.trim().split(";")) {
+            String[] keyValue = token.split("=", 2);
+            if (keyValue.length != 2) {
+                throw new AppException("Invalid recurrence rule format", HttpStatus.BAD_REQUEST);
+            }
+            parts.put(keyValue[0].trim().toUpperCase(), keyValue[1].trim().toUpperCase());
+        }
+
+        String frequency = parts.get("FREQ");
+        if (!"WEEKLY".equals(frequency)) {
+            throw new AppException("Only weekly recurrence is supported", HttpStatus.BAD_REQUEST);
+        }
+
+        Set<String> allowedKeys = Set.of("FREQ", "BYDAY");
+        for (String key : parts.keySet()) {
+            if (!allowedKeys.contains(key)) {
+                throw new AppException("Unsupported recurrence rule parameter: " + key, HttpStatus.BAD_REQUEST);
+            }
+        }
+
+        String byDay = parts.get("BYDAY");
+        if (byDay == null || byDay.isBlank()) {
+            return EnumSet.allOf(java.time.DayOfWeek.class);
+        }
+
+        Set<java.time.DayOfWeek> result = EnumSet.noneOf(java.time.DayOfWeek.class);
+        Set<String> seen = new HashSet<>();
+        for (String dayCode : byDay.split(",")) {
+            String normalized = dayCode.trim().toUpperCase();
+            if (normalized.isBlank()) {
+                continue;
+            }
+            if (!seen.add(normalized)) {
+                continue;
+            }
+            result.add(parseDayCode(normalized));
+        }
+        if (result.isEmpty()) {
+            throw new AppException("BYDAY must contain at least one weekday code", HttpStatus.BAD_REQUEST);
+        }
+        return result;
+    }
+
+    private java.time.DayOfWeek parseDayCode(String code) {
+        return switch (code) {
+            case "MO" -> java.time.DayOfWeek.MONDAY;
+            case "TU" -> java.time.DayOfWeek.TUESDAY;
+            case "WE" -> java.time.DayOfWeek.WEDNESDAY;
+            case "TH" -> java.time.DayOfWeek.THURSDAY;
+            case "FR" -> java.time.DayOfWeek.FRIDAY;
+            case "SA" -> java.time.DayOfWeek.SATURDAY;
+            case "SU" -> java.time.DayOfWeek.SUNDAY;
+            default -> throw new AppException("Unsupported BYDAY code: " + code, HttpStatus.BAD_REQUEST);
+        };
+    }
+
+    private List<LocalDate> generateOccurrenceDates(
+            LocalDate startDate,
+            LocalDate endDate,
+            Set<java.time.DayOfWeek> allowedDays
+    ) {
+        List<LocalDate> dates = new java.util.ArrayList<>();
+        for (LocalDate date = startDate; !date.isAfter(endDate); date = date.plusDays(1)) {
+            if (allowedDays.contains(date.getDayOfWeek())) {
+                dates.add(date);
+            }
+        }
+        if (dates.isEmpty()) {
+            throw new AppException("No recurring occurrences found in the selected date range", HttpStatus.BAD_REQUEST);
+        }
+        return dates;
     }
 }
