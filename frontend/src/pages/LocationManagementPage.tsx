@@ -1,15 +1,27 @@
 import { useMemo, useState } from 'react';
-import { Plus, RefreshCw, Trash2, Edit } from 'lucide-react';
+import { Plus, RefreshCw, Trash2, Edit, Tags } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useDeleteLocation, useLocations } from '@/hooks/useLocations';
 import { LocationEditorDialog } from '@/components/resources/LocationEditorDialog';
+import { TagManagerDialog } from '@/components/resources/TagManagerDialog';
 import type { LocationResponse } from '@/types/api';
+
+function availabilitySummary(location: LocationResponse): string {
+  const n = location.availability.length;
+  if (n === 0) return '—';
+  const first = location.availability[0];
+  return n === 1
+    ? `${first.dayOfWeek} ${first.startTime.slice(0, 5)}–${first.endTime.slice(0, 5)}`
+    : `${n} slots`;
+}
 
 export function LocationManagementPage() {
   const [search, setSearch] = useState('');
   const [editorOpen, setEditorOpen] = useState(false);
+  const [tagManagerOpen, setTagManagerOpen] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<LocationResponse | null>(null);
   const { data: locations = [], isLoading, isFetching, refetch } = useLocations({
     building: search || undefined,
@@ -44,6 +56,10 @@ export function LocationManagementPage() {
             <RefreshCw className={`mr-2 h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
+          <Button variant="outline" size="sm" onClick={() => setTagManagerOpen(true)}>
+            <Tags className="mr-2 h-4 w-4" />
+            Manage tags
+          </Button>
           <Button
             size="sm"
             onClick={() => {
@@ -72,20 +88,24 @@ export function LocationManagementPage() {
               <TableHead>Building</TableHead>
               <TableHead>Floor</TableHead>
               <TableHead>Room</TableHead>
-              <TableHead>Description</TableHead>
+              <TableHead>Capacity</TableHead>
+              <TableHead>Type</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Tags</TableHead>
+              <TableHead>Availability</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={5} className="h-20 text-center text-muted-foreground">
+                <TableCell colSpan={9} className="h-20 text-center text-muted-foreground">
                   Loading locations...
                 </TableCell>
               </TableRow>
             ) : sorted.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="h-20 text-center text-muted-foreground">
+                <TableCell colSpan={9} className="h-20 text-center text-muted-foreground">
                   No locations found.
                 </TableCell>
               </TableRow>
@@ -95,7 +115,19 @@ export function LocationManagementPage() {
                   <TableCell>{location.buildingName}</TableCell>
                   <TableCell>{location.floorNumber}</TableCell>
                   <TableCell>{location.roomNumber ?? '-'}</TableCell>
-                  <TableCell>{location.description ?? '-'}</TableCell>
+                  <TableCell>{location.capacity}</TableCell>
+                  <TableCell>{location.type}</TableCell>
+                  <TableCell>{location.status}</TableCell>
+                  <TableCell>
+                    <div className="flex flex-wrap gap-1">
+                      {location.tags.map((tag) => (
+                        <Badge key={tag.tagId} variant="secondary">
+                          {tag.tagName}
+                        </Badge>
+                      ))}
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{availabilitySummary(location)}</TableCell>
                   <TableCell className="text-right">
                     <div className="inline-flex gap-1">
                       <Button
@@ -129,6 +161,8 @@ export function LocationManagementPage() {
         onClose={() => setEditorOpen(false)}
         location={selectedLocation}
       />
+
+      <TagManagerDialog open={tagManagerOpen} onClose={() => setTagManagerOpen(false)} />
     </div>
   );
 }

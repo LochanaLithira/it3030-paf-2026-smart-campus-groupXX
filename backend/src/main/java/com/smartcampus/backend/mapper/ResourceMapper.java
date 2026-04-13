@@ -11,8 +11,6 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public interface ResourceMapper {
 
-    LocationResponse toLocationResponse(Location location);
-
     @Mapping(target = "locationId", source = "location.locationId")
     @Mapping(target = "buildingName", source = "location.buildingName")
     @Mapping(target = "floorNumber", source = "location.floorNumber")

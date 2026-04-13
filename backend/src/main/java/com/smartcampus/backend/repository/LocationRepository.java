@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
@@ -22,4 +23,38 @@ public interface LocationRepository extends JpaRepository<Location, UUID> {
             @Param("building") String building,
             @Param("floor") Integer floor
     );
+
+    @Query("""
+            SELECT DISTINCT l
+            FROM Location l
+            LEFT JOIN FETCH l.tagMappings tm
+            LEFT JOIN FETCH tm.tag
+            WHERE l.locationId IN :ids
+            """)
+    List<Location> findAllWithTagsByIds(@Param("ids") List<UUID> ids);
+
+    @Query("""
+            SELECT DISTINCT l
+            FROM Location l
+            LEFT JOIN FETCH l.availability
+            WHERE l.locationId IN :ids
+            """)
+    List<Location> findAllWithAvailabilityByIds(@Param("ids") List<UUID> ids);
+
+    @Query("""
+            SELECT DISTINCT l
+            FROM Location l
+            LEFT JOIN FETCH l.tagMappings tm
+            LEFT JOIN FETCH tm.tag
+            WHERE l.locationId = :locationId
+            """)
+    Optional<Location> findByIdWithTags(@Param("locationId") UUID locationId);
+
+    @Query("""
+            SELECT DISTINCT l
+            FROM Location l
+            LEFT JOIN FETCH l.availability
+            WHERE l.locationId = :locationId
+            """)
+    Optional<Location> findByIdWithAvailability(@Param("locationId") UUID locationId);
 }

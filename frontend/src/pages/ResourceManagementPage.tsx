@@ -2,7 +2,6 @@ import { useMemo, useState } from 'react';
 import { Edit, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import {
   Select,
   SelectContent,
@@ -12,16 +11,23 @@ import {
 } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ResourceEditorDialog } from '@/components/resources/ResourceEditorDialog';
-import { useLocations } from '@/hooks/useLocations';
 import {
   useDeleteResource,
-  useResourceTags,
   useResources,
   useUpdateResourceStatus,
 } from '@/hooks/useResources';
 import type { ResourceResponse, ResourceStatus } from '@/types/api';
 
 const STATUS_OPTIONS: ResourceStatus[] = ['ACTIVE', 'OUT_OF_SERVICE', 'UNDER_MAINTENANCE'];
+
+function resourceAvailabilitySummary(resource: ResourceResponse): string {
+  const n = resource.availability.length;
+  if (n === 0) return '—';
+  const first = resource.availability[0];
+  return n === 1
+    ? `${first.dayOfWeek} ${first.startTime.slice(0, 5)}–${first.endTime.slice(0, 5)}`
+    : `${n} slots`;
+}
 
 export function ResourceManagementPage() {
   const [search, setSearch] = useState('');
@@ -30,8 +36,6 @@ export function ResourceManagementPage() {
   const [selectedResource, setSelectedResource] = useState<ResourceResponse | null>(null);
   const [statusFilter, setStatusFilter] = useState<ResourceStatus | ''>('');
 
-  const { data: locations = [] } = useLocations();
-  const { data: tags = [] } = useResourceTags();
   const { data, isLoading, isFetching, refetch } = useResources({
     search: search || undefined,
     status: statusFilter || undefined,
@@ -110,24 +114,21 @@ export function ResourceManagementPage() {
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Location</TableHead>
-              <TableHead>Capacity</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>Tags</TableHead>
+              <TableHead>Availability</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={7} className="h-20 text-center text-muted-foreground">
+                <TableCell colSpan={4} className="h-20 text-center text-muted-foreground">
                   Loading resources...
                 </TableCell>
               </TableRow>
             ) : rows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="h-20 text-center text-muted-foreground">
+                <TableCell colSpan={4} className="h-20 text-center text-muted-foreground">
                   No resources found.
                 </TableCell>
               </TableRow>
@@ -135,13 +136,6 @@ export function ResourceManagementPage() {
               rows.map((resource) => (
                 <TableRow key={resource.resourceId}>
                   <TableCell className="font-medium">{resource.name}</TableCell>
-                  <TableCell>{resource.type}</TableCell>
-                  <TableCell>
-                    {resource.location
-                      ? `${resource.location.buildingName} F${resource.location.floorNumber}`
-                      : '-'}
-                  </TableCell>
-                  <TableCell>{resource.capacity}</TableCell>
                   <TableCell>
                     <Select
                       value={resource.status}
@@ -162,12 +156,8 @@ export function ResourceManagementPage() {
                       </SelectContent>
                     </Select>
                   </TableCell>
-                  <TableCell>
-                    <div className="flex flex-wrap gap-1">
-                      {resource.tags.map((tag) => (
-                        <Badge key={tag.tagId} variant="secondary">{tag.tagName}</Badge>
-                      ))}
-                    </div>
+                  <TableCell className="text-sm text-muted-foreground">
+                    {resourceAvailabilitySummary(resource)}
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="inline-flex gap-1">
@@ -217,8 +207,6 @@ export function ResourceManagementPage() {
         open={editorOpen}
         onClose={() => setEditorOpen(false)}
         resource={selectedResource}
-        locations={locations}
-        tags={tags}
       />
     </div>
   );

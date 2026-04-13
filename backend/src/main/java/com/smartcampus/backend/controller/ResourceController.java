@@ -92,4 +92,29 @@ public class ResourceController {
     public ResponseEntity<List<ResourceTagResponse>> listTags() {
         return ResponseEntity.ok(resourceService.listTags());
     }
+
+    @Operation(summary = "Create resource tag (admin)")
+    @PostMapping("/tags")
+    @PreAuthorize("hasAuthority('resources.create')")
+    public ResponseEntity<ResourceTagResponse> createTag(@Valid @RequestBody ResourceTagCreateRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(resourceService.createTag(request));
+    }
+
+    @Operation(summary = "Update resource tag (admin)")
+    @PutMapping("/tags/{tagId}")
+    @PreAuthorize("hasAuthority('resources.update')")
+    public ResponseEntity<ResourceTagResponse> updateTag(
+            @PathVariable UUID tagId,
+            @Valid @RequestBody ResourceTagUpdateRequest request
+    ) {
+        return ResponseEntity.ok(resourceService.updateTag(tagId, request));
+    }
+
+    @Operation(summary = "Delete resource tag (admin)")
+    @DeleteMapping("/tags/{tagId}")
+    @PreAuthorize("hasAuthority('resources.delete')")
+    public ResponseEntity<Void> deleteTag(@PathVariable UUID tagId) {
+        resourceService.deleteTag(tagId);
+        return ResponseEntity.noContent().build();
+    }
 }

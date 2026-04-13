@@ -2,6 +2,7 @@ package com.smartcampus.backend.service;
 
 import com.smartcampus.backend.dto.resource.*;
 import com.smartcampus.backend.exception.AppException;
+import com.smartcampus.backend.exception.ConflictException;
 import com.smartcampus.backend.exception.ResourceNotFoundException;
 import com.smartcampus.backend.exception.UnauthorizedException;
 import com.smartcampus.backend.mapper.ResourceMapper;
@@ -96,6 +97,35 @@ public class ResourceService {
                 .sorted(Comparator.comparing(ResourceTag::getTagName, String.CASE_INSENSITIVE_ORDER))
                 .map(resourceMapper::toTagResponse)
                 .toList();
+    }
+
+    @Transactional
+    public ResourceTagResponse createTag(ResourceTagCreateRequest request) {
+        String name = request.tagName().trim();
+        if (resourceTagRepository.findByTagNameIgnoreCase(name).isPresent()) {
+            throw new ConflictException("A tag with this name already exists");
+        }
+        ResourceTag tag = ResourceTag.builder().tagName(name).build();
+        return resourceMapper.toTagResponse(resourceTagRepository.save(tag));
+    }
+
+    @Transactional
+    public ResourceTagResponse updateTag(UUID tagId, ResourceTagUpdateRequest request) {
+        ResourceTag tag = resourceTagRepository.findById(tagId)
+                .orElseThrow(() -> new ResourceNotFoundException("Tag", tagId));
+        String name = request.tagName().trim();
+        if (resourceTagRepository.existsOtherWithNameIgnoreCase(name, tagId)) {
+            throw new ConflictException("A tag with this name already exists");
+        }
+        tag.setTagName(name);
+        return resourceMapper.toTagResponse(resourceTagRepository.save(tag));
+    }
+
+    @Transactional
+    public void deleteTag(UUID tagId) {
+        ResourceTag tag = resourceTagRepository.findById(tagId)
+                .orElseThrow(() -> new ResourceNotFoundException("Tag", tagId));
+        resourceTagRepository.delete(tag);
     }
 
     @Transactional

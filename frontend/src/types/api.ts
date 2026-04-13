@@ -123,11 +123,17 @@ export type ResourceType = 'LECTURE_HALL' | 'LAB' | 'MEETING_ROOM' | 'EQUIPMENT'
 export type ResourceStatus = 'ACTIVE' | 'OUT_OF_SERVICE' | 'UNDER_MAINTENANCE';
 export type DayOfWeek = 'MON' | 'TUE' | 'WED' | 'THU' | 'FRI' | 'SAT' | 'SUN';
 
+export type LocationResourceType = Exclude<ResourceType, 'EQUIPMENT'>;
+
 export interface LocationRequest {
   buildingName: string;
   floorNumber: number;
   roomNumber?: string;
-  description?: string;
+  capacity: number;
+  type: LocationResourceType;
+  status: ResourceStatus;
+  tagIds?: string[];
+  availability?: ResourceAvailabilityRequest[];
 }
 
 export interface LocationResponse {
@@ -135,9 +141,21 @@ export interface LocationResponse {
   buildingName: string;
   floorNumber: number;
   roomNumber: string | null;
-  description: string | null;
+  capacity: number;
+  type: ResourceType;
+  status: ResourceStatus;
+  tags: ResourceTagResponse[];
+  availability: ResourceAvailabilityResponse[];
   createdAt: string;
   updatedAt: string;
+}
+
+export interface ResourceTagCreateRequest {
+  tagName: string;
+}
+
+export interface ResourceTagUpdateRequest {
+  tagName: string;
 }
 
 export interface ResourceAvailabilityRequest {
