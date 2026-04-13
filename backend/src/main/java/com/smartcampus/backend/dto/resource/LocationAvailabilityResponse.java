@@ -6,7 +6,7 @@ import com.smartcampus.backend.model.enums.DayOfWeek;
 import java.time.LocalTime;
 import java.util.UUID;
 
-public record ResourceAvailabilityResponse(
+public record LocationAvailabilityResponse(
         UUID availId,
         AvailabilityRecurrenceType recurrenceType,
         DayOfWeek dayOfWeek,

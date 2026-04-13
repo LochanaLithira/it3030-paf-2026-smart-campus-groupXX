@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useDeleteLocation, useLocations } from '@/hooks/useLocations';
 import { LocationEditorDialog } from '@/components/resources/LocationEditorDialog';
+import { useCreateResourceTag, useDeleteResourceTag, useResourceTags, useUpdateResourceTag } from '@/hooks/useResources';
 import type { LocationResponse } from '@/types/api';
 
 export function LocationManagementPage() {
@@ -14,7 +15,12 @@ export function LocationManagementPage() {
   const { data: locations = [], isLoading, isFetching, refetch } = useLocations({
     building: search || undefined,
   });
+  const { data: tags = [] } = useResourceTags();
   const deleteLocation = useDeleteLocation();
+  const createTag = useCreateResourceTag();
+  const updateTag = useUpdateResourceTag();
+  const deleteTag = useDeleteResourceTag();
+  const [newTagName, setNewTagName] = useState('');
 
   const sorted = useMemo(
     () =>
@@ -72,20 +78,24 @@ export function LocationManagementPage() {
               <TableHead>Building</TableHead>
               <TableHead>Floor</TableHead>
               <TableHead>Room</TableHead>
-              <TableHead>Description</TableHead>
+              <TableHead>Type</TableHead>
+              <TableHead>Capacity</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Tags</TableHead>
+              <TableHead>Availability</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={5} className="h-20 text-center text-muted-foreground">
+                <TableCell colSpan={9} className="h-20 text-center text-muted-foreground">
                   Loading locations...
                 </TableCell>
               </TableRow>
             ) : sorted.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="h-20 text-center text-muted-foreground">
+                <TableCell colSpan={9} className="h-20 text-center text-muted-foreground">
                   No locations found.
                 </TableCell>
               </TableRow>
@@ -95,7 +105,11 @@ export function LocationManagementPage() {
                   <TableCell>{location.buildingName}</TableCell>
                   <TableCell>{location.floorNumber}</TableCell>
                   <TableCell>{location.roomNumber ?? '-'}</TableCell>
-                  <TableCell>{location.description ?? '-'}</TableCell>
+                  <TableCell>{location.type}</TableCell>
+                  <TableCell>{location.capacity}</TableCell>
+                  <TableCell>{location.status}</TableCell>
+                  <TableCell>{location.tags.map((tag) => tag.tagName).join(', ') || '-'}</TableCell>
+                  <TableCell>{location.availability.length}</TableCell>
                   <TableCell className="text-right">
                     <div className="inline-flex gap-1">
                       <Button
@@ -124,10 +138,54 @@ export function LocationManagementPage() {
         </Table>
       </div>
 
+      <div className="rounded-md border p-4 space-y-3">
+        <h2 className="text-lg font-semibold">Tag Management</h2>
+        <div className="flex gap-2">
+          <Input
+            placeholder="New tag name"
+            value={newTagName}
+            onChange={(event) => setNewTagName(event.target.value)}
+          />
+          <Button
+            onClick={() => {
+              const trimmed = newTagName.trim();
+              if (!trimmed) return;
+              createTag.mutate({ tagName: trimmed }, { onSuccess: () => setNewTagName('') });
+            }}
+            disabled={createTag.isPending}
+          >
+            Add Tag
+          </Button>
+        </div>
+        <div className="space-y-2">
+          {tags.map((tag) => (
+            <div key={tag.tagId} className="flex items-center gap-2">
+              <Input
+                defaultValue={tag.tagName}
+                onBlur={(event) => {
+                  const next = event.target.value.trim();
+                  if (!next || next === tag.tagName) return;
+                  updateTag.mutate({ tagId: tag.tagId, request: { tagName: next } });
+                }}
+              />
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => deleteTag.mutate(tag.tagId)}
+                disabled={deleteTag.isPending}
+              >
+                <Trash2 className="h-4 w-4 text-destructive" />
+              </Button>
+            </div>
+          ))}
+        </div>
+      </div>
+
       <LocationEditorDialog
         open={editorOpen}
         onClose={() => setEditorOpen(false)}
         location={selectedLocation}
+        tags={tags}
       />
     </div>
   );
