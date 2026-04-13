@@ -2,10 +2,12 @@ package com.smartcampus.backend.service;
 
 import com.smartcampus.backend.dto.resource.*;
 import com.smartcampus.backend.exception.AppException;
+import com.smartcampus.backend.exception.ConflictException;
 import com.smartcampus.backend.exception.ResourceNotFoundException;
 import com.smartcampus.backend.exception.UnauthorizedException;
 import com.smartcampus.backend.mapper.ResourceMapper;
 import com.smartcampus.backend.model.*;
+import com.smartcampus.backend.model.enums.AvailabilityRecurrenceType;
 import com.smartcampus.backend.model.enums.ResourceStatus;
 import com.smartcampus.backend.model.enums.ResourceType;
 import com.smartcampus.backend.repository.LocationRepository;
@@ -99,6 +101,44 @@ public class ResourceService {
     }
 
     @Transactional
+    public ResourceTagResponse createTag(ResourceTagRequest request) {
+        String normalized = normalizeTagName(request.tagName());
+        if (resourceTagRepository.existsByTagNameIgnoreCase(normalized)) {
+            throw new ConflictException("Tag already exists: " + normalized);
+        }
+
+        ResourceTag saved = resourceTagRepository.save(
+                ResourceTag.builder().tagName(normalized).build()
+        );
+        return resourceMapper.toTagResponse(saved);
+    }
+
+    @Transactional
+    public ResourceTagResponse updateTag(UUID tagId, ResourceTagRequest request) {
+        ResourceTag existing = findTagOrThrow(tagId);
+        String normalized = normalizeTagName(request.tagName());
+        resourceTagRepository.findByTagNameIgnoreCase(normalized)
+                .filter(tag -> !tag.getTagId().equals(tagId))
+                .ifPresent(tag -> {
+                    throw new ConflictException("Tag already exists: " + normalized);
+                });
+
+        existing.setTagName(normalized);
+        return resourceMapper.toTagResponse(resourceTagRepository.save(existing));
+    }
+
+    @Transactional
+    public void deleteTag(UUID tagId) {
+        ResourceTag existing = findTagOrThrow(tagId);
+        long inResourceUse = resourceTagRepository.countResourceMappings(tagId);
+        long inLocationUse = resourceTagRepository.countLocationMappings(tagId);
+        if (inResourceUse > 0 || inLocationUse > 0) {
+            throw new ConflictException("Tag cannot be deleted because it is already in use");
+        }
+        resourceTagRepository.delete(existing);
+    }
+
+    @Transactional
     public ResourceResponse createResource(ResourceRequest request) {
         validateAvailability(request.availability());
 
@@ -175,7 +215,9 @@ public class ResourceService {
         for (ResourceAvailabilityRequest slot : availability) {
             ResourceAvailability mapped = ResourceAvailability.builder()
                     .resource(resource)
+                    .recurrenceType(slot.recurrenceType())
                     .dayOfWeek(slot.dayOfWeek())
+                    .dayOfMonth(slot.dayOfMonth())
                     .startTime(slot.startTime())
                     .endTime(slot.endTime())
                     .build();
@@ -289,11 +331,36 @@ public class ResourceService {
                 throw new AppException("Availability end time must be after start time",
                         HttpStatus.UNPROCESSABLE_ENTITY);
             }
-            String key = slot.dayOfWeek() + "|" + slot.startTime() + "|" + slot.endTime();
+            if (slot.recurrenceType() == AvailabilityRecurrenceType.WEEKLY && slot.dayOfWeek() == null) {
+                throw new AppException("Weekly availability requires day of week", HttpStatus.UNPROCESSABLE_ENTITY);
+            }
+            if (slot.recurrenceType() == AvailabilityRecurrenceType.MONTHLY && slot.dayOfMonth() == null) {
+                throw new AppException("Monthly availability requires day of month", HttpStatus.UNPROCESSABLE_ENTITY);
+            }
+            if (slot.recurrenceType() != AvailabilityRecurrenceType.WEEKLY && slot.dayOfWeek() != null) {
+                throw new AppException("Day of week is only allowed for weekly availability", HttpStatus.UNPROCESSABLE_ENTITY);
+            }
+            if (slot.recurrenceType() != AvailabilityRecurrenceType.MONTHLY && slot.dayOfMonth() != null) {
+                throw new AppException("Day of month is only allowed for monthly availability", HttpStatus.UNPROCESSABLE_ENTITY);
+            }
+            String key = slot.recurrenceType() + "|" + slot.dayOfWeek() + "|" + slot.dayOfMonth() + "|" + slot.startTime() + "|" + slot.endTime();
             if (!uniqueDayAndTime.add(key)) {
                 throw new AppException("Duplicate availability slots are not allowed",
                         HttpStatus.UNPROCESSABLE_ENTITY);
             }
         }
+    }
+
+    private ResourceTag findTagOrThrow(UUID tagId) {
+        return resourceTagRepository.findById(tagId)
+                .orElseThrow(() -> new ResourceNotFoundException("Tag", tagId));
+    }
+
+    private String normalizeTagName(String tagName) {
+        String normalized = trimToNull(tagName);
+        if (normalized == null) {
+            throw new AppException("Tag name is required", HttpStatus.BAD_REQUEST);
+        }
+        return normalized;
     }
 }

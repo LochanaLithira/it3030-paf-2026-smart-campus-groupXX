@@ -123,6 +123,7 @@ export interface NotificationResponse {
 export type ResourceType = 'LECTURE_HALL' | 'LAB' | 'MEETING_ROOM' | 'EQUIPMENT';
 export type ResourceStatus = 'ACTIVE' | 'OUT_OF_SERVICE' | 'UNDER_MAINTENANCE';
 export type DayOfWeek = 'MON' | 'TUE' | 'WED' | 'THU' | 'FRI' | 'SAT' | 'SUN';
+export type AvailabilityRecurrenceType = 'DAILY' | 'WEEKLY' | 'MONTHLY';
 
 // -- Bookings ----------------------------------------------------------------
 
@@ -178,7 +179,28 @@ export interface LocationRequest {
   buildingName: string;
   floorNumber: number;
   roomNumber?: string;
-  description?: string;
+  capacity: number;
+  type: Exclude<ResourceType, 'EQUIPMENT'>;
+  status: ResourceStatus;
+  tagIds?: string[];
+  availability?: LocationAvailabilityRequest[];
+}
+
+export interface LocationAvailabilityRequest {
+  recurrenceType: AvailabilityRecurrenceType;
+  dayOfWeek?: DayOfWeek;
+  dayOfMonth?: number;
+  startTime: string;
+  endTime: string;
+}
+
+export interface LocationAvailabilityResponse {
+  availId: string;
+  recurrenceType: AvailabilityRecurrenceType;
+  dayOfWeek: DayOfWeek | null;
+  dayOfMonth: number | null;
+  startTime: string;
+  endTime: string;
 }
 
 export interface LocationResponse {
@@ -186,26 +208,38 @@ export interface LocationResponse {
   buildingName: string;
   floorNumber: number;
   roomNumber: string | null;
-  description: string | null;
+  capacity: number;
+  type: Exclude<ResourceType, 'EQUIPMENT'>;
+  status: ResourceStatus;
+  tags: ResourceTagResponse[];
+  availability: LocationAvailabilityResponse[];
   createdAt: string;
   updatedAt: string;
 }
 
 export interface ResourceAvailabilityRequest {
-  dayOfWeek: DayOfWeek;
+  recurrenceType: AvailabilityRecurrenceType;
+  dayOfWeek?: DayOfWeek;
+  dayOfMonth?: number;
   startTime: string;
   endTime: string;
 }
 
 export interface ResourceAvailabilityResponse {
   availId: string;
-  dayOfWeek: DayOfWeek;
+  recurrenceType: AvailabilityRecurrenceType;
+  dayOfWeek: DayOfWeek | null;
+  dayOfMonth: number | null;
   startTime: string;
   endTime: string;
 }
 
 export interface ResourceTagResponse {
   tagId: string;
+  tagName: string;
+}
+
+export interface ResourceTagRequest {
   tagName: string;
 }
 

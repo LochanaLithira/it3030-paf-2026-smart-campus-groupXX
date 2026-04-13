@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useFieldArray, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Plus, Trash2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -13,7 +13,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -23,11 +22,11 @@ import {
 } from '@/components/ui/select';
 import { useCreateResource, useUpdateResource } from '@/hooks/useResources';
 import type {
+  AvailabilityRecurrenceType,
   DayOfWeek,
   LocationResponse,
   ResourceRequest,
   ResourceResponse,
-  ResourceTagResponse,
 } from '@/types/api';
 
 const schema = z
@@ -43,34 +42,38 @@ const schema = z
       z.literal(''),
       z.undefined()
     ]),
-    dayOfWeek: z.enum(['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']).optional(),
-    startTime: z.string().optional().or(z.literal('')),
-    endTime: z.string().optional().or(z.literal('')),
-    tagIds: z.array(z.string()),
+    availability: z.array(z.object({
+      recurrenceType: z.enum(['DAILY', 'WEEKLY', 'MONTHLY']),
+      dayOfWeek: z.enum(['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']).optional(),
+      dayOfMonth: z.number().int().min(1).max(31).optional(),
+      startTime: z.string().min(1, 'Start time is required'),
+      endTime: z.string().min(1, 'End time is required'),
+    })),
   })
   .superRefine((values, ctx) => {
-    const hasDay = Boolean(values.dayOfWeek);
-    const hasStart = Boolean(values.startTime);
-    const hasEnd = Boolean(values.endTime);
-    const anyAvailabilityValue = hasDay || hasStart || hasEnd;
-    const allAvailabilityValues = hasDay && hasStart && hasEnd;
-
-    if (anyAvailabilityValue && !allAvailabilityValues) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'Provide day, start, and end time together',
-        path: ['dayOfWeek'],
-      });
-      return;
-    }
-
-    if (allAvailabilityValues && values.startTime! >= values.endTime!) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'End time must be after start time',
-        path: ['endTime'],
-      });
-    }
+    values.availability.forEach((slot, index) => {
+      if (slot.recurrenceType === 'WEEKLY' && !slot.dayOfWeek) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Weekly slots require day of week',
+          path: ['availability', index, 'dayOfWeek'],
+        });
+      }
+      if (slot.recurrenceType === 'MONTHLY' && !slot.dayOfMonth) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Monthly slots require day of month',
+          path: ['availability', index, 'dayOfMonth'],
+        });
+      }
+      if (slot.startTime >= slot.endTime) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'End time must be after start time',
+          path: ['availability', index, 'endTime'],
+        });
+      }
+    });
   });
 
 type FormValues = z.infer<typeof schema>;
@@ -80,7 +83,6 @@ interface ResourceEditorDialogProps {
   onClose: () => void;
   resource?: ResourceResponse | null;
   locations: LocationResponse[];
-  tags: ResourceTagResponse[];
 }
 
 export function ResourceEditorDialog({
@@ -88,7 +90,6 @@ export function ResourceEditorDialog({
   onClose,
   resource,
   locations,
-  tags,
 }: ResourceEditorDialogProps) {
   const createResource = useCreateResource();
   const updateResource = useUpdateResource();
@@ -100,29 +101,29 @@ export function ResourceEditorDialog({
     reset,
     setValue,
     watch,
+    control,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
       name: '',
-      type: 'LECTURE_HALL',
+      type: 'EQUIPMENT',
       capacity: 1,
       locationId: '',
       status: 'ACTIVE',
       description: '',
       imageUrl: '',
-      dayOfWeek: undefined,
-      startTime: '',
-      endTime: '',
-      tagIds: [],
+      availability: [],
     },
   });
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: 'availability',
+  });
 
-  const selectedTagIds = watch('tagIds');
   const selectedLocationId = watch('locationId');
   const selectedType = watch('type');
   const selectedStatus = watch('status');
-  const selectedDayOfWeek = watch('dayOfWeek');
 
   useEffect(() => {
     if (!open) {
@@ -132,21 +133,17 @@ export function ResourceEditorDialog({
     if (!resource) {
       reset({
         name: '',
-        type: 'LECTURE_HALL',
+        type: 'EQUIPMENT',
         capacity: 1,
         locationId: '',
         status: 'ACTIVE',
         description: '',
         imageUrl: '',
-        dayOfWeek: undefined,
-        startTime: '',
-        endTime: '',
-        tagIds: [],
+        availability: [],
       });
       return;
     }
 
-    const firstAvailability = resource.availability[0];
     reset({
       name: resource.name,
       type: resource.type,
@@ -155,26 +152,17 @@ export function ResourceEditorDialog({
       status: resource.status,
       description: resource.description ?? '',
       imageUrl: resource.imageUrl ?? '',
-      dayOfWeek: firstAvailability?.dayOfWeek as DayOfWeek | undefined,
-      startTime: firstAvailability?.startTime ?? '',
-      endTime: firstAvailability?.endTime ?? '',
-      tagIds: resource.tags.map((tag) => tag.tagId),
+      availability: resource.availability.map((slot) => ({
+        recurrenceType: slot.recurrenceType,
+        dayOfWeek: slot.dayOfWeek ?? undefined,
+        dayOfMonth: slot.dayOfMonth ?? undefined,
+        startTime: slot.startTime,
+        endTime: slot.endTime,
+      })),
     });
   }, [open, resource, reset]);
 
-  const toggleTag = (tagId: string, checked: boolean) => {
-    const next = checked
-      ? [...selectedTagIds, tagId]
-      : selectedTagIds.filter((id) => id !== tagId);
-    setValue('tagIds', next, { shouldValidate: true, shouldDirty: true });
-  };
-
   const onSubmit = (values: FormValues) => {
-    const availability =
-      values.dayOfWeek && values.startTime && values.endTime
-        ? [{ dayOfWeek: values.dayOfWeek, startTime: values.startTime, endTime: values.endTime }]
-        : [];
-
     const payload: ResourceRequest = {
       name: values.name.trim(),
       type: values.type,
@@ -182,18 +170,14 @@ export function ResourceEditorDialog({
       locationId: values.locationId || undefined,
       status: values.status,
       description: values.description?.trim() || undefined,
-      imageUrl: values.imageUrl?.trim() || undefined,  // Transform empty string to undefined
-      tagIds: values.tagIds,
-      availability,
+      imageUrl: values.imageUrl?.trim() || undefined,
+      availability: values.availability,
     };
 
     if (!resource) {
       createResource.mutate(payload, { onSuccess: onClose });
       return;
     }
-    // NOTE: This updates the resource but only supports editing/replacing with a single availability slot.
-    // If the resource has multiple availability slots, only the first is shown for editing,
-    // and updating will replace all slots with just one. Full multi-slot editing should be added.
     updateResource.mutate(
       { resourceId: resource.resourceId, request: payload },
       { onSuccess: onClose }
@@ -279,45 +263,95 @@ export function ResourceEditorDialog({
           </div>
 
           <div className="space-y-2">
-            <Label>Tags</Label>
-            <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-              {tags.map((tag) => (
-                <label key={tag.tagId} className="flex items-center gap-2 text-sm">
-                  <Checkbox
-                    checked={selectedTagIds.includes(tag.tagId)}
-                    onCheckedChange={(checked) => toggleTag(tag.tagId, Boolean(checked))}
-                  />
-                  {tag.tagName}
-                </label>
-              ))}
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Availability (optional, single slot)</Label>
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-              <Select
-                value={selectedDayOfWeek || null}
-                onValueChange={(value) => setValue('dayOfWeek', (value as DayOfWeek) ?? undefined)}
+            <div className="flex items-center justify-between">
+              <Label>Availability</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => append({ recurrenceType: 'WEEKLY', dayOfWeek: 'MON', dayOfMonth: undefined, startTime: '', endTime: '' })}
               >
-                <SelectTrigger><SelectValue placeholder="Day" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="MON">MON</SelectItem>
-                  <SelectItem value="TUE">TUE</SelectItem>
-                  <SelectItem value="WED">WED</SelectItem>
-                  <SelectItem value="THU">THU</SelectItem>
-                  <SelectItem value="FRI">FRI</SelectItem>
-                  <SelectItem value="SAT">SAT</SelectItem>
-                  <SelectItem value="SUN">SUN</SelectItem>
-                </SelectContent>
-              </Select>
-              <Input type="time" {...register('startTime')} />
-              <Input type="time" {...register('endTime')} />
+                <Plus className="mr-2 h-4 w-4" />
+                Add Slot
+              </Button>
             </div>
-            {(errors.dayOfWeek || errors.endTime) && (
-              <p className="text-xs text-destructive">
-                {errors.dayOfWeek?.message || errors.endTime?.message}
-              </p>
+            {fields.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No availability slots added.</p>
+            ) : (
+              <div className="space-y-2">
+                {fields.map((field, index) => (
+                  <div key={field.id} className="grid grid-cols-1 gap-2 md:grid-cols-[1fr_1fr_1fr_1fr_auto]">
+                    <Select
+                      value={watch(`availability.${index}.recurrenceType`)}
+                      onValueChange={(value) => {
+                        const nextType = value as AvailabilityRecurrenceType;
+                        setValue(`availability.${index}.recurrenceType`, nextType, { shouldDirty: true, shouldValidate: true });
+                        if (nextType === 'WEEKLY') {
+                          setValue(`availability.${index}.dayOfWeek`, 'MON', { shouldDirty: true, shouldValidate: true });
+                          setValue(`availability.${index}.dayOfMonth`, undefined, { shouldDirty: true, shouldValidate: true });
+                        } else if (nextType === 'MONTHLY') {
+                          setValue(`availability.${index}.dayOfWeek`, undefined, { shouldDirty: true, shouldValidate: true });
+                          setValue(`availability.${index}.dayOfMonth`, 1, { shouldDirty: true, shouldValidate: true });
+                        } else {
+                          setValue(`availability.${index}.dayOfWeek`, undefined, { shouldDirty: true, shouldValidate: true });
+                          setValue(`availability.${index}.dayOfMonth`, undefined, { shouldDirty: true, shouldValidate: true });
+                        }
+                      }}
+                    >
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="DAILY">Daily</SelectItem>
+                        <SelectItem value="WEEKLY">Weekly</SelectItem>
+                        <SelectItem value="MONTHLY">Monthly</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {watch(`availability.${index}.recurrenceType`) === 'WEEKLY' ? (
+                      <Select
+                        value={watch(`availability.${index}.dayOfWeek`) || null}
+                        onValueChange={(value) =>
+                          setValue(`availability.${index}.dayOfWeek`, value as DayOfWeek, { shouldDirty: true, shouldValidate: true })
+                        }
+                      >
+                        <SelectTrigger><SelectValue placeholder="Day" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="MON">MON</SelectItem>
+                          <SelectItem value="TUE">TUE</SelectItem>
+                          <SelectItem value="WED">WED</SelectItem>
+                          <SelectItem value="THU">THU</SelectItem>
+                          <SelectItem value="FRI">FRI</SelectItem>
+                          <SelectItem value="SAT">SAT</SelectItem>
+                          <SelectItem value="SUN">SUN</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    ) : watch(`availability.${index}.recurrenceType`) === 'MONTHLY' ? (
+                      <Input
+                        type="number"
+                        min={1}
+                        max={31}
+                        value={watch(`availability.${index}.dayOfMonth`) ?? ''}
+                        onChange={(event) =>
+                          setValue(
+                            `availability.${index}.dayOfMonth`,
+                            event.target.value === '' ? undefined : Number(event.target.value),
+                            { shouldDirty: true, shouldValidate: true }
+                          )
+                        }
+                        placeholder="Day (1-31)"
+                      />
+                    ) : (
+                      <Input value="Every day" disabled />
+                    )}
+                    <Input type="time" {...register(`availability.${index}.startTime`)} />
+                    <Input type="time" {...register(`availability.${index}.endTime`)} />
+                    <Button type="button" size="icon-sm" variant="ghost" onClick={() => remove(index)}>
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+            {errors.availability && (
+              <p className="text-xs text-destructive">Please fix availability entries.</p>
             )}
           </div>
 

@@ -1,7 +1,11 @@
 package com.smartcampus.backend.model;
 
+import com.smartcampus.backend.model.enums.ResourceStatus;
+import com.smartcampus.backend.model.enums.ResourceType;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -38,8 +42,18 @@ public class Location {
     @Column(name = "room_number", length = 20)
     private String roomNumber;
 
-    @Column(name = "description", columnDefinition = "TEXT")
-    private String description;
+    @Column(name = "capacity", nullable = false)
+    private Integer capacity;
+
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "type", nullable = false)
+    private ResourceType type;
+
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "status", nullable = false)
+    private ResourceStatus status;
 
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -52,4 +66,12 @@ public class Location {
     @OneToMany(mappedBy = "location", fetch = FetchType.LAZY)
     @Builder.Default
     private List<Resource> resources = new ArrayList<>();
+
+    @OneToMany(mappedBy = "location", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<LocationAvailability> availability = new ArrayList<>();
+
+    @OneToMany(mappedBy = "location", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<LocationTagMap> tagMappings = new ArrayList<>();
 }

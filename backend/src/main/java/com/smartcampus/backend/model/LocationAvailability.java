@@ -11,13 +11,13 @@ import java.time.LocalTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "resource_availability")
+@Table(name = "location_availability")
 @Getter
 @Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ResourceAvailability {
+public class LocationAvailability {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -25,8 +25,8 @@ public class ResourceAvailability {
     private UUID availId;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "resource_id", nullable = false)
-    private Resource resource;
+    @JoinColumn(name = "location_id", nullable = false)
+    private Location location;
 
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)

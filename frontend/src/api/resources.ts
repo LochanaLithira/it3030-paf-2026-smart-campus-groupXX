@@ -4,6 +4,7 @@ import type {
   ResourceRequest,
   ResourceResponse,
   ResourcesListParams,
+  ResourceTagRequest,
   ResourceTagResponse,
   UpdateResourceStatusRequest,
 } from '@/types/api';
@@ -41,4 +42,14 @@ export const resourcesApi = {
 
   listTags: async (): Promise<ResourceTagResponse[]> =>
     apiClient.get('resources/tags').json<ResourceTagResponse[]>(),
+
+  createTag: async (request: ResourceTagRequest): Promise<ResourceTagResponse> =>
+    apiClient.post('resources/tags', { json: request }).json<ResourceTagResponse>(),
+
+  updateTag: async (tagId: string, request: ResourceTagRequest): Promise<ResourceTagResponse> =>
+    apiClient.put(`resources/tags/${tagId}`, { json: request }).json<ResourceTagResponse>(),
+
+  deleteTag: async (tagId: string): Promise<void> => {
+    await apiClient.delete(`resources/tags/${tagId}`);
+  },
 };

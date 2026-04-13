@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { HTTPError } from 'ky';
 import { toast } from 'sonner';
 import { resourcesApi } from '@/api/resources';
-import type { ResourceRequest, ResourcesListParams, ResourceStatus } from '@/types/api';
+import type { ResourceRequest, ResourcesListParams, ResourceStatus, ResourceTagRequest } from '@/types/api';
 
 export const resourceKeys = {
   all: ['resources'] as const,
@@ -88,5 +88,44 @@ export function useDeleteResource() {
       toast.success('Resource deleted');
     },
     onError: async (error) => toast.error(await extractApiErrorMessage(error, 'Failed to delete resource')),
+  });
+}
+
+export function useCreateResourceTag() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (request: ResourceTagRequest) => resourcesApi.createTag(request),
+    onSuccess: (created) => {
+      qc.invalidateQueries({ queryKey: resourceKeys.tags() });
+      toast.success(`Tag ${created.tagName} created`);
+    },
+    onError: async (error) => toast.error(await extractApiErrorMessage(error, 'Failed to create tag')),
+  });
+}
+
+export function useUpdateResourceTag() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ tagId, request }: { tagId: string; request: ResourceTagRequest }) =>
+      resourcesApi.updateTag(tagId, request),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: resourceKeys.tags() });
+      qc.invalidateQueries({ queryKey: resourceKeys.lists() });
+      toast.success('Tag updated');
+    },
+    onError: async (error) => toast.error(await extractApiErrorMessage(error, 'Failed to update tag')),
+  });
+}
+
+export function useDeleteResourceTag() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (tagId: string) => resourcesApi.deleteTag(tagId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: resourceKeys.tags() });
+      qc.invalidateQueries({ queryKey: resourceKeys.lists() });
+      toast.success('Tag deleted');
+    },
+    onError: async (error) => toast.error(await extractApiErrorMessage(error, 'Failed to delete tag')),
   });
 }

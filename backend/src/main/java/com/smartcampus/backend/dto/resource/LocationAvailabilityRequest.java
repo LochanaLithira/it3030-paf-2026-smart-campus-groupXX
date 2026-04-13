@@ -8,7 +8,7 @@ import jakarta.validation.constraints.Min;
 
 import java.time.LocalTime;
 
-public record ResourceAvailabilityRequest(
+public record LocationAvailabilityRequest(
         @NotNull(message = "Recurrence type is required")
         AvailabilityRecurrenceType recurrenceType,
 
