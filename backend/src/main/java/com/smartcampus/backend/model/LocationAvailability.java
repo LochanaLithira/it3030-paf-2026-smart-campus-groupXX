@@ -1,5 +1,6 @@
 package com.smartcampus.backend.model;
 
+import com.smartcampus.backend.model.enums.AvailabilityRecurrenceType;
 import com.smartcampus.backend.model.enums.DayOfWeek;
 import jakarta.persistence.*;
 import lombok.*;
@@ -29,8 +30,16 @@ public class LocationAvailability {
 
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
-    @Column(name = "day_of_week", nullable = false)
+    @Column(name = "recurrence_type", nullable = false)
+    private AvailabilityRecurrenceType recurrenceType;
+
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "day_of_week")
     private DayOfWeek dayOfWeek;
+
+    @Column(name = "day_of_month")
+    private Integer dayOfMonth;
 
     @Column(name = "start_time", nullable = false)
     private LocalTime startTime;

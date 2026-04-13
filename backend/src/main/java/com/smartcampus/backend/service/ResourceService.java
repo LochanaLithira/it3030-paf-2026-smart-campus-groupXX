@@ -7,6 +7,7 @@ import com.smartcampus.backend.exception.ResourceNotFoundException;
 import com.smartcampus.backend.exception.UnauthorizedException;
 import com.smartcampus.backend.mapper.ResourceMapper;
 import com.smartcampus.backend.model.*;
+import com.smartcampus.backend.model.enums.AvailabilityRecurrenceType;
 import com.smartcampus.backend.model.enums.ResourceStatus;
 import com.smartcampus.backend.model.enums.ResourceType;
 import com.smartcampus.backend.repository.LocationRepository;
@@ -214,7 +215,9 @@ public class ResourceService {
         for (ResourceAvailabilityRequest slot : availability) {
             ResourceAvailability mapped = ResourceAvailability.builder()
                     .resource(resource)
+                    .recurrenceType(slot.recurrenceType())
                     .dayOfWeek(slot.dayOfWeek())
+                    .dayOfMonth(slot.dayOfMonth())
                     .startTime(slot.startTime())
                     .endTime(slot.endTime())
                     .build();
@@ -328,7 +331,19 @@ public class ResourceService {
                 throw new AppException("Availability end time must be after start time",
                         HttpStatus.UNPROCESSABLE_ENTITY);
             }
-            String key = slot.dayOfWeek() + "|" + slot.startTime() + "|" + slot.endTime();
+            if (slot.recurrenceType() == AvailabilityRecurrenceType.WEEKLY && slot.dayOfWeek() == null) {
+                throw new AppException("Weekly availability requires day of week", HttpStatus.UNPROCESSABLE_ENTITY);
+            }
+            if (slot.recurrenceType() == AvailabilityRecurrenceType.MONTHLY && slot.dayOfMonth() == null) {
+                throw new AppException("Monthly availability requires day of month", HttpStatus.UNPROCESSABLE_ENTITY);
+            }
+            if (slot.recurrenceType() != AvailabilityRecurrenceType.WEEKLY && slot.dayOfWeek() != null) {
+                throw new AppException("Day of week is only allowed for weekly availability", HttpStatus.UNPROCESSABLE_ENTITY);
+            }
+            if (slot.recurrenceType() != AvailabilityRecurrenceType.MONTHLY && slot.dayOfMonth() != null) {
+                throw new AppException("Day of month is only allowed for monthly availability", HttpStatus.UNPROCESSABLE_ENTITY);
+            }
+            String key = slot.recurrenceType() + "|" + slot.dayOfWeek() + "|" + slot.dayOfMonth() + "|" + slot.startTime() + "|" + slot.endTime();
             if (!uniqueDayAndTime.add(key)) {
                 throw new AppException("Duplicate availability slots are not allowed",
                         HttpStatus.UNPROCESSABLE_ENTITY);

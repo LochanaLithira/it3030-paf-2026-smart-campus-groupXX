@@ -22,7 +22,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useCreateLocation, useUpdateLocation } from '@/hooks/useLocations';
-import type { DayOfWeek, LocationResponse, ResourceTagResponse } from '@/types/api';
+import type { AvailabilityRecurrenceType, DayOfWeek, LocationResponse, ResourceTagResponse } from '@/types/api';
 
 const schema = z.object({
   buildingName: z.string().min(1, 'Building name is required').max(100),
@@ -36,12 +36,28 @@ const schema = z.object({
   status: z.enum(['ACTIVE', 'OUT_OF_SERVICE', 'UNDER_MAINTENANCE']),
   tagIds: z.array(z.string()),
   availability: z.array(z.object({
-    dayOfWeek: z.enum(['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']),
+    recurrenceType: z.enum(['DAILY', 'WEEKLY', 'MONTHLY']),
+    dayOfWeek: z.enum(['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']).optional(),
+    dayOfMonth: z.number().int().min(1).max(31).optional(),
     startTime: z.string().min(1, 'Start time is required'),
     endTime: z.string().min(1, 'End time is required'),
   })),
 }).superRefine((values, ctx) => {
   values.availability.forEach((slot, index) => {
+    if (slot.recurrenceType === 'WEEKLY' && !slot.dayOfWeek) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Weekly slots require day of week',
+        path: ['availability', index, 'dayOfWeek'],
+      });
+    }
+    if (slot.recurrenceType === 'MONTHLY' && !slot.dayOfMonth) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Monthly slots require day of month',
+        path: ['availability', index, 'dayOfMonth'],
+      });
+    }
     if (slot.startTime >= slot.endTime) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -114,7 +130,9 @@ export function LocationEditorDialog({ open, onClose, location, tags }: Location
         status: location.status,
         tagIds: location.tags.map((tag) => tag.tagId),
         availability: location.availability.map((slot) => ({
-          dayOfWeek: slot.dayOfWeek,
+          recurrenceType: slot.recurrenceType,
+          dayOfWeek: slot.dayOfWeek ?? undefined,
+          dayOfMonth: slot.dayOfMonth ?? undefined,
           startTime: slot.startTime,
           endTime: slot.endTime,
         })),
@@ -235,12 +253,12 @@ export function LocationEditorDialog({ open, onClose, location, tags }: Location
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label>Availability (weekly)</Label>
+              <Label>Availability</Label>
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => append({ dayOfWeek: 'MON', startTime: '', endTime: '' })}
+                onClick={() => append({ recurrenceType: 'WEEKLY', dayOfWeek: 'MON', dayOfMonth: undefined, startTime: '', endTime: '' })}
               >
                 <Plus className="mr-2 h-4 w-4" />
                 Add Slot
@@ -251,9 +269,34 @@ export function LocationEditorDialog({ open, onClose, location, tags }: Location
             ) : (
               <div className="space-y-2">
                 {fields.map((field, index) => (
-                  <div key={field.id} className="grid grid-cols-1 gap-2 md:grid-cols-[1fr_1fr_1fr_auto]">
+                  <div key={field.id} className="grid grid-cols-1 gap-2 md:grid-cols-[1fr_1fr_1fr_1fr_auto]">
                     <Select
-                      value={watch(`availability.${index}.dayOfWeek`)}
+                      value={watch(`availability.${index}.recurrenceType`)}
+                      onValueChange={(value) => {
+                        const nextType = value as AvailabilityRecurrenceType;
+                        setValue(`availability.${index}.recurrenceType`, nextType, { shouldDirty: true, shouldValidate: true });
+                        if (nextType === 'WEEKLY') {
+                          setValue(`availability.${index}.dayOfWeek`, 'MON', { shouldDirty: true, shouldValidate: true });
+                          setValue(`availability.${index}.dayOfMonth`, undefined, { shouldDirty: true, shouldValidate: true });
+                        } else if (nextType === 'MONTHLY') {
+                          setValue(`availability.${index}.dayOfWeek`, undefined, { shouldDirty: true, shouldValidate: true });
+                          setValue(`availability.${index}.dayOfMonth`, 1, { shouldDirty: true, shouldValidate: true });
+                        } else {
+                          setValue(`availability.${index}.dayOfWeek`, undefined, { shouldDirty: true, shouldValidate: true });
+                          setValue(`availability.${index}.dayOfMonth`, undefined, { shouldDirty: true, shouldValidate: true });
+                        }
+                      }}
+                    >
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="DAILY">Daily</SelectItem>
+                        <SelectItem value="WEEKLY">Weekly</SelectItem>
+                        <SelectItem value="MONTHLY">Monthly</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {watch(`availability.${index}.recurrenceType`) === 'WEEKLY' ? (
+                    <Select
+                      value={watch(`availability.${index}.dayOfWeek`) || null}
                       onValueChange={(value) =>
                         setValue(`availability.${index}.dayOfWeek`, value as DayOfWeek, { shouldDirty: true, shouldValidate: true })
                       }
@@ -265,6 +308,24 @@ export function LocationEditorDialog({ open, onClose, location, tags }: Location
                         ))}
                       </SelectContent>
                     </Select>
+                    ) : watch(`availability.${index}.recurrenceType`) === 'MONTHLY' ? (
+                      <Input
+                        type="number"
+                        min={1}
+                        max={31}
+                        value={watch(`availability.${index}.dayOfMonth`) ?? ''}
+                        onChange={(event) =>
+                          setValue(
+                            `availability.${index}.dayOfMonth`,
+                            event.target.value === '' ? undefined : Number(event.target.value),
+                            { shouldDirty: true, shouldValidate: true }
+                          )
+                        }
+                        placeholder="Day (1-31)"
+                      />
+                    ) : (
+                      <Input value="Every day" disabled />
+                    )}
                     <Input type="time" {...register(`availability.${index}.startTime`)} />
                     <Input type="time" {...register(`availability.${index}.endTime`)} />
                     <Button type="button" size="icon-sm" variant="ghost" onClick={() => remove(index)}>

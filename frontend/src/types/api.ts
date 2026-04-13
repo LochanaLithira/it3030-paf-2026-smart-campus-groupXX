@@ -122,6 +122,7 @@ export interface NotificationResponse {
 export type ResourceType = 'LECTURE_HALL' | 'LAB' | 'MEETING_ROOM' | 'EQUIPMENT';
 export type ResourceStatus = 'ACTIVE' | 'OUT_OF_SERVICE' | 'UNDER_MAINTENANCE';
 export type DayOfWeek = 'MON' | 'TUE' | 'WED' | 'THU' | 'FRI' | 'SAT' | 'SUN';
+export type AvailabilityRecurrenceType = 'DAILY' | 'WEEKLY' | 'MONTHLY';
 
 export interface LocationRequest {
   buildingName: string;
@@ -135,14 +136,18 @@ export interface LocationRequest {
 }
 
 export interface LocationAvailabilityRequest {
-  dayOfWeek: DayOfWeek;
+  recurrenceType: AvailabilityRecurrenceType;
+  dayOfWeek?: DayOfWeek;
+  dayOfMonth?: number;
   startTime: string;
   endTime: string;
 }
 
 export interface LocationAvailabilityResponse {
   availId: string;
-  dayOfWeek: DayOfWeek;
+  recurrenceType: AvailabilityRecurrenceType;
+  dayOfWeek: DayOfWeek | null;
+  dayOfMonth: number | null;
   startTime: string;
   endTime: string;
 }
@@ -162,14 +167,18 @@ export interface LocationResponse {
 }
 
 export interface ResourceAvailabilityRequest {
-  dayOfWeek: DayOfWeek;
+  recurrenceType: AvailabilityRecurrenceType;
+  dayOfWeek?: DayOfWeek;
+  dayOfMonth?: number;
   startTime: string;
   endTime: string;
 }
 
 export interface ResourceAvailabilityResponse {
   availId: string;
-  dayOfWeek: DayOfWeek;
+  recurrenceType: AvailabilityRecurrenceType;
+  dayOfWeek: DayOfWeek | null;
+  dayOfMonth: number | null;
   startTime: string;
   endTime: string;
 }
