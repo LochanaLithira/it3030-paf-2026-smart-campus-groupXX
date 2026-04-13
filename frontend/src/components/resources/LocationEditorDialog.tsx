@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useFieldArray, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Plus, Trash2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -13,8 +13,16 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useCreateLocation, useUpdateLocation } from '@/hooks/useLocations';
-import type { LocationResponse } from '@/types/api';
+import type { DayOfWeek, LocationResponse, ResourceTagResponse } from '@/types/api';
 
 const schema = z.object({
   buildingName: z.string().min(1, 'Building name is required').max(100),
@@ -23,7 +31,25 @@ const schema = z.object({
     .min(-10, 'Floor number cannot be less than -10')
     .max(300, 'Floor number cannot be greater than 300'),
   roomNumber: z.string().max(20).optional().or(z.literal('')),
-  description: z.string().max(2000, 'Description is too long').optional().or(z.literal('')),
+  capacity: z.number().int().min(1, 'Capacity must be at least 1'),
+  type: z.enum(['LECTURE_HALL', 'LAB', 'MEETING_ROOM']),
+  status: z.enum(['ACTIVE', 'OUT_OF_SERVICE', 'UNDER_MAINTENANCE']),
+  tagIds: z.array(z.string()),
+  availability: z.array(z.object({
+    dayOfWeek: z.enum(['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']),
+    startTime: z.string().min(1, 'Start time is required'),
+    endTime: z.string().min(1, 'End time is required'),
+  })),
+}).superRefine((values, ctx) => {
+  values.availability.forEach((slot, index) => {
+    if (slot.startTime >= slot.endTime) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'End time must be after start time',
+        path: ['availability', index, 'endTime'],
+      });
+    }
+  });
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -32,9 +58,12 @@ interface LocationEditorDialogProps {
   open: boolean;
   onClose: () => void;
   location?: LocationResponse | null;
+  tags: ResourceTagResponse[];
 }
 
-export function LocationEditorDialog({ open, onClose, location }: LocationEditorDialogProps) {
+const WEEK_DAYS: DayOfWeek[] = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+
+export function LocationEditorDialog({ open, onClose, location, tags }: LocationEditorDialogProps) {
   const createLocation = useCreateLocation();
   const updateLocation = useUpdateLocation();
   const isEdit = Boolean(location);
@@ -43,6 +72,9 @@ export function LocationEditorDialog({ open, onClose, location }: LocationEditor
     register,
     handleSubmit,
     reset,
+    setValue,
+    watch,
+    control,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -50,9 +82,22 @@ export function LocationEditorDialog({ open, onClose, location }: LocationEditor
       buildingName: '',
       floorNumber: 0,
       roomNumber: '',
-      description: '',
+      capacity: 1,
+      type: 'LECTURE_HALL',
+      status: 'ACTIVE',
+      tagIds: [],
+      availability: [],
     },
   });
+
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: 'availability',
+  });
+
+  const selectedTagIds = watch('tagIds');
+  const selectedType = watch('type');
+  const selectedStatus = watch('status');
 
   useEffect(() => {
     if (!open) {
@@ -64,24 +109,45 @@ export function LocationEditorDialog({ open, onClose, location }: LocationEditor
         buildingName: location.buildingName,
         floorNumber: location.floorNumber,
         roomNumber: location.roomNumber ?? '',
-        description: location.description ?? '',
+        capacity: location.capacity,
+        type: location.type,
+        status: location.status,
+        tagIds: location.tags.map((tag) => tag.tagId),
+        availability: location.availability.map((slot) => ({
+          dayOfWeek: slot.dayOfWeek,
+          startTime: slot.startTime,
+          endTime: slot.endTime,
+        })),
       });
     } else {
       reset({
         buildingName: '',
         floorNumber: 0,
         roomNumber: '',
-        description: '',
+        capacity: 1,
+        type: 'LECTURE_HALL',
+        status: 'ACTIVE',
+        tagIds: [],
+        availability: [],
       });
     }
   }, [open, location, reset]);
+
+  const toggleTag = (tagId: string, checked: boolean) => {
+    const next = checked ? [...selectedTagIds, tagId] : selectedTagIds.filter((id) => id !== tagId);
+    setValue('tagIds', next, { shouldValidate: true, shouldDirty: true });
+  };
 
   const onSubmit = (values: FormValues) => {
     const payload = {
       buildingName: values.buildingName.trim(),
       floorNumber: values.floorNumber,
       roomNumber: values.roomNumber?.trim() || undefined,
-      description: values.description?.trim() || undefined,
+      capacity: values.capacity,
+      type: values.type,
+      status: values.status,
+      tagIds: values.tagIds,
+      availability: values.availability,
     };
 
     if (!location) {
@@ -121,9 +187,94 @@ export function LocationEditorDialog({ open, onClose, location }: LocationEditor
             <Input id="location-room" {...register('roomNumber')} />
           </div>
 
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="location-capacity">Capacity</Label>
+              <Input id="location-capacity" type="number" {...register('capacity', { valueAsNumber: true })} />
+              {errors.capacity && <p className="text-xs text-destructive">{errors.capacity.message}</p>}
+            </div>
+            <div className="space-y-1.5">
+              <Label>Type</Label>
+              <Select value={selectedType} onValueChange={(value) => setValue('type', value as FormValues['type'])}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="LECTURE_HALL">Lecture Hall</SelectItem>
+                  <SelectItem value="LAB">Lab</SelectItem>
+                  <SelectItem value="MEETING_ROOM">Meeting Room</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
           <div className="space-y-1.5">
-            <Label htmlFor="location-description">Description</Label>
-            <Input id="location-description" {...register('description')} />
+            <Label>Status</Label>
+            <Select value={selectedStatus} onValueChange={(value) => setValue('status', value as FormValues['status'])}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ACTIVE">Active</SelectItem>
+                <SelectItem value="OUT_OF_SERVICE">Out of Service</SelectItem>
+                <SelectItem value="UNDER_MAINTENANCE">Under Maintenance</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Tags</Label>
+            <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+              {tags.map((tag) => (
+                <label key={tag.tagId} className="flex items-center gap-2 text-sm">
+                  <Checkbox
+                    checked={selectedTagIds.includes(tag.tagId)}
+                    onCheckedChange={(checked) => toggleTag(tag.tagId, Boolean(checked))}
+                  />
+                  {tag.tagName}
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label>Availability (weekly)</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => append({ dayOfWeek: 'MON', startTime: '', endTime: '' })}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Add Slot
+              </Button>
+            </div>
+            {fields.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No availability slots added.</p>
+            ) : (
+              <div className="space-y-2">
+                {fields.map((field, index) => (
+                  <div key={field.id} className="grid grid-cols-1 gap-2 md:grid-cols-[1fr_1fr_1fr_auto]">
+                    <Select
+                      value={watch(`availability.${index}.dayOfWeek`)}
+                      onValueChange={(value) =>
+                        setValue(`availability.${index}.dayOfWeek`, value as DayOfWeek, { shouldDirty: true, shouldValidate: true })
+                      }
+                    >
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {WEEK_DAYS.map((day) => (
+                          <SelectItem key={day} value={day}>{day}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Input type="time" {...register(`availability.${index}.startTime`)} />
+                    <Input type="time" {...register(`availability.${index}.endTime`)} />
+                    <Button type="button" size="icon-sm" variant="ghost" onClick={() => remove(index)}>
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+            {errors.availability && <p className="text-xs text-destructive">Please fix availability entries.</p>}
           </div>
 
           <DialogFooter>

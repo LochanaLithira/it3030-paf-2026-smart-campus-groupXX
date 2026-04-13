@@ -2,7 +2,6 @@ import { useMemo, useState } from 'react';
 import { Edit, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import {
   Select,
   SelectContent,
@@ -15,7 +14,6 @@ import { ResourceEditorDialog } from '@/components/resources/ResourceEditorDialo
 import { useLocations } from '@/hooks/useLocations';
 import {
   useDeleteResource,
-  useResourceTags,
   useResources,
   useUpdateResourceStatus,
 } from '@/hooks/useResources';
@@ -31,7 +29,6 @@ export function ResourceManagementPage() {
   const [statusFilter, setStatusFilter] = useState<ResourceStatus | ''>('');
 
   const { data: locations = [] } = useLocations();
-  const { data: tags = [] } = useResourceTags();
   const { data, isLoading, isFetching, refetch } = useResources({
     search: search || undefined,
     status: statusFilter || undefined,
@@ -114,20 +111,19 @@ export function ResourceManagementPage() {
               <TableHead>Location</TableHead>
               <TableHead>Capacity</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>Tags</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={7} className="h-20 text-center text-muted-foreground">
+                <TableCell colSpan={6} className="h-20 text-center text-muted-foreground">
                   Loading resources...
                 </TableCell>
               </TableRow>
             ) : rows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="h-20 text-center text-muted-foreground">
+                <TableCell colSpan={6} className="h-20 text-center text-muted-foreground">
                   No resources found.
                 </TableCell>
               </TableRow>
@@ -161,13 +157,6 @@ export function ResourceManagementPage() {
                         ))}
                       </SelectContent>
                     </Select>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex flex-wrap gap-1">
-                      {resource.tags.map((tag) => (
-                        <Badge key={tag.tagId} variant="secondary">{tag.tagName}</Badge>
-                      ))}
-                    </div>
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="inline-flex gap-1">
@@ -218,7 +207,6 @@ export function ResourceManagementPage() {
         onClose={() => setEditorOpen(false)}
         resource={selectedResource}
         locations={locations}
-        tags={tags}
       />
     </div>
   );

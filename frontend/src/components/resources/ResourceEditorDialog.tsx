@@ -13,7 +13,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -27,7 +26,6 @@ import type {
   LocationResponse,
   ResourceRequest,
   ResourceResponse,
-  ResourceTagResponse,
 } from '@/types/api';
 
 const schema = z
@@ -46,7 +44,6 @@ const schema = z
     dayOfWeek: z.enum(['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']).optional(),
     startTime: z.string().optional().or(z.literal('')),
     endTime: z.string().optional().or(z.literal('')),
-    tagIds: z.array(z.string()),
   })
   .superRefine((values, ctx) => {
     const hasDay = Boolean(values.dayOfWeek);
@@ -80,7 +77,6 @@ interface ResourceEditorDialogProps {
   onClose: () => void;
   resource?: ResourceResponse | null;
   locations: LocationResponse[];
-  tags: ResourceTagResponse[];
 }
 
 export function ResourceEditorDialog({
@@ -88,7 +84,6 @@ export function ResourceEditorDialog({
   onClose,
   resource,
   locations,
-  tags,
 }: ResourceEditorDialogProps) {
   const createResource = useCreateResource();
   const updateResource = useUpdateResource();
@@ -105,7 +100,7 @@ export function ResourceEditorDialog({
     resolver: zodResolver(schema),
     defaultValues: {
       name: '',
-      type: 'LECTURE_HALL',
+      type: 'EQUIPMENT',
       capacity: 1,
       locationId: '',
       status: 'ACTIVE',
@@ -114,11 +109,9 @@ export function ResourceEditorDialog({
       dayOfWeek: undefined,
       startTime: '',
       endTime: '',
-      tagIds: [],
     },
   });
 
-  const selectedTagIds = watch('tagIds');
   const selectedLocationId = watch('locationId');
   const selectedType = watch('type');
   const selectedStatus = watch('status');
@@ -132,7 +125,7 @@ export function ResourceEditorDialog({
     if (!resource) {
       reset({
         name: '',
-        type: 'LECTURE_HALL',
+        type: 'EQUIPMENT',
         capacity: 1,
         locationId: '',
         status: 'ACTIVE',
@@ -141,7 +134,6 @@ export function ResourceEditorDialog({
         dayOfWeek: undefined,
         startTime: '',
         endTime: '',
-        tagIds: [],
       });
       return;
     }
@@ -158,16 +150,8 @@ export function ResourceEditorDialog({
       dayOfWeek: firstAvailability?.dayOfWeek as DayOfWeek | undefined,
       startTime: firstAvailability?.startTime ?? '',
       endTime: firstAvailability?.endTime ?? '',
-      tagIds: resource.tags.map((tag) => tag.tagId),
     });
   }, [open, resource, reset]);
-
-  const toggleTag = (tagId: string, checked: boolean) => {
-    const next = checked
-      ? [...selectedTagIds, tagId]
-      : selectedTagIds.filter((id) => id !== tagId);
-    setValue('tagIds', next, { shouldValidate: true, shouldDirty: true });
-  };
 
   const onSubmit = (values: FormValues) => {
     const availability =
@@ -183,7 +167,6 @@ export function ResourceEditorDialog({
       status: values.status,
       description: values.description?.trim() || undefined,
       imageUrl: values.imageUrl?.trim() || undefined,  // Transform empty string to undefined
-      tagIds: values.tagIds,
       availability,
     };
 
@@ -276,21 +259,6 @@ export function ResourceEditorDialog({
             <Label htmlFor="resource-image-url">Image URL</Label>
             <Input id="resource-image-url" {...register('imageUrl')} />
             {errors.imageUrl && <p className="text-xs text-destructive">{errors.imageUrl.message}</p>}
-          </div>
-
-          <div className="space-y-2">
-            <Label>Tags</Label>
-            <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-              {tags.map((tag) => (
-                <label key={tag.tagId} className="flex items-center gap-2 text-sm">
-                  <Checkbox
-                    checked={selectedTagIds.includes(tag.tagId)}
-                    onCheckedChange={(checked) => toggleTag(tag.tagId, Boolean(checked))}
-                  />
-                  {tag.tagName}
-                </label>
-              ))}
-            </div>
           </div>
 
           <div className="space-y-2">

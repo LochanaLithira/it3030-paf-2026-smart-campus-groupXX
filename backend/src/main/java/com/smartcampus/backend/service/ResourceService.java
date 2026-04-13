@@ -2,6 +2,7 @@ package com.smartcampus.backend.service;
 
 import com.smartcampus.backend.dto.resource.*;
 import com.smartcampus.backend.exception.AppException;
+import com.smartcampus.backend.exception.ConflictException;
 import com.smartcampus.backend.exception.ResourceNotFoundException;
 import com.smartcampus.backend.exception.UnauthorizedException;
 import com.smartcampus.backend.mapper.ResourceMapper;
@@ -96,6 +97,44 @@ public class ResourceService {
                 .sorted(Comparator.comparing(ResourceTag::getTagName, String.CASE_INSENSITIVE_ORDER))
                 .map(resourceMapper::toTagResponse)
                 .toList();
+    }
+
+    @Transactional
+    public ResourceTagResponse createTag(ResourceTagRequest request) {
+        String normalized = normalizeTagName(request.tagName());
+        if (resourceTagRepository.existsByTagNameIgnoreCase(normalized)) {
+            throw new ConflictException("Tag already exists: " + normalized);
+        }
+
+        ResourceTag saved = resourceTagRepository.save(
+                ResourceTag.builder().tagName(normalized).build()
+        );
+        return resourceMapper.toTagResponse(saved);
+    }
+
+    @Transactional
+    public ResourceTagResponse updateTag(UUID tagId, ResourceTagRequest request) {
+        ResourceTag existing = findTagOrThrow(tagId);
+        String normalized = normalizeTagName(request.tagName());
+        resourceTagRepository.findByTagNameIgnoreCase(normalized)
+                .filter(tag -> !tag.getTagId().equals(tagId))
+                .ifPresent(tag -> {
+                    throw new ConflictException("Tag already exists: " + normalized);
+                });
+
+        existing.setTagName(normalized);
+        return resourceMapper.toTagResponse(resourceTagRepository.save(existing));
+    }
+
+    @Transactional
+    public void deleteTag(UUID tagId) {
+        ResourceTag existing = findTagOrThrow(tagId);
+        long inResourceUse = resourceTagRepository.countResourceMappings(tagId);
+        long inLocationUse = resourceTagRepository.countLocationMappings(tagId);
+        if (inResourceUse > 0 || inLocationUse > 0) {
+            throw new ConflictException("Tag cannot be deleted because it is already in use");
+        }
+        resourceTagRepository.delete(existing);
     }
 
     @Transactional
@@ -295,5 +334,18 @@ public class ResourceService {
                         HttpStatus.UNPROCESSABLE_ENTITY);
             }
         }
+    }
+
+    private ResourceTag findTagOrThrow(UUID tagId) {
+        return resourceTagRepository.findById(tagId)
+                .orElseThrow(() -> new ResourceNotFoundException("Tag", tagId));
+    }
+
+    private String normalizeTagName(String tagName) {
+        String normalized = trimToNull(tagName);
+        if (normalized == null) {
+            throw new AppException("Tag name is required", HttpStatus.BAD_REQUEST);
+        }
+        return normalized;
     }
 }

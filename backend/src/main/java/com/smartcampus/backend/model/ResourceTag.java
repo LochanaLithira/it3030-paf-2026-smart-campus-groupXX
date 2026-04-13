@@ -27,4 +27,8 @@ public class ResourceTag {
     @OneToMany(mappedBy = "tag", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @Builder.Default
     private List<ResourceTagMap> resourceMappings = new ArrayList<>();
+
+    @OneToMany(mappedBy = "tag", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<LocationTagMap> locationMappings = new ArrayList<>();
 }

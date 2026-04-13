@@ -127,7 +127,24 @@ export interface LocationRequest {
   buildingName: string;
   floorNumber: number;
   roomNumber?: string;
-  description?: string;
+  capacity: number;
+  type: Exclude<ResourceType, 'EQUIPMENT'>;
+  status: ResourceStatus;
+  tagIds?: string[];
+  availability?: LocationAvailabilityRequest[];
+}
+
+export interface LocationAvailabilityRequest {
+  dayOfWeek: DayOfWeek;
+  startTime: string;
+  endTime: string;
+}
+
+export interface LocationAvailabilityResponse {
+  availId: string;
+  dayOfWeek: DayOfWeek;
+  startTime: string;
+  endTime: string;
 }
 
 export interface LocationResponse {
@@ -135,7 +152,11 @@ export interface LocationResponse {
   buildingName: string;
   floorNumber: number;
   roomNumber: string | null;
-  description: string | null;
+  capacity: number;
+  type: Exclude<ResourceType, 'EQUIPMENT'>;
+  status: ResourceStatus;
+  tags: ResourceTagResponse[];
+  availability: LocationAvailabilityResponse[];
   createdAt: string;
   updatedAt: string;
 }
@@ -155,6 +176,10 @@ export interface ResourceAvailabilityResponse {
 
 export interface ResourceTagResponse {
   tagId: string;
+  tagName: string;
+}
+
+export interface ResourceTagRequest {
   tagName: string;
 }
 
