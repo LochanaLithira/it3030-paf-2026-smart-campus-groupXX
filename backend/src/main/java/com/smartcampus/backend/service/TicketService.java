@@ -38,6 +38,7 @@ public class TicketService {
     private final TicketCommentRepository commentRepository;
     private final TicketStatusHistoryRepository statusHistoryRepository;
     private final ResourceRepository resourceRepository;
+    private final LocationRepository locationRepository;
     private final UserRepository userRepository;
     private final NotificationService notificationService;
     private final TicketMapper ticketMapper;
@@ -57,6 +58,7 @@ public class TicketService {
             TicketPriority priority,
             TicketCategory category,
             UUID resourceId,
+            UUID locationId,
             Pageable pageable
     ) {
         UUID currentUserId = SecurityUtils.getCurrentUserId();
@@ -88,7 +90,7 @@ public class TicketService {
                 status  == null ? null : status.name(),
                 priority == null ? null : priority.name(),
                 category == null ? null : category.name(),
-                resourceId, reporterId, assignedTechId, unsortedPageable
+            resourceId, locationId, reporterId, assignedTechId, unsortedPageable
         );
 
         return tickets.map(ticketMapper::toTicketSummaryResponse);
@@ -110,11 +112,20 @@ public class TicketService {
         User reporter = userRepository.findById(currentUserId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        Resource resource = resourceRepository.findById(request.resourceId())
+        Resource resource = null;
+        Location location = null;
+
+        if (request.resourceId() != null) {
+            resource = resourceRepository.findById(request.resourceId())
                 .orElseThrow(() -> new ResourceNotFoundException("Resource not found with ID: " + request.resourceId()));
+        } else {
+            location = locationRepository.findById(request.locationId())
+                .orElseThrow(() -> new ResourceNotFoundException("Location not found with ID: " + request.locationId()));
+        }
 
         Ticket ticket = Ticket.builder()
                 .resource(resource)
+            .location(location)
                 .reporter(reporter)
                 .category(request.category())
                 .description(request.description())
@@ -137,6 +148,7 @@ public class TicketService {
         }
 
         // Notify all admins about new ticket
+        String targetName = resource != null ? resource.getName() : formatLocationName(location);
         notifyAdmins("New Ticket Created",
                 String.format("Ticket #%s: %s - %s",
                     savedTicket.getTicketId().toString().substring(0, 8),
@@ -145,8 +157,8 @@ public class TicketService {
                 NotificationType.TICKET_CREATED,
                 savedTicket.getTicketId());
 
-        log.info("Created ticket {} for resource {} by user {}", 
-                savedTicket.getTicketId(), resource.getResourceId(), currentUserId);
+        log.info("Created ticket {} for target {} by user {}", 
+            savedTicket.getTicketId(), targetName, currentUserId);
 
         return ticketMapper.toTicketResponse(savedTicket);
     }
@@ -543,6 +555,16 @@ public class TicketService {
         if (!hasPermission(user, permission)) {
             throw new ForbiddenException("You do not have permission: " + permission);
         }
+    }
+
+    private String formatLocationName(Location location) {
+        if (location == null) {
+            return "Unknown location";
+        }
+        String room = location.getRoomNumber() == null || location.getRoomNumber().isBlank()
+                ? ""
+                : ", Room " + location.getRoomNumber();
+        return location.getBuildingName() + " - Floor " + location.getFloorNumber() + room;
     }
 
     private void notifyAdmins(String title, String message, NotificationType type, UUID relatedEntityId) {

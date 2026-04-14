@@ -22,6 +22,7 @@ export const ticketsApi = {
     // Build the ticket request JSON (without files)
     const ticketData = {
       resourceId: request.resourceId,
+      locationId: request.locationId,
       category: request.category,
       description: request.description,
       priority: request.priority,
@@ -55,6 +56,7 @@ export const ticketsApi = {
     if (params.priority) searchParams.set('priority', params.priority);
     if (params.category) searchParams.set('category', params.category);
     if (params.resourceId) searchParams.set('resourceId', params.resourceId);
+    if (params.locationId) searchParams.set('locationId', params.locationId);
     if (params.assignedTechId) searchParams.set('assignedTechId', params.assignedTechId);
     if (params.page !== undefined) searchParams.set('page', String(params.page));
     if (params.size !== undefined) searchParams.set('size', String(params.size));

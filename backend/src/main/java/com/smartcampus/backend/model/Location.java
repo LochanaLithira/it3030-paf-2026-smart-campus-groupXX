@@ -63,10 +63,6 @@ public class Location {
     @Column(name = "updated_at", nullable = false)
     private OffsetDateTime updatedAt;
 
-    @OneToMany(mappedBy = "location", fetch = FetchType.LAZY)
-    @Builder.Default
-    private List<Resource> resources = new ArrayList<>();
-
     @OneToMany(mappedBy = "location", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @Builder.Default
     private List<LocationAvailability> availability = new ArrayList<>();

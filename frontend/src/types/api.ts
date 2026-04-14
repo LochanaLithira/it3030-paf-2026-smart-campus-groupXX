@@ -130,7 +130,8 @@ export type AvailabilityRecurrenceType = 'DAILY' | 'WEEKLY' | 'MONTHLY';
 export type BookingStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
 
 export interface BookingCreateRequest {
-  resourceId: string;
+  resourceId?: string;
+  locationId?: string;
   bookingDate: string; // YYYY-MM-DD
   startTime: string; // HH:mm
   endTime: string; // HH:mm
@@ -139,7 +140,8 @@ export interface BookingCreateRequest {
 }
 
 export interface BookingResourceSummary {
-  resourceId: string;
+  resourceId: string | null;
+  locationId: string | null;
   name: string;
   type: ResourceType;
 }
@@ -253,11 +255,7 @@ export interface ResourceLocationResponse {
 export interface ResourceRequest {
   name: string;
   type: ResourceType;
-  capacity: number;
-  locationId?: string;
   status?: ResourceStatus;
-  description?: string;
-  imageUrl?: string;
   tagIds?: string[];
   availability?: ResourceAvailabilityRequest[];
 }
@@ -266,13 +264,9 @@ export interface ResourceResponse {
   resourceId: string;
   name: string;
   type: ResourceType;
-  capacity: number;
   status: ResourceStatus;
-  description: string | null;
-  imageUrl: string | null;
   createdBy: string | null;
   createdAt: string;
-  location: ResourceLocationResponse | null;
   tags: ResourceTagResponse[];
   availability: ResourceAvailabilityResponse[];
 }
@@ -289,10 +283,8 @@ export interface LocationsListParams {
 export interface ResourcesListParams {
   type?: ResourceType;
   status?: ResourceStatus;
-  locationId?: string;
   tags?: string;
   search?: string;
-  minCapacity?: number;
   page?: number;
   size?: number;
   sort?: string;
@@ -312,14 +304,15 @@ export type TicketCategory =
   | 'OTHER';
 
 export interface TicketResourceResponse {
-  resourceId: string;
+  resourceId: string | null;
+  locationId: string | null;
   name: string;
   type: ResourceType;
-  location: ResourceLocationResponse | null;
 }
 
 export interface TicketRequest {
-  resourceId: string;
+  resourceId?: string;
+  locationId?: string;
   category: TicketCategory;
   description: string;
   priority: TicketPriority;
@@ -413,6 +406,7 @@ export interface TicketsListParams {
   priority?: TicketPriority;
   category?: TicketCategory;
   resourceId?: string;
+  locationId?: string;
   assignedTechId?: string;
   page?: number;
   size?: number;

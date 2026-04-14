@@ -99,7 +99,7 @@ const usersRoute = createRoute({
   component: UserManagementPage,
   beforeLoad: () => {
     const { hasPermission } = useAuthStore.getState();
-    if (!hasPermission(PERMISSIONS.USERS_READ)) {
+    if (!hasPermission(PERMISSIONS.USER_MANAGEMENT_PAGE)) {
       throw redirect({ to: '/dashboard' });
     }
   },
@@ -111,7 +111,7 @@ const rolesRoute = createRoute({
   component: RoleManagementPage,
   beforeLoad: () => {
     const { hasPermission } = useAuthStore.getState();
-    if (!hasPermission(PERMISSIONS.ROLES_READ)) {
+    if (!hasPermission(PERMISSIONS.ROLE_MANAGEMENT_PAGE)) {
       throw redirect({ to: '/dashboard' });
     }
   },
@@ -129,7 +129,7 @@ const locationsRoute = createRoute({
   component: LocationManagementPage,
   beforeLoad: () => {
     const { hasPermission } = useAuthStore.getState();
-    if (!hasPermission(PERMISSIONS.LOCATIONS_READ)) {
+    if (!hasPermission(PERMISSIONS.FACILITIES_MANAGEMENT_PAGE)) {
       throw redirect({ to: '/dashboard' });
     }
   },
@@ -141,7 +141,7 @@ const resourcesRoute = createRoute({
   component: ResourceManagementPage,
   beforeLoad: () => {
     const { hasPermission } = useAuthStore.getState();
-    if (!hasPermission(PERMISSIONS.RESOURCES_READ)) {
+    if (!hasPermission(PERMISSIONS.FACILITIES_MANAGEMENT_PAGE)) {
       throw redirect({ to: '/dashboard' });
     }
   },
@@ -153,7 +153,7 @@ const bookingsRoute = createRoute({
   component: BookingListPage,
   beforeLoad: () => {
     const { hasPermission } = useAuthStore.getState();
-    if (!hasPermission(PERMISSIONS.BOOKINGS_VIEW_OWN)) {
+    if (!hasPermission(PERMISSIONS.BOOKINGS_MANAGEMENT_PAGE_USER)) {
       throw redirect({ to: '/dashboard' });
     }
   },
@@ -189,7 +189,7 @@ const adminBookingsRoute = createRoute({
   component: AdminBookingQueuePage,
   beforeLoad: () => {
     const { hasPermission } = useAuthStore.getState();
-    if (!hasPermission(PERMISSIONS.BOOKINGS_VIEW_ALL)) {
+    if (!hasPermission(PERMISSIONS.BOOKINGS_MANAGEMENT_PAGE_ADMIN)) {
       throw redirect({ to: '/dashboard' });
     }
   },
@@ -202,11 +202,7 @@ const ticketsRoute = createRoute({
   beforeLoad: () => {
     const { hasPermission } = useAuthStore.getState();
     // Allow access if user has any ticket-related permission
-    if (
-      !hasPermission(PERMISSIONS.TICKETS_VIEW_OWN) &&
-      !hasPermission(PERMISSIONS.TICKETS_VIEW_ALL) &&
-      !hasPermission(PERMISSIONS.TICKETS_VIEW_ASSIGNED)
-    ) {
+    if (!hasPermission(PERMISSIONS.TICKETS_MANAGEMENT_PAGE_USER)) {
       throw redirect({ to: '/dashboard' });
     }
   },
@@ -248,7 +244,7 @@ const techDashboardRoute = createRoute({
   beforeLoad: () => {
     const { hasPermission } = useAuthStore.getState();
     // Only technicians with assigned ticket permissions
-    if (!hasPermission(PERMISSIONS.TICKETS_VIEW_ASSIGNED)) {
+    if (!hasPermission(PERMISSIONS.TICKETS_MANAGEMENT_PAGE_TECHNICIAN)) {
       throw redirect({ to: '/dashboard' });
     }
   },

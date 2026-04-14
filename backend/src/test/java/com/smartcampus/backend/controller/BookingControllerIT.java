@@ -69,6 +69,7 @@ class BookingControllerIT {
 
         BookingCreateRequest request = new BookingCreateRequest(
                 resourceId,
+                null,
                 LocalDate.now().plusDays(2),
                 LocalTime.of(9, 0),
                 LocalTime.of(10, 0),
@@ -78,7 +79,7 @@ class BookingControllerIT {
 
         BookingResponse response = new BookingResponse(
                 bookingId,
-                new BookingResourceSummary(resourceId, "Hall A", ResourceType.LECTURE_HALL),
+                new BookingResourceSummary(resourceId, null, "Hall A", ResourceType.LECTURE_HALL),
                 new BookingUserSummary(userId, "Alice", "alice@uni.edu"),
                 request.bookingDate(),
                 request.startTime(),

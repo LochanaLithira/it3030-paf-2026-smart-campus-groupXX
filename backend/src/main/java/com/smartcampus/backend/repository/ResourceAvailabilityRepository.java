@@ -11,5 +11,7 @@ import java.util.UUID;
 @Repository
 public interface ResourceAvailabilityRepository extends JpaRepository<ResourceAvailability, UUID> {
 
+    List<ResourceAvailability> findByResource_ResourceId(UUID resourceId);
+
     List<ResourceAvailability> findByResource_ResourceIdAndDayOfWeek(UUID resourceId, DayOfWeek dayOfWeek);
 }

@@ -124,9 +124,7 @@ export function TicketListPage() {
         return (
           <div className="max-w-[200px]">
             <div className="font-medium truncate">{resource?.name ?? 'N/A'}</div>
-            <div className="text-xs text-gray-500">
-              {resource?.location?.buildingName} {resource?.location?.roomNumber}
-            </div>
+            <div className="text-xs text-gray-500">{resource?.type?.replace('_', ' ') ?? ''}</div>
           </div>
         );
       },

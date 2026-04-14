@@ -55,14 +55,14 @@ public class BookingController {
     public ResponseEntity<PageResponse<BookingResponse>> listBookings(
             @RequestParam(required = false) BookingStatus status,
             @RequestParam(required = false) UUID resourceId,
-            @RequestParam(required = false) UUID userId,
             @RequestParam(required = false) UUID locationId,
+            @RequestParam(required = false) UUID userId,
             @RequestParam(required = false) LocalDate fromDate,
             @RequestParam(required = false) LocalDate toDate,
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
         return ResponseEntity.ok(bookingService.listBookings(
-                status, resourceId, userId, locationId, fromDate, toDate, pageable
+            status, resourceId, locationId, userId, fromDate, toDate, pageable
         ));
     }
 

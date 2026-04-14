@@ -16,12 +16,6 @@ public interface ResourceMapper {
     @Mapping(target = "availability", ignore = true)
     LocationResponse toLocationResponse(Location location);
 
-    @Mapping(target = "locationId", source = "location.locationId")
-    @Mapping(target = "buildingName", source = "location.buildingName")
-    @Mapping(target = "floorNumber", source = "location.floorNumber")
-    @Mapping(target = "roomNumber", source = "location.roomNumber")
-    ResourceLocationResponse toResourceLocationResponse(Location location);
-
     ResourceTagResponse toTagResponse(ResourceTag tag);
 
     LocationAvailabilityResponse toLocationAvailabilityResponse(LocationAvailability availability);
@@ -29,7 +23,6 @@ public interface ResourceMapper {
     ResourceAvailabilityResponse toAvailabilityResponse(ResourceAvailability availability);
 
     @Mapping(target = "createdBy", source = "createdBy.userId")
-    @Mapping(target = "location", ignore = true)
     @Mapping(target = "tags", ignore = true)
     @Mapping(target = "availability", ignore = true)
     ResourceResponse toResourceResponse(Resource resource);

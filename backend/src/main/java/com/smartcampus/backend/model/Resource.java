@@ -38,23 +38,10 @@ public class Resource {
     @Column(name = "type", nullable = false)
     private ResourceType type;
 
-    @Column(name = "capacity")
-    private Integer capacity;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "location_id")
-    private Location location;
-
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(name = "status", nullable = false)
     private ResourceStatus status;
-
-    @Column(name = "description", columnDefinition = "TEXT")
-    private String description;
-
-    @Column(name = "image_url", columnDefinition = "TEXT")
-    private String imageUrl;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by")

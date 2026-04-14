@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -20,7 +20,10 @@ import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
+  SelectSeparator,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
@@ -30,59 +33,74 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
+import { Label } from '@/components/ui/label';
+import { useLocations } from '@/hooks/useLocations';
 import { useResources } from '@/hooks/useResources';
-import type { TicketCategory, TicketPriority } from '@/types/api';
+import type { LocationResponse, ResourceType, TicketCategory, TicketPriority } from '@/types/api';
 
 const MAX_FILE_SIZE = 3 * 1024 * 1024; // 3MB
 const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
 const MAX_ATTACHMENTS = 3;
 
-const ticketFormSchema = z.object({
-  resourceId: z.string().min(1, 'Resource is required'),
-  category: z.enum([
-    'ELECTRICAL',
-    'PLUMBING',
-    'HVAC',
-    'IT',
-    'FURNITURE',
-    'GENERAL_MAINTENANCE',
-    'OTHER',
-  ] as const, {
-    message: 'Category is required',
-  }),
-  priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'] as const, {
-    message: 'Priority is required',
-  }),
-  description: z
-    .string()
-    .min(10, 'Description must be at least 10 characters')
-    .max(2000, 'Description must not exceed 2000 characters'),
-  // PDF requirement: separate email and phone fields
-  preferredContactEmail: z
-    .string()
-    .email('Invalid email format')
-    .max(150, 'Email must not exceed 150 characters')
-    .optional()
-    .or(z.literal('')),
-  preferredContactPhone: z
-    .string()
-    .regex(/^[+]?[0-9]{10,15}$/, 'Invalid phone format (10-15 digits, + optional)')
-    .optional()
-    .or(z.literal('')),
-  dueDate: z.date().optional(),
-  attachments: z
-    .array(z.instanceof(File))
-    .max(MAX_ATTACHMENTS, `Maximum ${MAX_ATTACHMENTS} attachments allowed`)
-    .refine(
-      (files) => files.every((file) => file.size <= MAX_FILE_SIZE),
-      `Each file must be less than 3MB`
-    )
-    .refine(
-      (files) => files.every((file) => ACCEPTED_IMAGE_TYPES.includes(file.type)),
-      'Only .jpg, .jpeg, .png and .webp formats are supported'
-    )
-    .optional(),
-});
+const ticketFormSchema = z
+  .object({
+    resourceId: z.string().optional(),
+    locationId: z.string().optional(),
+    category: z.enum([
+      'ELECTRICAL',
+      'PLUMBING',
+      'HVAC',
+      'IT',
+      'FURNITURE',
+      'GENERAL_MAINTENANCE',
+      'OTHER',
+    ] as const, {
+      message: 'Category is required',
+    }),
+    priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'] as const, {
+      message: 'Priority is required',
+    }),
+    description: z
+      .string()
+      .min(10, 'Description must be at least 10 characters')
+      .max(2000, 'Description must not exceed 2000 characters'),
+    // PDF requirement: separate email and phone fields
+    preferredContactEmail: z
+      .string()
+      .email('Invalid email format')
+      .max(150, 'Email must not exceed 150 characters')
+      .optional()
+      .or(z.literal('')),
+    preferredContactPhone: z
+      .string()
+      .regex(/^[+]?[0-9]{10,15}$/, 'Invalid phone format (10-15 digits, + optional)')
+      .optional()
+      .or(z.literal('')),
+    dueDate: z.date().optional(),
+    attachments: z
+      .array(z.instanceof(File))
+      .max(MAX_ATTACHMENTS, `Maximum ${MAX_ATTACHMENTS} attachments allowed`)
+      .refine(
+        (files) => files.every((file) => file.size <= MAX_FILE_SIZE),
+        `Each file must be less than 3MB`
+      )
+      .refine(
+        (files) => files.every((file) => ACCEPTED_IMAGE_TYPES.includes(file.type)),
+        'Only .jpg, .jpeg, .png and .webp formats are supported'
+      )
+      .optional(),
+  })
+  .refine(
+    (values) => {
+      const hasResource = Boolean(values.resourceId?.trim());
+      const hasLocation = Boolean(values.locationId?.trim());
+      return hasResource !== hasLocation;
+    },
+    {
+      message: 'Select either a resource or a location',
+      path: ['resourceId'],
+    }
+  );
 
 export type TicketFormValues = z.infer<typeof ticketFormSchema>;
 
@@ -110,17 +128,23 @@ const PRIORITY_LABELS: Record<TicketPriority, string> = {
   CRITICAL: 'Critical',
 };
 
+const RESOURCE_TYPE_OPTIONS: ResourceType[] = ['LECTURE_HALL', 'LAB', 'MEETING_ROOM', 'EQUIPMENT'];
+
 export function TicketForm({ onSubmit, onCancel, isLoading, defaultValues }: TicketFormProps) {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [resourceTypeFilter, setResourceTypeFilter] = useState<ResourceType | ''>('');
   const { data: resourcesData, isLoading: resourcesLoading, isError: resourcesError } = useResources({
     size: 1000,
     status: 'ACTIVE',
+    type: resourceTypeFilter || undefined,
   });
+  const { data: locationsData, isLoading: locationsLoading, isError: locationsError } = useLocations();
 
   const form = useForm<TicketFormValues>({
     resolver: zodResolver(ticketFormSchema),
     defaultValues: {
       resourceId: defaultValues?.resourceId || '',
+      locationId: defaultValues?.locationId || '',
       category: defaultValues?.category || undefined,
       priority: defaultValues?.priority || 'MEDIUM',
       description: defaultValues?.description || '',
@@ -149,49 +173,137 @@ export function TicketForm({ onSubmit, onCancel, isLoading, defaultValues }: Tic
   };
 
   const resources = resourcesData?.content || [];
+  const locations = useMemo(
+    () =>
+      (locationsData ?? []).filter((location) => {
+        if (location.status !== 'ACTIVE') {
+          return false;
+        }
+        if (!resourceTypeFilter) {
+          return true;
+        }
+        return location.type === resourceTypeFilter;
+      }),
+    [locationsData, resourceTypeFilter]
+  );
+  const assetsLoading = resourcesLoading || locationsLoading;
+  const assetsError = resourcesError || locationsError;
+  const selectedLocationId = form.watch('locationId');
+
+  useEffect(() => {
+    const currentResourceId = form.getValues('resourceId');
+    if (currentResourceId && !resources.some((resource) => resource.resourceId === currentResourceId)) {
+      form.setValue('resourceId', '', { shouldValidate: true });
+    }
+  }, [form, resources]);
+
+  useEffect(() => {
+    const currentLocationId = form.getValues('locationId');
+    if (currentLocationId && !locations.some((location) => location.locationId === currentLocationId)) {
+      form.setValue('locationId', '', { shouldValidate: true });
+    }
+  }, [form, locations]);
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-        {/* Resource Selector */}
+        <div className="space-y-2">
+          <Label>Filter by resource type</Label>
+          <Select
+            value={resourceTypeFilter || '__all__'}
+            onValueChange={(value) => setResourceTypeFilter(value === '__all__' ? '' : (value as ResourceType))}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="All resource types" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">All resource types</SelectItem>
+              {RESOURCE_TYPE_OPTIONS.map((type) => (
+                <SelectItem key={type} value={type}>
+                  {type.replace(/_/g, ' ')}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Resource Or Location Selector */}
         <FormField
           control={form.control}
           name="resourceId"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Resource *</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
+              <FormLabel>Resource or Location *</FormLabel>
+              <Select
+                value={field.value ? field.value : selectedLocationId ? `_location_${selectedLocationId}` : undefined}
+                onValueChange={(value) => {
+                  if (!value) {
+                    form.setValue('locationId', '', { shouldDirty: true, shouldValidate: true });
+                    field.onChange('');
+                    return;
+                  }
+                  if (value.startsWith('_location_')) {
+                    form.setValue('locationId', value.replace('_location_', ''), {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    });
+                    field.onChange('');
+                    return;
+                  }
+                  form.setValue('locationId', '', { shouldDirty: true, shouldValidate: true });
+                  field.onChange(value);
+                }}
+              >
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select a resource" />
+                    <SelectValue placeholder="Select a resource or location" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {resourcesLoading && (
+                  {assetsLoading && (
                     <SelectItem value="_loading" disabled>
-                      Loading resources...
+                      Loading resources and locations...
                     </SelectItem>
                   )}
-                  {resourcesError && (
+                  {assetsError && (
                     <SelectItem value="_error" disabled>
                       ⚠ Permission error — please log out and log back in
                     </SelectItem>
                   )}
-                  {!resourcesError && resources.length === 0 && !resourcesLoading && (
+                  {!assetsError && !assetsLoading && resources.length === 0 && locations.length === 0 && (
                     <SelectItem value="_empty" disabled>
-                      No resources available
+                      No resources or locations available
                     </SelectItem>
                   )}
-                  {resources.map((resource) => (
-                    <SelectItem key={resource.resourceId} value={resource.resourceId}>
-                      {resource.name} — {resource.type.replace('_', ' ')}
-                      {resource.location && ` (${resource.location.buildingName}, Floor ${resource.location.floorNumber}${resource.location.roomNumber ? `, Room ${resource.location.roomNumber}` : ''})`}
-                    </SelectItem>
-                  ))}
+                  {resources.length > 0 && (
+                    <SelectGroup>
+                      <SelectLabel>Resources</SelectLabel>
+                      {resources.map((resource) => (
+                        <SelectItem key={resource.resourceId} value={resource.resourceId}>
+                          {resource.name} — {resource.type.replace(/_/g, ' ')}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  )}
+                  {locations.length > 0 && (
+                    <>
+                      <SelectSeparator />
+                      <SelectGroup>
+                        <SelectLabel>Locations</SelectLabel>
+                        {locations.map((location: LocationResponse) => (
+                          <SelectItem key={location.locationId} value={`_location_${location.locationId}`}>
+                            {location.buildingName} — Floor {location.floorNumber}
+                            {location.roomNumber ? `, Room ${location.roomNumber}` : ''}
+                            {` (${location.type.replace(/_/g, ' ')})`}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    </>
+                  )}
                 </SelectContent>
               </Select>
               <FormDescription>
-                Select the resource or location this ticket is about
+                Select either a resource or a location for this ticket.
               </FormDescription>
               <FormMessage />
             </FormItem>

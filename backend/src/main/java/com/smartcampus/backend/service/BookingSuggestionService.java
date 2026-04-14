@@ -4,6 +4,7 @@ import com.smartcampus.backend.dto.booking.BookingSuggestion;
 import com.smartcampus.backend.model.Booking;
 import com.smartcampus.backend.model.Resource;
 import com.smartcampus.backend.model.ResourceAvailability;
+import com.smartcampus.backend.model.enums.AvailabilityRecurrenceType;
 import com.smartcampus.backend.model.enums.DayOfWeek;
 import com.smartcampus.backend.model.enums.ResourceStatus;
 import com.smartcampus.backend.repository.BookingRepository;
@@ -82,9 +83,10 @@ public class BookingSuggestionService {
             Duration duration,
             int limit
     ) {
-        DayOfWeek dayOfWeek = toDayOfWeek(date);
-        List<ResourceAvailability> windows =
-                availabilityRepository.findByResource_ResourceIdAndDayOfWeek(resource.getResourceId(), dayOfWeek);
+        List<ResourceAvailability> windows = availabilityRepository.findByResource_ResourceId(resource.getResourceId())
+            .stream()
+            .filter(w -> matchesDate(w.getRecurrenceType(), w.getDayOfWeek(), w.getDayOfMonth(), date))
+            .toList();
         if (windows.isEmpty()) return List.of();
 
         List<Booking> active = bookingRepository.findActiveByResourceAndDate(resource.getResourceId(), date);
@@ -127,6 +129,23 @@ public class BookingSuggestionService {
             case FRIDAY -> DayOfWeek.FRI;
             case SATURDAY -> DayOfWeek.SAT;
             case SUNDAY -> DayOfWeek.SUN;
+        };
+    }
+
+    private boolean matchesDate(
+            AvailabilityRecurrenceType recurrenceType,
+            DayOfWeek dayOfWeek,
+            Integer dayOfMonth,
+            LocalDate date
+    ) {
+        if (recurrenceType == null) {
+            return dayOfWeek == toDayOfWeek(date);
+        }
+
+        return switch (recurrenceType) {
+            case DAILY -> true;
+            case WEEKLY -> dayOfWeek == toDayOfWeek(date);
+            case MONTHLY -> dayOfMonth != null && dayOfMonth == date.getDayOfMonth();
         };
     }
 

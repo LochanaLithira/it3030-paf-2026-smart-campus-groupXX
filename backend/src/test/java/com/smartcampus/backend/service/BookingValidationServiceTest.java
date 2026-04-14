@@ -3,9 +3,11 @@ package com.smartcampus.backend.service;
 import com.smartcampus.backend.exception.AppException;
 import com.smartcampus.backend.model.Resource;
 import com.smartcampus.backend.model.ResourceAvailability;
+import com.smartcampus.backend.model.enums.AvailabilityRecurrenceType;
 import com.smartcampus.backend.model.enums.DayOfWeek;
 import com.smartcampus.backend.model.enums.ResourceStatus;
 import com.smartcampus.backend.repository.BookingRepository;
+import com.smartcampus.backend.repository.LocationAvailabilityRepository;
 import com.smartcampus.backend.repository.ResourceAvailabilityRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -36,19 +38,26 @@ class BookingValidationServiceTest {
     @Mock
     private ResourceAvailabilityRepository availabilityRepository;
 
+        @Mock
+        private LocationAvailabilityRepository locationAvailabilityRepository;
+
     private BookingValidationService bookingValidationService;
 
     @BeforeEach
     void setUp() {
-        bookingValidationService = new BookingValidationService(bookingRepository, availabilityRepository);
+                bookingValidationService = new BookingValidationService(
+                                bookingRepository,
+                                availabilityRepository,
+                                locationAvailabilityRepository
+                );
     }
 
     @Test
     void validateCreate_passesWhenRequestIsWithinAvailability() {
-        Resource resource = activeResource(40);
+                Resource resource = activeResource();
         LocalDate bookingDate = next(java.time.DayOfWeek.MONDAY);
 
-        when(availabilityRepository.findByResource_ResourceIdAndDayOfWeek(eq(resource.getResourceId()), eq(DayOfWeek.MON)))
+        when(availabilityRepository.findByResource_ResourceId(eq(resource.getResourceId())))
                 .thenReturn(List.of(window(resource, DayOfWeek.MON, "08:00", "18:00")));
 
         bookingValidationService.validateCreate(
@@ -62,7 +71,7 @@ class BookingValidationServiceTest {
 
     @Test
     void validateCreate_throwsWhenEndTimeNotAfterStartTime() {
-        Resource resource = activeResource(20);
+                Resource resource = activeResource();
         LocalDate bookingDate = next(java.time.DayOfWeek.TUESDAY);
 
         AppException ex = assertThrows(
@@ -82,7 +91,7 @@ class BookingValidationServiceTest {
 
     @Test
     void validateCreate_throwsWhenDateIsInPast() {
-        Resource resource = activeResource(30);
+                Resource resource = activeResource();
         LocalDate yesterday = LocalDate.now().minusDays(1);
 
         AppException ex = assertThrows(
@@ -102,7 +111,7 @@ class BookingValidationServiceTest {
 
     @Test
     void validateCreate_throwsWhenResourceIsInactive() {
-        Resource resource = activeResource(40);
+                Resource resource = activeResource();
         resource.setStatus(ResourceStatus.OUT_OF_SERVICE);
         LocalDate bookingDate = next(java.time.DayOfWeek.WEDNESDAY);
 
@@ -122,31 +131,11 @@ class BookingValidationServiceTest {
     }
 
     @Test
-    void validateCreate_throwsWhenAttendeesExceedCapacity() {
-        Resource resource = activeResource(15);
-        LocalDate bookingDate = next(java.time.DayOfWeek.THURSDAY);
-
-        AppException ex = assertThrows(
-                AppException.class,
-                () -> bookingValidationService.validateCreate(
-                        resource,
-                        bookingDate,
-                        LocalTime.of(10, 0),
-                        LocalTime.of(11, 0),
-                        20
-                )
-        );
-
-        assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, ex.getStatus());
-        assertEquals("Expected attendees exceeds resource capacity", ex.getMessage());
-    }
-
-    @Test
     void validateCreate_throwsWhenOutsideAvailabilityWindow() {
-        Resource resource = activeResource(30);
+        Resource resource = activeResource();
         LocalDate bookingDate = next(java.time.DayOfWeek.FRIDAY);
 
-        when(availabilityRepository.findByResource_ResourceIdAndDayOfWeek(any(), eq(DayOfWeek.FRI)))
+                when(availabilityRepository.findByResource_ResourceId(any()))
                 .thenReturn(List.of(window(resource, DayOfWeek.FRI, "09:00", "12:00")));
 
         AppException ex = assertThrows(
@@ -165,6 +154,42 @@ class BookingValidationServiceTest {
     }
 
     @Test
+    void validateCreate_passesWhenDailyAvailabilityMatchesDate() {
+        Resource resource = activeResource();
+        LocalDate bookingDate = next(java.time.DayOfWeek.THURSDAY);
+
+        when(availabilityRepository.findByResource_ResourceId(eq(resource.getResourceId())))
+                .thenReturn(List.of(windowDaily(resource, "00:00", "23:59")));
+
+        bookingValidationService.validateCreate(
+                resource,
+                bookingDate,
+                LocalTime.of(9, 0),
+                LocalTime.of(10, 0),
+                10
+        );
+    }
+
+    @Test
+    void validateCreate_passesWhenMonthlyAvailabilityMatchesDate() {
+        Resource resource = activeResource();
+        LocalDate bookingDate = LocalDate.now().plusMonths(1);
+        int dayOfMonth = Math.min(bookingDate.getDayOfMonth(), bookingDate.lengthOfMonth());
+        bookingDate = bookingDate.withDayOfMonth(dayOfMonth);
+
+        when(availabilityRepository.findByResource_ResourceId(eq(resource.getResourceId())))
+                .thenReturn(List.of(windowMonthly(resource, dayOfMonth, "08:00", "12:00")));
+
+        bookingValidationService.validateCreate(
+                resource,
+                bookingDate,
+                LocalTime.of(9, 0),
+                LocalTime.of(10, 0),
+                10
+        );
+    }
+
+    @Test
     void hasConflict_delegatesToRepository() {
         UUID resourceId = UUID.randomUUID();
         LocalDate bookingDate = next(java.time.DayOfWeek.MONDAY);
@@ -178,11 +203,10 @@ class BookingValidationServiceTest {
         assertFalse(bookingValidationService.hasConflict(resourceId, bookingDate, startTime, endTime));
     }
 
-    private Resource activeResource(Integer capacity) {
+        private Resource activeResource() {
         return Resource.builder()
                 .resourceId(UUID.randomUUID())
                 .name("Room A")
-                .capacity(capacity)
                 .status(ResourceStatus.ACTIVE)
                 .build();
     }
@@ -190,11 +214,31 @@ class BookingValidationServiceTest {
     private ResourceAvailability window(Resource resource, DayOfWeek dayOfWeek, String start, String end) {
         return ResourceAvailability.builder()
                 .resource(resource)
+                                .recurrenceType(AvailabilityRecurrenceType.WEEKLY)
                 .dayOfWeek(dayOfWeek)
                 .startTime(LocalTime.parse(start))
                 .endTime(LocalTime.parse(end))
                 .build();
     }
+
+        private ResourceAvailability windowDaily(Resource resource, String start, String end) {
+                return ResourceAvailability.builder()
+                                .resource(resource)
+                                .recurrenceType(AvailabilityRecurrenceType.DAILY)
+                                .startTime(LocalTime.parse(start))
+                                .endTime(LocalTime.parse(end))
+                                .build();
+        }
+
+        private ResourceAvailability windowMonthly(Resource resource, int dayOfMonth, String start, String end) {
+                return ResourceAvailability.builder()
+                                .resource(resource)
+                                .recurrenceType(AvailabilityRecurrenceType.MONTHLY)
+                                .dayOfMonth(dayOfMonth)
+                                .startTime(LocalTime.parse(start))
+                                .endTime(LocalTime.parse(end))
+                                .build();
+        }
 
     private LocalDate next(java.time.DayOfWeek dayOfWeek) {
         LocalDate today = LocalDate.now();

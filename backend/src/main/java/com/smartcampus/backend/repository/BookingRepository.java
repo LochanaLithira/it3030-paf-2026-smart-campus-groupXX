@@ -18,61 +18,184 @@ import java.util.UUID;
 @Repository
 public interface BookingRepository extends JpaRepository<Booking, UUID> {
 
-    @EntityGraph(attributePaths = {"resource", "user", "resource.location"})
+    @EntityGraph(attributePaths = {"resource", "location", "user"})
     Page<Booking> findByUser_UserId(UUID userId, Pageable pageable);
 
-    @EntityGraph(attributePaths = {"resource", "user", "resource.location"})
+    @EntityGraph(attributePaths = {"resource", "location", "user"})
     Page<Booking> findByStatus(BookingStatus status, Pageable pageable);
 
     @Query("""
         SELECT COUNT(b) > 0 FROM Booking b
         WHERE b.resource.resourceId = :resourceId
         AND b.bookingDate = :date
-        AND b.status NOT IN (com.smartcampus.backend.model.enums.BookingStatus.REJECTED,
-                             com.smartcampus.backend.model.enums.BookingStatus.CANCELLED)
+        AND b.status <> :rejectedStatus
+        AND b.status <> :cancelledStatus
         AND b.startTime < :endTime
         AND b.endTime > :startTime
     """)
-    boolean existsConflict(
+    boolean existsConflictInternal(
         @Param("resourceId") UUID resourceId,
         @Param("date") LocalDate date,
         @Param("startTime") LocalTime startTime,
-        @Param("endTime") LocalTime endTime
+        @Param("endTime") LocalTime endTime,
+        @Param("rejectedStatus") BookingStatus rejectedStatus,
+        @Param("cancelledStatus") BookingStatus cancelledStatus
     );
 
-    @EntityGraph(attributePaths = {"resource", "user", "resource.location"})
+    default boolean existsConflict(
+        UUID resourceId,
+        LocalDate date,
+        LocalTime startTime,
+        LocalTime endTime
+    ) {
+        return existsConflictInternal(
+            resourceId,
+            date,
+            startTime,
+            endTime,
+            BookingStatus.REJECTED,
+            BookingStatus.CANCELLED
+        );
+    }
+
     @Query("""
-        SELECT b FROM Booking b
-        LEFT JOIN b.resource r
-        LEFT JOIN r.location l
-        WHERE (:status IS NULL OR b.status = :status)
-          AND (:resourceId IS NULL OR r.resourceId = :resourceId)
-          AND (:userId IS NULL OR b.user.userId = :userId)
-          AND (:locationId IS NULL OR l.locationId = :locationId)
-          AND (:fromDate IS NULL OR b.bookingDate >= :fromDate)
-          AND (:toDate IS NULL OR b.bookingDate <= :toDate)
-        """)
-    Page<Booking> findAllWithFilters(
-            @Param("status") BookingStatus status,
-            @Param("resourceId") UUID resourceId,
-            @Param("userId") UUID userId,
-            @Param("locationId") UUID locationId,
-            @Param("fromDate") LocalDate fromDate,
-            @Param("toDate") LocalDate toDate,
-            Pageable pageable
+        SELECT COUNT(b) > 0 FROM Booking b
+        WHERE b.location.locationId = :locationId
+        AND b.bookingDate = :date
+        AND b.status <> :rejectedStatus
+        AND b.status <> :cancelledStatus
+        AND b.startTime < :endTime
+        AND b.endTime > :startTime
+    """)
+    boolean existsLocationConflictInternal(
+        @Param("locationId") UUID locationId,
+        @Param("date") LocalDate date,
+        @Param("startTime") LocalTime startTime,
+        @Param("endTime") LocalTime endTime,
+        @Param("rejectedStatus") BookingStatus rejectedStatus,
+        @Param("cancelledStatus") BookingStatus cancelledStatus
     );
 
-    @EntityGraph(attributePaths = {"resource", "user", "resource.location"})
+    default boolean existsLocationConflict(
+        UUID locationId,
+        LocalDate date,
+        LocalTime startTime,
+        LocalTime endTime
+    ) {
+        return existsLocationConflictInternal(
+            locationId,
+            date,
+            startTime,
+            endTime,
+            BookingStatus.REJECTED,
+            BookingStatus.CANCELLED
+        );
+    }
+
+        @EntityGraph(attributePaths = {"resource", "location", "user"})
+        @Query("""
+                SELECT b FROM Booking b
+                LEFT JOIN b.resource r
+                LEFT JOIN b.location l
+                WHERE b.status = :status
+                    AND (:resourceId IS NULL OR r.resourceId = :resourceId)
+                    AND (:locationId IS NULL OR l.locationId = :locationId)
+                    AND (:userId IS NULL OR b.user.userId = :userId)
+                    AND (:fromDate IS NULL OR b.bookingDate >= :fromDate)
+                    AND (:toDate IS NULL OR b.bookingDate <= :toDate)
+                """)
+        Page<Booking> findAllWithStatusFilters(
+                        @Param("status") BookingStatus status,
+                        @Param("resourceId") UUID resourceId,
+                        @Param("locationId") UUID locationId,
+                        @Param("userId") UUID userId,
+                        @Param("fromDate") LocalDate fromDate,
+                        @Param("toDate") LocalDate toDate,
+                        Pageable pageable
+        );
+
+        @EntityGraph(attributePaths = {"resource", "location", "user"})
+        @Query("""
+                SELECT b FROM Booking b
+                LEFT JOIN b.resource r
+                LEFT JOIN b.location l
+                WHERE (:resourceId IS NULL OR r.resourceId = :resourceId)
+                    AND (:locationId IS NULL OR l.locationId = :locationId)
+                    AND (:userId IS NULL OR b.user.userId = :userId)
+                    AND (:fromDate IS NULL OR b.bookingDate >= :fromDate)
+                    AND (:toDate IS NULL OR b.bookingDate <= :toDate)
+                """)
+        Page<Booking> findAllWithoutStatusFilters(
+                        @Param("resourceId") UUID resourceId,
+                        @Param("locationId") UUID locationId,
+                        @Param("userId") UUID userId,
+                        @Param("fromDate") LocalDate fromDate,
+                        @Param("toDate") LocalDate toDate,
+                        Pageable pageable
+        );
+
+        default Page<Booking> findAllWithFilters(
+                        BookingStatus status,
+                        UUID resourceId,
+                        UUID locationId,
+                        UUID userId,
+                        LocalDate fromDate,
+                        LocalDate toDate,
+                        Pageable pageable
+        ) {
+                if (status == null) {
+                        return findAllWithoutStatusFilters(resourceId, locationId, userId, fromDate, toDate, pageable);
+                }
+                return findAllWithStatusFilters(status, resourceId, locationId, userId, fromDate, toDate, pageable);
+        }
+
+    @EntityGraph(attributePaths = {"resource", "location", "user"})
     @Query("""
         SELECT b FROM Booking b
         WHERE b.resource.resourceId = :resourceId
           AND b.bookingDate = :date
-          AND b.status NOT IN (com.smartcampus.backend.model.enums.BookingStatus.REJECTED,
-                               com.smartcampus.backend.model.enums.BookingStatus.CANCELLED)
+          AND b.status <> :rejectedStatus
+          AND b.status <> :cancelledStatus
         ORDER BY b.startTime ASC
         """)
-    List<Booking> findActiveByResourceAndDate(
+    List<Booking> findActiveByResourceAndDateInternal(
             @Param("resourceId") UUID resourceId,
-            @Param("date") LocalDate date
+            @Param("date") LocalDate date,
+            @Param("rejectedStatus") BookingStatus rejectedStatus,
+            @Param("cancelledStatus") BookingStatus cancelledStatus
     );
+
+    default List<Booking> findActiveByResourceAndDate(UUID resourceId, LocalDate date) {
+        return findActiveByResourceAndDateInternal(
+            resourceId,
+            date,
+            BookingStatus.REJECTED,
+            BookingStatus.CANCELLED
+        );
+    }
+
+    @EntityGraph(attributePaths = {"resource", "location", "user"})
+    @Query("""
+        SELECT b FROM Booking b
+        WHERE b.location.locationId = :locationId
+          AND b.bookingDate = :date
+          AND b.status <> :rejectedStatus
+          AND b.status <> :cancelledStatus
+        ORDER BY b.startTime ASC
+        """)
+    List<Booking> findActiveByLocationAndDateInternal(
+            @Param("locationId") UUID locationId,
+            @Param("date") LocalDate date,
+            @Param("rejectedStatus") BookingStatus rejectedStatus,
+            @Param("cancelledStatus") BookingStatus cancelledStatus
+    );
+
+    default List<Booking> findActiveByLocationAndDate(UUID locationId, LocalDate date) {
+        return findActiveByLocationAndDateInternal(
+            locationId,
+            date,
+            BookingStatus.REJECTED,
+            BookingStatus.CANCELLED
+        );
+    }
 }

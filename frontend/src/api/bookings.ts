@@ -4,8 +4,8 @@ import type { ApiError, BookingAvailabilityResponse, BookingCreateRequest, Booki
 export interface BookingsListParams {
   status?: BookingStatus;
   resourceId?: string;
-  userId?: string;
   locationId?: string;
+  userId?: string;
   fromDate?: string;
   toDate?: string;
   page?: number;

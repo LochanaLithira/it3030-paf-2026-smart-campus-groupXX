@@ -12,9 +12,10 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useBookings, useCancelBooking } from '@/hooks/useBookings';
-import type { BookingResponse, BookingStatus } from '@/types/api';
+import type { BookingResponse, BookingStatus, ResourceType } from '@/types/api';
 
 const STATUS_OPTIONS: BookingStatus[] = ['PENDING', 'APPROVED', 'REJECTED', 'CANCELLED'];
+const RESOURCE_TYPE_OPTIONS: ResourceType[] = ['LECTURE_HALL', 'LAB', 'MEETING_ROOM', 'EQUIPMENT'];
 
 function statusVariant(status: BookingStatus): 'default' | 'secondary' | 'destructive' | 'outline' {
   switch (status) {
@@ -32,6 +33,7 @@ function statusVariant(status: BookingStatus): 'default' | 'secondary' | 'destru
 export function BookingListPage() {
   const [page, setPage] = useState(0);
   const [status, setStatus] = useState<BookingStatus | ''>('');
+  const [resourceType, setResourceType] = useState<ResourceType | ''>('');
 
   const { data, isFetching, refetch } = useBookings({
     page,
@@ -40,7 +42,13 @@ export function BookingListPage() {
   });
   const cancel = useCancelBooking();
 
-  const rows = useMemo(() => data?.content ?? [], [data]);
+  const rows = useMemo(() => {
+    const raw = data?.content ?? [];
+    if (!resourceType) {
+      return raw;
+    }
+    return raw.filter((booking) => booking.resource.type === resourceType);
+  }, [data, resourceType]);
 
   return (
     <div className="space-y-4">
@@ -63,7 +71,7 @@ export function BookingListPage() {
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex flex-col gap-2 md:flex-row md:items-center">
         <Select
           value={status || '__all__'}
           onValueChange={(value) => {
@@ -80,6 +88,26 @@ export function BookingListPage() {
             {STATUS_OPTIONS.map((s) => (
               <SelectItem key={s} value={s}>
                 {s}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select
+          value={resourceType || '__all__'}
+          onValueChange={(value) => {
+            setResourceType(value === '__all__' ? '' : (value as ResourceType));
+            setPage(0);
+          }}
+        >
+          <SelectTrigger className="w-56">
+            <SelectValue placeholder="Filter by resource type" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__all__">All resource types</SelectItem>
+            {RESOURCE_TYPE_OPTIONS.map((type) => (
+              <SelectItem key={type} value={type}>
+                {type}
               </SelectItem>
             ))}
           </SelectContent>

@@ -296,13 +296,18 @@ export function LocationEditorDialog({ open, onClose, location, tags }: Location
                     </Select>
                     {watch(`availability.${index}.recurrenceType`) === 'WEEKLY' ? (
                     <Select
-                      value={watch(`availability.${index}.dayOfWeek`) || null}
+                      value={watch(`availability.${index}.dayOfWeek`) || '__none__'}
                       onValueChange={(value) =>
-                        setValue(`availability.${index}.dayOfWeek`, value as DayOfWeek, { shouldDirty: true, shouldValidate: true })
+                        setValue(
+                          `availability.${index}.dayOfWeek`,
+                          value === '__none__' ? undefined : (value as DayOfWeek),
+                          { shouldDirty: true, shouldValidate: true }
+                        )
                       }
                     >
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="__none__" disabled>Select day</SelectItem>
                         {WEEK_DAYS.map((day) => (
                           <SelectItem key={day} value={day}>{day}</SelectItem>
                         ))}

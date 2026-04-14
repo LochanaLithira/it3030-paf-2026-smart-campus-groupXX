@@ -6,6 +6,7 @@ import java.util.UUID;
 
 public record BookingResourceSummary(
         UUID resourceId,
+        UUID locationId,
         String name,
         ResourceType type
 ) {}

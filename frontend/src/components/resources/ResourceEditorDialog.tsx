@@ -24,7 +24,6 @@ import { useCreateResource, useUpdateResource } from '@/hooks/useResources';
 import type {
   AvailabilityRecurrenceType,
   DayOfWeek,
-  LocationResponse,
   ResourceRequest,
   ResourceResponse,
 } from '@/types/api';
@@ -33,15 +32,7 @@ const schema = z
   .object({
     name: z.string().min(1, 'Resource name is required').max(150),
     type: z.enum(['LECTURE_HALL', 'LAB', 'MEETING_ROOM', 'EQUIPMENT']),
-    capacity: z.number().int().min(1, 'Capacity must be at least 1'),
-    locationId: z.string().optional(),
     status: z.enum(['ACTIVE', 'OUT_OF_SERVICE', 'UNDER_MAINTENANCE']),
-    description: z.string().max(5000, 'Description is too long').optional().or(z.literal('')),
-    imageUrl: z.union([
-      z.string().url('Image URL must be valid'),
-      z.literal(''),
-      z.undefined()
-    ]),
     availability: z.array(z.object({
       recurrenceType: z.enum(['DAILY', 'WEEKLY', 'MONTHLY']),
       dayOfWeek: z.enum(['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']).optional(),
@@ -82,14 +73,12 @@ interface ResourceEditorDialogProps {
   open: boolean;
   onClose: () => void;
   resource?: ResourceResponse | null;
-  locations: LocationResponse[];
 }
 
 export function ResourceEditorDialog({
   open,
   onClose,
   resource,
-  locations,
 }: ResourceEditorDialogProps) {
   const createResource = useCreateResource();
   const updateResource = useUpdateResource();
@@ -108,11 +97,7 @@ export function ResourceEditorDialog({
     defaultValues: {
       name: '',
       type: 'EQUIPMENT',
-      capacity: 1,
-      locationId: '',
       status: 'ACTIVE',
-      description: '',
-      imageUrl: '',
       availability: [],
     },
   });
@@ -121,7 +106,6 @@ export function ResourceEditorDialog({
     name: 'availability',
   });
 
-  const selectedLocationId = watch('locationId');
   const selectedType = watch('type');
   const selectedStatus = watch('status');
 
@@ -134,11 +118,7 @@ export function ResourceEditorDialog({
       reset({
         name: '',
         type: 'EQUIPMENT',
-        capacity: 1,
-        locationId: '',
         status: 'ACTIVE',
-        description: '',
-        imageUrl: '',
         availability: [],
       });
       return;
@@ -147,11 +127,7 @@ export function ResourceEditorDialog({
     reset({
       name: resource.name,
       type: resource.type,
-      capacity: resource.capacity,
-      locationId: resource.location?.locationId ?? '',
       status: resource.status,
-      description: resource.description ?? '',
-      imageUrl: resource.imageUrl ?? '',
       availability: resource.availability.map((slot) => ({
         recurrenceType: slot.recurrenceType,
         dayOfWeek: slot.dayOfWeek ?? undefined,
@@ -166,11 +142,7 @@ export function ResourceEditorDialog({
     const payload: ResourceRequest = {
       name: values.name.trim(),
       type: values.type,
-      capacity: values.capacity,
-      locationId: values.locationId || undefined,
       status: values.status,
-      description: values.description?.trim() || undefined,
-      imageUrl: values.imageUrl?.trim() || undefined,
       availability: values.availability,
     };
 
@@ -202,12 +174,6 @@ export function ResourceEditorDialog({
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="resource-capacity">Capacity</Label>
-              <Input id="resource-capacity" type="number" {...register('capacity', { valueAsNumber: true })} />
-              {errors.capacity && <p className="text-xs text-destructive">{errors.capacity.message}</p>}
-            </div>
-
-            <div className="space-y-1.5">
               <Label>Type</Label>
               <Select value={selectedType} onValueChange={(value) => setValue('type', value as FormValues['type'])}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
@@ -231,35 +197,6 @@ export function ResourceEditorDialog({
                 </SelectContent>
               </Select>
             </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label>Location</Label>
-            <Select
-              value={selectedLocationId || null}
-              onValueChange={(value) => setValue('locationId', value === '__none__' ? '' : (value ?? ''))}
-            >
-              <SelectTrigger><SelectValue placeholder="No location" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__none__">No location</SelectItem>
-                {locations.map((location) => (
-                  <SelectItem key={location.locationId} value={location.locationId}>
-                    {location.buildingName} - Floor {location.floorNumber} {location.roomNumber ?? ''}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="resource-description">Description</Label>
-            <Input id="resource-description" {...register('description')} />
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="resource-image-url">Image URL</Label>
-            <Input id="resource-image-url" {...register('imageUrl')} />
-            {errors.imageUrl && <p className="text-xs text-destructive">{errors.imageUrl.message}</p>}
           </div>
 
           <div className="space-y-2">
@@ -307,13 +244,18 @@ export function ResourceEditorDialog({
                     </Select>
                     {watch(`availability.${index}.recurrenceType`) === 'WEEKLY' ? (
                       <Select
-                        value={watch(`availability.${index}.dayOfWeek`) || null}
+                        value={watch(`availability.${index}.dayOfWeek`) || '__none__'}
                         onValueChange={(value) =>
-                          setValue(`availability.${index}.dayOfWeek`, value as DayOfWeek, { shouldDirty: true, shouldValidate: true })
+                          setValue(
+                            `availability.${index}.dayOfWeek`,
+                            value === '__none__' ? undefined : (value as DayOfWeek),
+                            { shouldDirty: true, shouldValidate: true }
+                          )
                         }
                       >
                         <SelectTrigger><SelectValue placeholder="Day" /></SelectTrigger>
                         <SelectContent>
+                          <SelectItem value="__none__" disabled>Select day</SelectItem>
                           <SelectItem value="MON">MON</SelectItem>
                           <SelectItem value="TUE">TUE</SelectItem>
                           <SelectItem value="WED">WED</SelectItem>
