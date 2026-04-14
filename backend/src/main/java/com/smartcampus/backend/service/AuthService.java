@@ -30,7 +30,6 @@ import org.springframework.web.client.RestTemplate;
 import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 /**
  * Handles the SPA OAuth2 code-exchange flow:
@@ -60,7 +59,7 @@ public class AuthService {
     /** In-memory blacklist of invalidated refresh-token JTIs. Replace with Redis in production. */
     private final Set<String> invalidatedTokens = ConcurrentHashMap.newKeySet();
 
-    // ─── Self-Registration (no role assigned) ──────────────────────────────
+    // ─── Self-Registration (default USER role) ─────────────────────────────
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
@@ -76,9 +75,11 @@ public class AuthService {
                 .build();
 
         User saved = userRepository.save(newUser);
-        log.info("New user registered (no role): {}", saved.getEmail());
+        User withDefaultRole = assignDefaultRoleAndReload(saved);
+
+        log.info("New user registered with USER role: {}", withDefaultRole.getEmail());
         // Return auth response so the user is logged in immediately after signup
-        return buildAuthResponse(saved);
+        return buildAuthResponse(withDefaultRole);
     }
 
     // ─── Login via Email + Password ──────────────────────────────────────────
@@ -173,6 +174,36 @@ public class AuthService {
 
     // ─── Internals ───────────────────────────────────────────────────────────
 
+    private Role getDefaultUserRole() {
+        return roleRepository.findByRoleName(DEFAULT_ROLE)
+                .orElseThrow(() -> new IllegalStateException("Default role USER not seeded"));
+    }
+
+    private User assignDefaultRoleAndReload(User user) {
+        Role defaultRole = getDefaultUserRole();
+
+        boolean alreadyAssigned = user.getUserRoles().stream()
+                .anyMatch(userRole -> defaultRole.getRoleId().equals(userRole.getRoleId()));
+
+        if (!alreadyAssigned) {
+            UserRole userRole = UserRole.builder()
+                    .userId(user.getUserId())
+                    .roleId(defaultRole.getRoleId())
+                    .user(user)
+                    .role(defaultRole)
+                    .build();
+
+            // Explicitly populate assignedAt because auditing isn't configured on UserRole.
+            userRole.setAssignedAt(OffsetDateTime.now());
+
+            user.getUserRoles().add(userRole);
+            userRepository.save(user);
+        }
+
+        return userRepository.findByIdWithRoles(user.getUserId())
+                .orElseThrow(() -> new ResourceNotFoundException("User", user.getUserId()));
+    }
+
     private Map<String, Object> exchangeCodeWithGoogle(String code, String redirectUri) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
@@ -239,12 +270,15 @@ public class AuthService {
                 user.setOauthProvider(provider);
                 user.setOauthProviderId(providerId);
             }
-            return userRepository.save(user);
-        }
+            User saved = userRepository.save(user);
 
-        // New user — assign default USER role
-        Role defaultRole = roleRepository.findByRoleName(DEFAULT_ROLE)
-                .orElseThrow(() -> new IllegalStateException("Default role USER not seeded"));
+            // Backfill default role for legacy users that were created without any roles.
+            if (saved.getUserRoles().isEmpty()) {
+                return assignDefaultRoleAndReload(saved);
+            }
+
+            return saved;
+        }
 
         User newUser = User.builder()
                 .email(email)
@@ -256,22 +290,10 @@ public class AuthService {
                 .build();
 
         User saved = userRepository.save(newUser);
-
-        UserRole userRole = UserRole.builder()
-                .userId(saved.getUserId())
-                .roleId(defaultRole.getRoleId())
-                .user(saved)
-                .role(defaultRole)
-                .build();
-        
-        // Manually set assignedAt to avoid auditing issues
-        userRole.setAssignedAt(OffsetDateTime.now());
-        
-        saved.getUserRoles().add(userRole);
-        userRepository.save(saved);
+        User withDefaultRole = assignDefaultRoleAndReload(saved);
 
         log.info("New user created: {}", email);
-        return userRepository.findByIdWithRoles(saved.getUserId()).orElseThrow();
+        return withDefaultRole;
     }
 
     private AuthResponse buildAuthResponse(User user) {

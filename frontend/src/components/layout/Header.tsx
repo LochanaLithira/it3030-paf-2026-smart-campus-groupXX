@@ -11,6 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { NotificationBell } from '@/components/layout/NotificationBell';
 import { useAuthStore } from '@/store/authStore';
 
 function getInitials(name: string) {
@@ -40,6 +41,8 @@ export function Header() {
 
       {/* Right side */}
       <div className="flex items-center gap-3">
+        <NotificationBell />
+
         {/* Visible logout button */}
         <Button
           variant="ghost"

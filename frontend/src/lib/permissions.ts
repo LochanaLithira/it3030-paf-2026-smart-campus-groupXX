@@ -3,8 +3,6 @@
 //  Mirrors the backend roles.permissions text[] column values
 // ================================================================
 
-import { id } from "zod/v4/locales";
-
 export const PERMISSIONS = {
   
   //Management Page Access

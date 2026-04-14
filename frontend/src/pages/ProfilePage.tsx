@@ -3,6 +3,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { NotificationPreferencesSection } from '@/components/profile/NotificationPreferencesSection';
 
 function getInitials(name: string) {
   return name
@@ -19,7 +20,7 @@ export function ProfilePage() {
   if (!user) return null;
 
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className="max-w-3xl space-y-6">
       <h1 className="text-2xl font-bold">My Profile</h1>
 
       <Card>
@@ -75,6 +76,8 @@ export function ProfilePage() {
           </div>
         </CardContent>
       </Card>
+
+      <NotificationPreferencesSection />
     </div>
   );
 }

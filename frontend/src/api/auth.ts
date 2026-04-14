@@ -19,7 +19,7 @@ export const authApi = {
   },
 
   /**
-   * Self-registration — the new account has NO role until admin assigns one.
+   * Self-registration — the new account is created with USER role.
    */
   register: async (request: RegisterRequest): Promise<AuthResponse> => {
     const data = await apiClient.post('auth/register', { json: request }).json<AuthResponse>();

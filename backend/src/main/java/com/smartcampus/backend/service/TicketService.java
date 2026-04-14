@@ -199,15 +199,7 @@ public class TicketService {
         }
 
         // Notify the assigned technician
-        sendNotificationSafe(
-                technician.getUserId(),
-                "Ticket Assigned",
-                String.format("You have been assigned ticket #%s: %s",
-                    ticket.getTicketId().toString().substring(0, 8),
-                    ticket.getDescription().substring(0, Math.min(50, ticket.getDescription().length()))),
-                NotificationType.TICKET_ASSIGNED,
-                ticket.getTicketId()
-        );
+        notificationService.notifyTechnicianAssigned(savedTicket, technician.getUserId());
 
         log.info("Assigned ticket {} to technician {}", ticketId, technician.getUserId());
 
@@ -249,13 +241,13 @@ public class TicketService {
         };
 
         // Notify reporter about status change
-        sendNotificationSafe(
-                ticket.getReporter().getUserId(),
-                "Ticket Status Updated",
-                statusMessage,
-                NotificationType.TICKET_UPDATED,
-                ticket.getTicketId()
-        );
+        notificationService.notifyTicketStatusChanged(savedTicket, request.newStatus());
+        if (request.newStatus() == TicketStatus.RESOLVED) {
+            notificationService.notifyTicketResolved(savedTicket, request.resolutionNotes());
+        }
+        if (request.newStatus() == TicketStatus.REJECTED) {
+            notificationService.notifyTicketRejected(savedTicket, request.note());
+        }
 
         log.info("Updated ticket {} status from {} to {}", ticketId, oldStatus, request.newStatus());
 
@@ -280,27 +272,7 @@ public class TicketService {
 
         TicketComment savedComment = commentRepository.save(comment);
 
-        // Notify the other party
-        UUID recipientId;
-        if (currentUserId.equals(ticket.getReporter().getUserId())) {
-            // Reporter commented, notify technician
-            recipientId = ticket.getAssignedTech() != null ? ticket.getAssignedTech().getUserId() : null;
-        } else {
-            // Technician or admin commented, notify reporter
-            recipientId = ticket.getReporter().getUserId();
-        }
-
-        // Notify other party about comment
-        if (recipientId != null) {
-            sendNotificationSafe(
-                    recipientId,
-                    "New Comment on Ticket",
-                    String.format("%s commented: %s", author.getFullName(),
-                        request.content().substring(0, Math.min(50, request.content().length()))),
-                    NotificationType.TICKET_UPDATED,
-                    ticket.getTicketId()
-            );
-        }
+        notificationService.notifyCommentAdded(ticket, currentUserId, request.content());
 
         log.info("Added comment to ticket {} by user {}", ticketId, currentUserId);
 
@@ -584,7 +556,14 @@ public class TicketService {
     private void sendNotificationSafe(UUID userId, String title, String message,
                                       NotificationType type, UUID relatedEntityId) {
         try {
-            notificationService.create(userId, title, message, type, relatedEntityId);
+            notificationService.sendNotification(
+                    userId,
+                    type,
+                    title,
+                    message,
+                    relatedEntityId != null ? relatedEntityId.toString() : null,
+                    "TICKET"
+            );
         } catch (Exception ex) {
             log.warn("Failed to send {} notification to user {}: {}", type, userId, ex.getMessage());
         }

@@ -26,6 +26,7 @@ import { BookingListPage } from '@/pages/BookingListPage';
 import { BookingDetailPage } from '@/pages/BookingDetailPage';
 import { BookingCreatePage } from '@/pages/BookingCreatePage';
 import { AdminBookingQueuePage } from '@/pages/AdminBookingQueuePage';
+import { NotificationsPage } from '@/pages/NotificationsPage';
 
 // ── Root Route ───────────────────────────────────────────────────
 
@@ -121,6 +122,12 @@ const profileRoute = createRoute({
   getParentRoute: () => protectedLayoutRoute,
   path: '/profile',
   component: ProfilePage,
+});
+
+const notificationsRoute = createRoute({
+  getParentRoute: () => protectedLayoutRoute,
+  path: '/notifications',
+  component: NotificationsPage,
 });
 
 const locationsRoute = createRoute({
@@ -271,6 +278,7 @@ const routeTree = rootRoute.addChildren([
     ticketDetailRoute,
     techDashboardRoute,
     profileRoute,
+    notificationsRoute,
   ]),
 ]);
 

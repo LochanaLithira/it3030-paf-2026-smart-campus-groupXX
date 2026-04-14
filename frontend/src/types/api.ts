@@ -118,6 +118,53 @@ export interface NotificationResponse {
   readAt: string | null;
 }
 
+export type NotificationCategory = 'BOOKING' | 'TICKET' | 'COMMENT' | 'SYSTEM';
+
+export type NotificationType =
+  | 'BOOKING_APPROVED'
+  | 'BOOKING_REJECTED'
+  | 'BOOKING_CANCELLED'
+  | 'TICKET_CREATED'
+  | 'TICKET_STATUS_CHANGED'
+  | 'TICKET_ASSIGNED'
+  | 'TICKET_RESOLVED'
+  | 'TICKET_REJECTED'
+  | 'COMMENT_ADDED'
+  | 'GENERAL';
+
+export interface NotificationDTO {
+  id: string;
+  recipientUserId: string;
+  category: NotificationCategory;
+  type: NotificationType;
+  title: string;
+  message: string;
+  isRead: boolean;
+  createdAt: string;
+  referenceId: string | null;
+  referenceType: 'BOOKING' | 'TICKET' | 'COMMENT' | string | null;
+}
+
+export interface NotificationPreferenceDTO {
+  id: string;
+  userId: string;
+  category: NotificationCategory;
+  enabled: boolean;
+}
+
+export interface UpdatePreferenceRequest {
+  category: NotificationCategory;
+  enabled: boolean;
+}
+
+export interface UnreadCountResponse {
+  count: number;
+}
+
+export interface BulkReadResponse {
+  updated: number;
+}
+
 // -- Facilities & Assets ------------------------------------------------------
 
 export type ResourceType = 'LECTURE_HALL' | 'LAB' | 'MEETING_ROOM' | 'EQUIPMENT';

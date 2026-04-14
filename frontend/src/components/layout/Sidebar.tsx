@@ -11,6 +11,7 @@ import {
   Ticket,
   Wrench,
   CalendarDays,
+  Bell,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/authStore';
@@ -82,6 +83,11 @@ const NAV_ITEMS: NavItem[] = [
     label: 'Profile',
     href: '/profile',
     icon: Settings,
+  },
+  {
+    label: 'Notifications',
+    href: '/notifications',
+    icon: Bell,
   },
 ];
 

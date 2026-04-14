@@ -20,7 +20,6 @@ import com.smartcampus.backend.model.User;
 import com.smartcampus.backend.model.enums.AvailabilityRecurrenceType;
 import com.smartcampus.backend.model.enums.BookingStatus;
 import com.smartcampus.backend.model.enums.DayOfWeek;
-import com.smartcampus.backend.model.enums.NotificationType;
 import com.smartcampus.backend.repository.BookingRepository;
 import com.smartcampus.backend.repository.LocationRepository;
 import com.smartcampus.backend.repository.RecurringBookingGroupRepository;
@@ -193,12 +192,13 @@ public class BookingService {
 
         // Notify admins
         for (UUID adminId : userRepository.findAllAdminUserIds()) {
-            notificationService.create(
-                    adminId,
-                    "Booking Requested",
-                    user.getFullName() + " requested " + targetName(saved) + " on " + req.bookingDate(),
-                    NotificationType.BOOKING_CREATED,
-                    saved.getBookingId()
+            notificationService.sendNotification(
+                adminId,
+                com.smartcampus.backend.model.enums.NotificationType.GENERAL,
+                "Booking Requested",
+                user.getFullName() + " requested " + targetName(saved) + " on " + req.bookingDate(),
+                saved.getBookingId().toString(),
+                "BOOKING"
             );
         }
 
@@ -270,13 +270,14 @@ public class BookingService {
         bookingRepository.saveAll(bookings);
 
         for (UUID adminId : userRepository.findAllAdminUserIds()) {
-            notificationService.create(
-                    adminId,
-                    "Recurring Booking Requested",
-                    user.getFullName() + " requested recurring bookings for " + resource.getName()
-                            + " from " + req.startDate() + " to " + req.endDate() + ".",
-                    NotificationType.BOOKING_CREATED,
-                    group.getGroupId()
+            notificationService.sendNotification(
+                adminId,
+                com.smartcampus.backend.model.enums.NotificationType.GENERAL,
+                "Recurring Booking Requested",
+                user.getFullName() + " requested recurring bookings for " + resource.getName()
+                    + " from " + req.startDate() + " to " + req.endDate() + ".",
+                group.getGroupId().toString(),
+                "BOOKING"
             );
         }
 
@@ -342,13 +343,7 @@ public class BookingService {
 
         Booking saved = bookingRepository.save(booking);
 
-        notificationService.create(
-                saved.getUser().getUserId(),
-                "Booking Approved",
-            "Your booking for " + targetName(saved) + " on " + saved.getBookingDate() + " was approved.",
-                NotificationType.BOOKING_APPROVED,
-                saved.getBookingId()
-        );
+        notificationService.notifyBookingApproved(saved);
 
         return toResponse(saved);
     }
@@ -373,13 +368,7 @@ public class BookingService {
 
         Booking saved = bookingRepository.save(booking);
 
-        notificationService.create(
-                saved.getUser().getUserId(),
-                "Booking Rejected",
-            "Your booking for " + targetName(saved) + " on " + saved.getBookingDate() + " was rejected.",
-                NotificationType.BOOKING_REJECTED,
-                saved.getBookingId()
-        );
+        notificationService.notifyBookingRejected(saved, req.rejectionReason());
 
         return toResponse(saved);
     }
@@ -407,21 +396,16 @@ public class BookingService {
         Booking saved = bookingRepository.save(booking);
 
         if (canCancelAny && !saved.getUser().getUserId().equals(currentUserId)) {
-            notificationService.create(
-                    saved.getUser().getUserId(),
-                    "Booking Cancelled",
-                    "An admin cancelled your booking for " + targetName(saved) + " on " + saved.getBookingDate() + ".",
-                    NotificationType.BOOKING_CANCELLED,
-                    saved.getBookingId()
-            );
+            notificationService.notifyBookingCancelled(saved);
         } else {
             for (UUID adminId : userRepository.findAllAdminUserIds()) {
-                notificationService.create(
+                notificationService.sendNotification(
                         adminId,
+                        com.smartcampus.backend.model.enums.NotificationType.GENERAL,
                         "Booking Cancelled",
                         saved.getUser().getFullName() + " cancelled a booking for " + targetName(saved) + " on " + saved.getBookingDate() + ".",
-                        NotificationType.BOOKING_CANCELLED,
-                        saved.getBookingId()
+                        saved.getBookingId().toString(),
+                        "BOOKING"
                 );
             }
         }
