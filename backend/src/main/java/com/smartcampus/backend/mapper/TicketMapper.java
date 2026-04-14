@@ -16,16 +16,34 @@ public interface TicketMapper {
     @Mapping(target = "email", source = "email")
     UserSummaryResponse toUserSummaryResponse(User user);
 
-    // Resource response for tickets
-    @Mapping(target = "resourceId", source = "resourceId")
-    @Mapping(target = "name", source = "name")
-    @Mapping(target = "type", source = "type")
-    @Mapping(target = "location", source = "location")
-    TicketResourceResponse toTicketResourceResponse(Resource resource);
+    default TicketResourceResponse toTicketResourceResponse(Ticket ticket) {
+        if (ticket.getResource() != null) {
+            return new TicketResourceResponse(
+                    ticket.getResource().getResourceId(),
+                    null,
+                    ticket.getResource().getName(),
+                    ticket.getResource().getType().name()
+            );
+        }
+
+        if (ticket.getLocation() != null) {
+            String room = ticket.getLocation().getRoomNumber() == null || ticket.getLocation().getRoomNumber().isBlank()
+                    ? ""
+                    : ", Room " + ticket.getLocation().getRoomNumber();
+            return new TicketResourceResponse(
+                    null,
+                    ticket.getLocation().getLocationId(),
+                    ticket.getLocation().getBuildingName() + " - Floor " + ticket.getLocation().getFloorNumber() + room,
+                    ticket.getLocation().getType().name()
+            );
+        }
+
+        return null;
+    }
 
     // Ticket full response with all associations
     @Mapping(target = "ticketId", source = "ticketId")
-    @Mapping(target = "resource", source = "resource")
+    @Mapping(target = "resource", expression = "java(toTicketResourceResponse(ticket))")
     @Mapping(target = "reporter", source = "reporter")
     @Mapping(target = "assignedTech", source = "assignedTech")
     @Mapping(target = "category", source = "category")
@@ -46,7 +64,7 @@ public interface TicketMapper {
 
     // Ticket summary response (for list views)
     @Mapping(target = "ticketId", source = "ticket.ticketId")
-    @Mapping(target = "resource", source = "ticket.resource")
+    @Mapping(target = "resource", expression = "java(toTicketResourceResponse(ticket))")
     @Mapping(target = "reporter", source = "ticket.reporter")
     @Mapping(target = "assignedTech", source = "ticket.assignedTech")
     @Mapping(target = "category", source = "ticket.category")

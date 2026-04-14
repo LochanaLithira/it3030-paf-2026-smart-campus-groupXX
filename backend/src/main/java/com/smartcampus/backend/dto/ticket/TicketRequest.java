@@ -2,6 +2,7 @@ package com.smartcampus.backend.dto.ticket;
 
 import com.smartcampus.backend.model.enums.TicketCategory;
 import com.smartcampus.backend.model.enums.TicketPriority;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -12,8 +13,9 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 public record TicketRequest(
-    @NotNull(message = "Resource ID is required")
     UUID resourceId,
+
+    UUID locationId,
 
     @NotNull(message = "Category is required")
     TicketCategory category,
@@ -35,4 +37,9 @@ public record TicketRequest(
 
     // Optional due date requested by reporter
     LocalDate dueDate
-) {}
+) {
+    @AssertTrue(message = "Either resourceId or locationId must be provided, but not both")
+    public boolean hasExactlyOneTarget() {
+        return (resourceId != null) ^ (locationId != null);
+    }
+}

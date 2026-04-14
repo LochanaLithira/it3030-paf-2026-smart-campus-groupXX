@@ -42,10 +42,11 @@ public class TicketController {
             @RequestParam(required = false) TicketPriority priority,
             @RequestParam(required = false) TicketCategory category,
             @RequestParam(required = false) UUID resourceId,
+            @RequestParam(required = false) UUID locationId,
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
         Page<TicketSummaryResponse> tickets = ticketService.listTickets(
-                status, priority, category, resourceId, pageable
+            status, priority, category, resourceId, locationId, pageable
         );
         return ResponseEntity.ok(tickets);
     }

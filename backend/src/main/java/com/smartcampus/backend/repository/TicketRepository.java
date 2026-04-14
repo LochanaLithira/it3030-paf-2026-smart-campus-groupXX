@@ -21,7 +21,7 @@ public interface TicketRepository extends JpaRepository<Ticket, UUID> {
     @Query("""
         SELECT t FROM Ticket t
         LEFT JOIN FETCH t.resource r
-        LEFT JOIN FETCH r.location
+        LEFT JOIN FETCH t.location l
         LEFT JOIN FETCH t.reporter rep
         LEFT JOIN FETCH t.assignedTech tech
         WHERE t.ticketId = :ticketId
@@ -37,18 +37,19 @@ public interface TicketRepository extends JpaRepository<Ticket, UUID> {
         value = """
             SELECT DISTINCT t.*,
                 r.resource_id AS res_id,
-                loc.location_id,
+                loc.location_id AS loc_id,
                 rep.user_id AS rep_id,
                 tech.user_id AS tech_id
             FROM tickets t
             LEFT JOIN resources r ON r.resource_id = t.resource_id
-            LEFT JOIN locations loc ON loc.location_id = r.location_id
+            LEFT JOIN locations loc ON loc.location_id = t.location_id
             LEFT JOIN users rep ON rep.user_id = t.reporter_id
             LEFT JOIN users tech ON tech.user_id = t.assigned_tech_id
             WHERE (:status IS NULL OR t.status = CAST(:status AS ticket_status))
             AND (:priority IS NULL OR t.priority = CAST(:priority AS ticket_priority))
             AND (CAST(:category AS VARCHAR) IS NULL OR t.category = :category)
             AND (:resourceId IS NULL OR r.resource_id = CAST(:resourceId AS uuid))
+            AND (:locationId IS NULL OR loc.location_id = CAST(:locationId AS uuid))
             AND (:reporterId IS NULL OR rep.user_id = CAST(:reporterId AS uuid))
             AND (:assignedTechId IS NULL OR tech.user_id = CAST(:assignedTechId AS uuid))
             ORDER BY t.priority DESC, t.created_at DESC
@@ -57,12 +58,14 @@ public interface TicketRepository extends JpaRepository<Ticket, UUID> {
             SELECT COUNT(DISTINCT t.ticket_id)
             FROM tickets t
             LEFT JOIN resources r ON r.resource_id = t.resource_id
+            LEFT JOIN locations loc ON loc.location_id = t.location_id
             LEFT JOIN users rep ON rep.user_id = t.reporter_id
             LEFT JOIN users tech ON tech.user_id = t.assigned_tech_id
             WHERE (:status IS NULL OR t.status = CAST(:status AS ticket_status))
             AND (:priority IS NULL OR t.priority = CAST(:priority AS ticket_priority))
             AND (CAST(:category AS VARCHAR) IS NULL OR t.category = :category)
             AND (:resourceId IS NULL OR r.resource_id = CAST(:resourceId AS uuid))
+            AND (:locationId IS NULL OR loc.location_id = CAST(:locationId AS uuid))
             AND (:reporterId IS NULL OR rep.user_id = CAST(:reporterId AS uuid))
             AND (:assignedTechId IS NULL OR tech.user_id = CAST(:assignedTechId AS uuid))
             """,
@@ -73,6 +76,7 @@ public interface TicketRepository extends JpaRepository<Ticket, UUID> {
         @Param("priority") String priority,
         @Param("category") String category,
         @Param("resourceId") UUID resourceId,
+        @Param("locationId") UUID locationId,
         @Param("reporterId") UUID reporterId,
         @Param("assignedTechId") UUID assignedTechId,
         Pageable pageable

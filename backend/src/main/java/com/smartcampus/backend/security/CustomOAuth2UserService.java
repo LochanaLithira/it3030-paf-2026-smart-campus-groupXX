@@ -5,6 +5,7 @@ import com.smartcampus.backend.model.User;
 import com.smartcampus.backend.model.UserRole;
 import com.smartcampus.backend.repository.RoleRepository;
 import com.smartcampus.backend.repository.UserRepository;
+import com.smartcampus.backend.service.NotificationPreferenceService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
@@ -30,6 +31,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
+        private final NotificationPreferenceService notificationPreferenceService;
 
     @Override
     @Transactional
@@ -57,6 +59,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             user.setOauthProviderId(providerId);
         }
         userRepository.save(user);
+        notificationPreferenceService.initDefaultPreferences(user.getUserId());
 
         UserPrincipal principal = UserPrincipal.from(userRepository.findByIdWithRoles(user.getUserId())
                 .orElseThrow(() -> new OAuth2AuthenticationException("User not found after upsert")));

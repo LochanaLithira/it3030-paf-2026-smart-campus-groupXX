@@ -25,7 +25,7 @@ public class AuthController {
 
     private final AuthService authService;
 
-    @Operation(summary = "Self-registration — creates account with no role assigned")
+    @Operation(summary = "Self-registration — creates account with default USER role")
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(
             @Valid @RequestBody RegisterRequest request,

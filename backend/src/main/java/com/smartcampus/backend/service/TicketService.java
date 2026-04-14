@@ -38,6 +38,7 @@ public class TicketService {
     private final TicketCommentRepository commentRepository;
     private final TicketStatusHistoryRepository statusHistoryRepository;
     private final ResourceRepository resourceRepository;
+    private final LocationRepository locationRepository;
     private final UserRepository userRepository;
     private final NotificationService notificationService;
     private final TicketMapper ticketMapper;
@@ -57,6 +58,7 @@ public class TicketService {
             TicketPriority priority,
             TicketCategory category,
             UUID resourceId,
+            UUID locationId,
             Pageable pageable
     ) {
         UUID currentUserId = SecurityUtils.getCurrentUserId();
@@ -88,7 +90,7 @@ public class TicketService {
                 status  == null ? null : status.name(),
                 priority == null ? null : priority.name(),
                 category == null ? null : category.name(),
-                resourceId, reporterId, assignedTechId, unsortedPageable
+            resourceId, locationId, reporterId, assignedTechId, unsortedPageable
         );
 
         return tickets.map(ticketMapper::toTicketSummaryResponse);
@@ -110,11 +112,20 @@ public class TicketService {
         User reporter = userRepository.findById(currentUserId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        Resource resource = resourceRepository.findById(request.resourceId())
+        Resource resource = null;
+        Location location = null;
+
+        if (request.resourceId() != null) {
+            resource = resourceRepository.findById(request.resourceId())
                 .orElseThrow(() -> new ResourceNotFoundException("Resource not found with ID: " + request.resourceId()));
+        } else {
+            location = locationRepository.findById(request.locationId())
+                .orElseThrow(() -> new ResourceNotFoundException("Location not found with ID: " + request.locationId()));
+        }
 
         Ticket ticket = Ticket.builder()
                 .resource(resource)
+            .location(location)
                 .reporter(reporter)
                 .category(request.category())
                 .description(request.description())
@@ -137,6 +148,7 @@ public class TicketService {
         }
 
         // Notify all admins about new ticket
+        String targetName = resource != null ? resource.getName() : formatLocationName(location);
         notifyAdmins("New Ticket Created",
                 String.format("Ticket #%s: %s - %s",
                     savedTicket.getTicketId().toString().substring(0, 8),
@@ -145,8 +157,8 @@ public class TicketService {
                 NotificationType.TICKET_CREATED,
                 savedTicket.getTicketId());
 
-        log.info("Created ticket {} for resource {} by user {}", 
-                savedTicket.getTicketId(), resource.getResourceId(), currentUserId);
+        log.info("Created ticket {} for target {} by user {}", 
+            savedTicket.getTicketId(), targetName, currentUserId);
 
         return ticketMapper.toTicketResponse(savedTicket);
     }
@@ -187,15 +199,7 @@ public class TicketService {
         }
 
         // Notify the assigned technician
-        sendNotificationSafe(
-                technician.getUserId(),
-                "Ticket Assigned",
-                String.format("You have been assigned ticket #%s: %s",
-                    ticket.getTicketId().toString().substring(0, 8),
-                    ticket.getDescription().substring(0, Math.min(50, ticket.getDescription().length()))),
-                NotificationType.TICKET_ASSIGNED,
-                ticket.getTicketId()
-        );
+        notificationService.notifyTechnicianAssigned(savedTicket, technician.getUserId());
 
         log.info("Assigned ticket {} to technician {}", ticketId, technician.getUserId());
 
@@ -237,13 +241,13 @@ public class TicketService {
         };
 
         // Notify reporter about status change
-        sendNotificationSafe(
-                ticket.getReporter().getUserId(),
-                "Ticket Status Updated",
-                statusMessage,
-                NotificationType.TICKET_UPDATED,
-                ticket.getTicketId()
-        );
+        notificationService.notifyTicketStatusChanged(savedTicket, request.newStatus());
+        if (request.newStatus() == TicketStatus.RESOLVED) {
+            notificationService.notifyTicketResolved(savedTicket, request.resolutionNotes());
+        }
+        if (request.newStatus() == TicketStatus.REJECTED) {
+            notificationService.notifyTicketRejected(savedTicket, request.note());
+        }
 
         log.info("Updated ticket {} status from {} to {}", ticketId, oldStatus, request.newStatus());
 
@@ -268,27 +272,7 @@ public class TicketService {
 
         TicketComment savedComment = commentRepository.save(comment);
 
-        // Notify the other party
-        UUID recipientId;
-        if (currentUserId.equals(ticket.getReporter().getUserId())) {
-            // Reporter commented, notify technician
-            recipientId = ticket.getAssignedTech() != null ? ticket.getAssignedTech().getUserId() : null;
-        } else {
-            // Technician or admin commented, notify reporter
-            recipientId = ticket.getReporter().getUserId();
-        }
-
-        // Notify other party about comment
-        if (recipientId != null) {
-            sendNotificationSafe(
-                    recipientId,
-                    "New Comment on Ticket",
-                    String.format("%s commented: %s", author.getFullName(),
-                        request.content().substring(0, Math.min(50, request.content().length()))),
-                    NotificationType.TICKET_UPDATED,
-                    ticket.getTicketId()
-            );
-        }
+        notificationService.notifyCommentAdded(ticket, currentUserId, request.content());
 
         log.info("Added comment to ticket {} by user {}", ticketId, currentUserId);
 
@@ -545,6 +529,16 @@ public class TicketService {
         }
     }
 
+    private String formatLocationName(Location location) {
+        if (location == null) {
+            return "Unknown location";
+        }
+        String room = location.getRoomNumber() == null || location.getRoomNumber().isBlank()
+                ? ""
+                : ", Room " + location.getRoomNumber();
+        return location.getBuildingName() + " - Floor " + location.getFloorNumber() + room;
+    }
+
     private void notifyAdmins(String title, String message, NotificationType type, UUID relatedEntityId) {
         List<User> admins = userRepository.findAll().stream()
                 .filter(u -> hasPermission(u, "tickets.view_all"))
@@ -562,7 +556,14 @@ public class TicketService {
     private void sendNotificationSafe(UUID userId, String title, String message,
                                       NotificationType type, UUID relatedEntityId) {
         try {
-            notificationService.create(userId, title, message, type, relatedEntityId);
+            notificationService.sendNotification(
+                    userId,
+                    type,
+                    title,
+                    message,
+                    relatedEntityId != null ? relatedEntityId.toString() : null,
+                    "TICKET"
+            );
         } catch (Exception ex) {
             log.warn("Failed to send {} notification to user {}: {}", type, userId, ex.getMessage());
         }

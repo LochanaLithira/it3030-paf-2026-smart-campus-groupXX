@@ -33,14 +33,12 @@ public class ResourceController {
     public ResponseEntity<PageResponse<ResourceResponse>> listResources(
             @RequestParam(required = false) ResourceType type,
             @RequestParam(required = false) ResourceStatus status,
-            @RequestParam(required = false) UUID locationId,
             @RequestParam(required = false) String tags,
             @RequestParam(required = false) String search,
-            @RequestParam(required = false) Integer minCapacity,
             @PageableDefault(size = 20, sort = "createdAt") Pageable pageable
     ) {
         return ResponseEntity.ok(PageResponse.from(resourceService.listResources(
-                type, status, locationId, tags, search, minCapacity, pageable
+            type, status, tags, search, pageable
         )));
     }
 
@@ -86,6 +84,8 @@ public class ResourceController {
         return ResponseEntity.noContent().build();
     }
 
+/* RESOURCE TAGS */
+    
     @Operation(summary = "List all resource tags")
     @GetMapping("/tags")
     @PreAuthorize("hasAuthority('resources.read')")

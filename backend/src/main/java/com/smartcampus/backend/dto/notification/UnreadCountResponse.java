@@ -1,3 +1,3 @@
 package com.smartcampus.backend.dto.notification;
 
-public record UnreadCountResponse(long count) {}
+public record UnreadCountResponse(int count) {}

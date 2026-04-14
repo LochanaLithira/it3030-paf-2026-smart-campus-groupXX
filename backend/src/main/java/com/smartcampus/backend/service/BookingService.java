@@ -12,13 +12,16 @@ import com.smartcampus.backend.dto.common.PageResponse;
 import com.smartcampus.backend.exception.AppException;
 import com.smartcampus.backend.exception.BookingConflictException;
 import com.smartcampus.backend.model.Booking;
+import com.smartcampus.backend.model.Location;
 import com.smartcampus.backend.model.RecurringBookingGroup;
 import com.smartcampus.backend.model.Resource;
+import com.smartcampus.backend.model.ResourceAvailability;
 import com.smartcampus.backend.model.User;
+import com.smartcampus.backend.model.enums.AvailabilityRecurrenceType;
 import com.smartcampus.backend.model.enums.BookingStatus;
 import com.smartcampus.backend.model.enums.DayOfWeek;
-import com.smartcampus.backend.model.enums.NotificationType;
 import com.smartcampus.backend.repository.BookingRepository;
+import com.smartcampus.backend.repository.LocationRepository;
 import com.smartcampus.backend.repository.RecurringBookingGroupRepository;
 import com.smartcampus.backend.repository.ResourceAvailabilityRepository;
 import com.smartcampus.backend.repository.ResourceRepository;
@@ -33,6 +36,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -48,6 +52,7 @@ public class BookingService {
     private final BookingRepository bookingRepository;
     private final RecurringBookingGroupRepository recurringBookingGroupRepository;
     private final ResourceRepository resourceRepository;
+    private final LocationRepository locationRepository;
     private final UserRepository userRepository;
     private final ResourceAvailabilityRepository availabilityRepository;
     private final BookingValidationService bookingValidationService;
@@ -57,11 +62,7 @@ public class BookingService {
     private BookingResponse toResponse(Booking b) {
         return new BookingResponse(
                 b.getBookingId(),
-                new BookingResourceSummary(
-                        b.getResource().getResourceId(),
-                        b.getResource().getName(),
-                        b.getResource().getType()
-                ),
+            toTargetSummary(b),
                 new BookingUserSummary(
                         b.getUser().getUserId(),
                         b.getUser().getFullName(),
@@ -82,6 +83,45 @@ public class BookingService {
         );
     }
 
+    private BookingResourceSummary toTargetSummary(Booking booking) {
+        if (booking.getResource() != null) {
+            return new BookingResourceSummary(
+                    booking.getResource().getResourceId(),
+                    null,
+                    booking.getResource().getName(),
+                    booking.getResource().getType()
+            );
+        }
+
+        if (booking.getLocation() != null) {
+            return new BookingResourceSummary(
+                    null,
+                    booking.getLocation().getLocationId(),
+                    formatLocationName(booking.getLocation()),
+                    booking.getLocation().getType()
+            );
+        }
+
+        throw new AppException("Booking has no target resource or location", HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    private String formatLocationName(Location location) {
+        String room = location.getRoomNumber() == null || location.getRoomNumber().isBlank()
+                ? ""
+                : ", Room " + location.getRoomNumber();
+        return location.getBuildingName() + " - Floor " + location.getFloorNumber() + room;
+    }
+
+    private String targetName(Booking booking) {
+        if (booking.getResource() != null) {
+            return booking.getResource().getName();
+        }
+        if (booking.getLocation() != null) {
+            return formatLocationName(booking.getLocation());
+        }
+        return "Unknown target";
+    }
+
     @Transactional
     public BookingResponse createBooking(BookingCreateRequest req) {
         UUID userId = SecurityUtils.getCurrentUserId();
@@ -89,30 +129,57 @@ public class BookingService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND));
 
-        Resource resource = resourceRepository.findById(req.resourceId())
+        Resource resource = null;
+        Location location = null;
+
+        if (req.resourceId() != null) {
+            resource = resourceRepository.findById(req.resourceId())
                 .orElseThrow(() -> new AppException("Resource not found", HttpStatus.NOT_FOUND));
 
-        bookingValidationService.validateCreate(
+            bookingValidationService.validateCreate(
                 resource,
                 req.bookingDate(),
                 req.startTime(),
                 req.endTime(),
                 req.expectedAttendees()
-        );
-
-        boolean conflict = bookingValidationService.hasConflict(
-                req.resourceId(), req.bookingDate(), req.startTime(), req.endTime()
-        );
-        if (conflict) {
-            throw new BookingConflictException(
-                    "This resource is already booked for the selected time slot",
-                    bookingSuggestionService.suggest(resource, req.bookingDate(), req.startTime(), req.endTime())
             );
+
+            boolean conflict = bookingValidationService.hasConflict(
+                req.resourceId(), req.bookingDate(), req.startTime(), req.endTime()
+            );
+            if (conflict) {
+            throw new BookingConflictException(
+                "This resource is already booked for the selected time slot",
+                bookingSuggestionService.suggest(resource, req.bookingDate(), req.startTime(), req.endTime())
+            );
+            }
+        } else {
+            location = locationRepository.findById(req.locationId())
+                .orElseThrow(() -> new AppException("Location not found", HttpStatus.NOT_FOUND));
+
+            bookingValidationService.validateCreate(
+                location,
+                req.bookingDate(),
+                req.startTime(),
+                req.endTime(),
+                req.expectedAttendees()
+            );
+
+            boolean conflict = bookingValidationService.hasLocationConflict(
+                req.locationId(), req.bookingDate(), req.startTime(), req.endTime()
+            );
+            if (conflict) {
+            throw new BookingConflictException(
+                "This location is already booked for the selected time slot",
+                List.of()
+            );
+            }
         }
 
         Booking booking = Booking.builder()
                 .user(user)
                 .resource(resource)
+            .location(location)
                 .bookingDate(req.bookingDate())
                 .startTime(req.startTime())
                 .endTime(req.endTime())
@@ -125,12 +192,13 @@ public class BookingService {
 
         // Notify admins
         for (UUID adminId : userRepository.findAllAdminUserIds()) {
-            notificationService.create(
-                    adminId,
-                    "Booking Requested",
-                    user.getFullName() + " requested " + resource.getName() + " on " + req.bookingDate(),
-                    NotificationType.BOOKING_CREATED,
-                    saved.getBookingId()
+            notificationService.sendNotification(
+                adminId,
+                com.smartcampus.backend.model.enums.NotificationType.GENERAL,
+                "Booking Requested",
+                user.getFullName() + " requested " + targetName(saved) + " on " + req.bookingDate(),
+                saved.getBookingId().toString(),
+                "BOOKING"
             );
         }
 
@@ -202,13 +270,14 @@ public class BookingService {
         bookingRepository.saveAll(bookings);
 
         for (UUID adminId : userRepository.findAllAdminUserIds()) {
-            notificationService.create(
-                    adminId,
-                    "Recurring Booking Requested",
-                    user.getFullName() + " requested recurring bookings for " + resource.getName()
-                            + " from " + req.startDate() + " to " + req.endDate() + ".",
-                    NotificationType.BOOKING_CREATED,
-                    group.getGroupId()
+            notificationService.sendNotification(
+                adminId,
+                com.smartcampus.backend.model.enums.NotificationType.GENERAL,
+                "Recurring Booking Requested",
+                user.getFullName() + " requested recurring bookings for " + resource.getName()
+                    + " from " + req.startDate() + " to " + req.endDate() + ".",
+                group.getGroupId().toString(),
+                "BOOKING"
             );
         }
 
@@ -219,8 +288,8 @@ public class BookingService {
     public PageResponse<BookingResponse> listBookings(
             BookingStatus status,
             UUID resourceId,
-            UUID userId,
             UUID locationId,
+            UUID userId,
             LocalDate fromDate,
             LocalDate toDate,
             Pageable pageable
@@ -231,8 +300,8 @@ public class BookingService {
         Page<Booking> page = bookingRepository.findAllWithFilters(
                 status,
                 resourceId,
+            locationId,
                 effectiveUserId,
-                locationId,
                 fromDate,
                 toDate,
                 pageable
@@ -274,13 +343,7 @@ public class BookingService {
 
         Booking saved = bookingRepository.save(booking);
 
-        notificationService.create(
-                saved.getUser().getUserId(),
-                "Booking Approved",
-                "Your booking for " + saved.getResource().getName() + " on " + saved.getBookingDate() + " was approved.",
-                NotificationType.BOOKING_APPROVED,
-                saved.getBookingId()
-        );
+        notificationService.notifyBookingApproved(saved);
 
         return toResponse(saved);
     }
@@ -305,13 +368,7 @@ public class BookingService {
 
         Booking saved = bookingRepository.save(booking);
 
-        notificationService.create(
-                saved.getUser().getUserId(),
-                "Booking Rejected",
-                "Your booking for " + saved.getResource().getName() + " on " + saved.getBookingDate() + " was rejected.",
-                NotificationType.BOOKING_REJECTED,
-                saved.getBookingId()
-        );
+        notificationService.notifyBookingRejected(saved, req.rejectionReason());
 
         return toResponse(saved);
     }
@@ -339,21 +396,16 @@ public class BookingService {
         Booking saved = bookingRepository.save(booking);
 
         if (canCancelAny && !saved.getUser().getUserId().equals(currentUserId)) {
-            notificationService.create(
-                    saved.getUser().getUserId(),
-                    "Booking Cancelled",
-                    "An admin cancelled your booking for " + saved.getResource().getName() + " on " + saved.getBookingDate() + ".",
-                    NotificationType.BOOKING_CANCELLED,
-                    saved.getBookingId()
-            );
+            notificationService.notifyBookingCancelled(saved);
         } else {
             for (UUID adminId : userRepository.findAllAdminUserIds()) {
-                notificationService.create(
+                notificationService.sendNotification(
                         adminId,
+                        com.smartcampus.backend.model.enums.NotificationType.GENERAL,
                         "Booking Cancelled",
-                        saved.getUser().getFullName() + " cancelled a booking for " + saved.getResource().getName() + " on " + saved.getBookingDate() + ".",
-                        NotificationType.BOOKING_CANCELLED,
-                        saved.getBookingId()
+                        saved.getUser().getFullName() + " cancelled a booking for " + targetName(saved) + " on " + saved.getBookingDate() + ".",
+                        saved.getBookingId().toString(),
+                        "BOOKING"
                 );
             }
         }
@@ -367,7 +419,10 @@ public class BookingService {
                 .orElseThrow(() -> new AppException("Resource not found", HttpStatus.NOT_FOUND));
 
         DayOfWeek dayOfWeek = toDayOfWeek(date);
-        var windows = availabilityRepository.findByResource_ResourceIdAndDayOfWeek(resourceId, dayOfWeek);
+        var windows = availabilityRepository.findByResource_ResourceId(resourceId).stream()
+            .filter(w -> matchesDate(w.getRecurrenceType(), w.getDayOfWeek(), w.getDayOfMonth(), date))
+            .sorted(Comparator.comparing(ResourceAvailability::getStartTime))
+            .toList();
         BookingAvailabilityResponse.TimeWindow window = windows.isEmpty()
                 ? null
                 : new BookingAvailabilityResponse.TimeWindow(windows.getFirst().getStartTime(), windows.getFirst().getEndTime());
@@ -389,6 +444,23 @@ public class BookingService {
             case FRIDAY -> DayOfWeek.FRI;
             case SATURDAY -> DayOfWeek.SAT;
             case SUNDAY -> DayOfWeek.SUN;
+        };
+    }
+
+    private boolean matchesDate(
+            AvailabilityRecurrenceType recurrenceType,
+            DayOfWeek dayOfWeek,
+            Integer dayOfMonth,
+            LocalDate date
+    ) {
+        if (recurrenceType == null) {
+            return dayOfWeek == toDayOfWeek(date);
+        }
+
+        return switch (recurrenceType) {
+            case DAILY -> true;
+            case WEEKLY -> dayOfWeek == toDayOfWeek(date);
+            case MONTHLY -> dayOfMonth != null && dayOfMonth == date.getDayOfMonth();
         };
     }
 

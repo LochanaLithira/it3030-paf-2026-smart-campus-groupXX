@@ -11,13 +11,9 @@ public record ResourceResponse(
         UUID resourceId,
         String name,
         ResourceType type,
-        Integer capacity,
         ResourceStatus status,
-        String description,
-        String imageUrl,
         UUID createdBy,
         OffsetDateTime createdAt,
-        ResourceLocationResponse location,
         List<ResourceTagResponse> tags,
         List<ResourceAvailabilityResponse> availability
 ) {}

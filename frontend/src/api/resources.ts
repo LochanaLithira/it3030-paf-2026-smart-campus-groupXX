@@ -14,10 +14,8 @@ export const resourcesApi = {
     const searchParams = new URLSearchParams();
     if (params.type) searchParams.set('type', params.type);
     if (params.status) searchParams.set('status', params.status);
-    if (params.locationId) searchParams.set('locationId', params.locationId);
     if (params.tags) searchParams.set('tags', params.tags);
     if (params.search) searchParams.set('search', params.search);
-    if (params.minCapacity !== undefined) searchParams.set('minCapacity', String(params.minCapacity));
     if (params.page !== undefined) searchParams.set('page', String(params.page));
     if (params.size !== undefined) searchParams.set('size', String(params.size));
     if (params.sort) searchParams.set('sort', params.sort);

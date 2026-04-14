@@ -1,0 +1,21 @@
+                             Table "public.notifications"
+     Column      |           Type           | Collation | Nullable |      Default      
+-----------------+--------------------------+-----------+----------+-------------------
+ notification_id | uuid                     |           | not null | gen_random_uuid()
+ recipient_id    | uuid                     |           | not null | 
+ title           | character varying(120)   |           | not null | 
+ message         | text                     |           | not null | 
+ type            | notification_type        |           | not null | 
+ is_read         | boolean                  |           | not null | false
+ created_at      | timestamp with time zone |           | not null | now()
+ category        | notification_category    |           | not null | 
+ reference_id    | character varying(255)   |           |          | 
+ reference_type  | character varying(50)    |           |          | 
+Indexes:
+    "notifications_pkey" PRIMARY KEY, btree (notification_id)
+    "idx_notifications_created" btree (recipient_id, created_at DESC)
+    "idx_notifications_unread" btree (recipient_id, is_read)
+    "idx_notifications_user" btree (recipient_id)
+Foreign-key constraints:
+    "notifications_recipient_id_fkey" FOREIGN KEY (recipient_id) REFERENCES users(user_id) ON DELETE CASCADE
+

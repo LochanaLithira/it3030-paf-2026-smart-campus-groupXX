@@ -11,6 +11,7 @@ import {
   Ticket,
   Wrench,
   CalendarDays,
+  Bell,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/authStore';
@@ -28,65 +29,65 @@ const NAV_ITEMS: NavItem[] = [
     label: 'Dashboard',
     href: '/dashboard',
     icon: LayoutDashboard,
-    permission: PERMISSIONS.DASHBOARD_VIEW_ADMIN,
   },
   {
     label: 'User Management',
     href: '/users',
     icon: Users,
-    permission: PERMISSIONS.USERS_READ,
+    permission: PERMISSIONS.USER_MANAGEMENT_PAGE,
   },
   {
     label: 'Role Management',
     href: '/roles',
     icon: ShieldCheck,
-    permission: PERMISSIONS.ROLES_READ,
+    permission: PERMISSIONS.ROLE_MANAGEMENT_PAGE,
   },
   {
     label: 'Locations',
     href: '/locations',
     icon: Building2,
-    permission: PERMISSIONS.LOCATIONS_READ,
+    permission: PERMISSIONS.FACILITIES_MANAGEMENT_PAGE,
   },
   {
     label: 'Resources',
     href: '/resources',
     icon: MapPin,
-    permission: PERMISSIONS.RESOURCES_READ,
+    permission: PERMISSIONS.FACILITIES_MANAGEMENT_PAGE,
   },
   {
     label: 'My Bookings',
     href: '/bookings',
     icon: CalendarDays,
-    permission: PERMISSIONS.BOOKINGS_VIEW_OWN,
+    permission: PERMISSIONS.BOOKINGS_MANAGEMENT_PAGE_USER,
   },
   {
     label: 'Booking Approvals',
     href: '/admin/bookings',
     icon: CalendarDays,
-    permission: PERMISSIONS.BOOKINGS_VIEW_ALL,
+    permission: PERMISSIONS.BOOKINGS_MANAGEMENT_PAGE_ADMIN,
   },
   {
     label: 'Tickets',
     href: '/tickets',
     icon: Ticket,
     // Visible to any role with any ticket-view permission
-    permission: [
-      PERMISSIONS.TICKETS_VIEW_OWN,
-      PERMISSIONS.TICKETS_VIEW_ALL,
-      PERMISSIONS.TICKETS_VIEW_ASSIGNED,
-    ],
+    permission: PERMISSIONS.TICKETS_MANAGEMENT_PAGE_USER,
   },
   {
     label: 'Tech Dashboard',
     href: '/tech-dashboard',
     icon: Wrench,
-    permission: PERMISSIONS.TICKETS_VIEW_ASSIGNED,
+    permission: PERMISSIONS.TICKETS_MANAGEMENT_PAGE_TECHNICIAN,
   },
   {
     label: 'Profile',
     href: '/profile',
     icon: Settings,
+  },
+  {
+    label: 'Notifications',
+    href: '/notifications',
+    icon: Bell,
   },
 ];
 

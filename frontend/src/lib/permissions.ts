@@ -4,76 +4,24 @@
 // ================================================================
 
 export const PERMISSIONS = {
+  
+  //Management Page Access
+  USER_MANAGEMENT_PAGE: 'pages.user_management_page',
+  ROLE_MANAGEMENT_PAGE: 'pages.role_management_page',
+  FACILITIES_MANAGEMENT_PAGE: 'pages.facilities_management_page',
+  BOOKINGS_MANAGEMENT_PAGE_USER: 'pages.bookings_management_page_user',
+  BOOKINGS_MANAGEMENT_PAGE_ADMIN: 'pages.bookings_management_page_admin',
+  TICKETS_MANAGEMENT_PAGE_USER: 'pages.tickets_management_page_user',
+  TICKETS_MANAGEMENT_PAGE_TECHNICIAN: 'pages.tickets_management_page_technician',
+
+
+
   // User Management
   USERS_READ: 'users.read',
   USERS_CREATE: 'users.create',
   USERS_UPDATE: 'users.update',
   USERS_DELETE_SOFT: 'users.delete_soft',
   USERS_DELETE: 'users.delete',
-
-  // Student Group Management
-  STUDENTS_READ: 'students.read',
-  STUDENTS_CREATE: 'students.create',
-  STUDENTS_UPDATE: 'students.update',
-  STUDENTS_MANAGE_ENROLLMENT: 'students.manage_enrollment',
-  STUDENTS_READ_INACTIVE: 'students.read_inactive',
-  STUDENTS_ACTIVATE: 'students.activate',
-  STUDENTS_DELETE_SOFT: 'students.delete_soft',
-  STUDENTS_DELETE: 'students.delete',
-
-  // Course Management
-  COURSES_READ: 'courses.read',
-  COURSES_CREATE: 'courses.create',
-  COURSES_READ_INACTIVE: 'courses.read_inactive',
-  COURSES_UPDATE: 'courses.update',
-  COURSES_DELETE_SOFT: 'courses.delete_soft',
-  COURSES_DELETE: 'courses.delete',
-  COURSES_MANAGE_CONTENT: 'courses.manage_content',
-
-  // Chapter Management
-  CHAPTER_READ: 'chapters.read',
-  CHAPTER_CREATE: 'chapters.create',
-  CHAPTER_UPDATE: 'chapters.update',
-  CHAPTER_DELETE: 'chapters.delete',
-
-  // Week Management
-  WEEKS_READ: 'weeks.read',
-  WEEKS_CREATE: 'weeks.create',
-  WEEKS_UPDATE: 'weeks.update',
-  WEEKS_DELETE: 'weeks.delete',
-
-  // Content Management
-  CONTENT_READ: 'content.read',
-  CONTENT_CREATE: 'content.create',
-  CONTENT_DELETE: 'content.delete',
-  CONTENT_DOWNLOAD: 'content.download',
-  CONTENT_VIEW: 'content.view',
-
-  // Trial-exams Management
-  MOCK_EXAMS_READ: 'trial_exams.read',
-  MOCK_EXAMS_CREATE: 'trial_exams.create',
-  MOCK_EXAMS_UPDATE: 'trial_exams.update',
-  MOCK_EXAMS_DELETE: 'trial_exams.delete',
-  MOCK_EXAMS_DELETE_SOFT: 'trial_exams.delete_soft',
-  MOCK_EXAMS_READ_INACTIVE: 'trial_exams.read_inactive',
-
-  // Payment & Billing
-  PAYMENTS_PROCESS: 'payments.process',
-  INVOICES_READ: 'invoices.read',
-  INVOICES_CREATE: 'invoices.create',
-  INVOICES_UPDATE: 'invoices.update',
-  INVOICES_DELETE: 'invoices.delete',
-
-  // Feedback Management
-  FEEDBACK_READ: 'feedback.read',
-  FEEDBACK_CREATE: 'feedback.create',
-  FEEDBACK_UPDATE: 'feedback.update',
-  FEEDBACK_DELETE: 'feedback.delete',
-
-  // Results Management
-  RESULTS_READ: 'results.read',
-  RESULTS_CREATE: 'results.create',
-  RESULTS_UPDATE: 'results.update',
 
   // Role Management
   ROLES_READ: 'roles.read',
@@ -112,17 +60,6 @@ export const PERMISSIONS = {
   TICKETS_DELETE: 'tickets.delete',
   TICKETS_COMMENT_OWN: 'tickets.comment_own',
   TICKETS_COMMENT_ASSIGNED: 'tickets.comment_assigned',
-
-  // Settings & Configuration
-  SETTINGS_VIEW: 'settings.view',
-  ADMIN_UPDATE: 'admin.update',
-  ADMIN_CREATE: 'admin.create',
-  ADMIN_DELETE: 'admin.delete',
-
-  // Dashboard & Overview
-  DASHBOARD_VIEW_ADMIN: 'dashboard.view_admin',
-  DASHBOARD_VIEW_STUDENT: 'dashboard.view_student',
-  DASHBOARD_VIEW_PARENT: 'dashboard.view_parent',
 } as const;
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -198,6 +135,20 @@ export const PERMISSION_GROUPS = [
       { key: PERMISSIONS.TICKETS_DELETE,           label: 'Delete Tickets',             description: 'Delete OPEN or REJECTED tickets (ADMIN)' },
       { key: PERMISSIONS.TICKETS_COMMENT_OWN,      label: 'Comment on Own Tickets',     description: 'Add comments to tickets you submitted (USER)' },
       { key: PERMISSIONS.TICKETS_COMMENT_ASSIGNED, label: 'Comment on Assigned Tickets',description: 'Add comments to tickets assigned to you (TECHNICIAN / ADMIN)' },
+    ],
+  },
+  {
+    id: 'Management Page Permissions',
+    label: 'Management Page Permissions',
+    description: 'Access to management page functionalities',
+    permissions: [
+      { key: PERMISSIONS.USER_MANAGEMENT_PAGE, label: 'View Management Page', description: 'Access the management page (ADMIN)' },
+      { key: PERMISSIONS.ROLE_MANAGEMENT_PAGE, label: 'View Role Management', description: 'Access the role management page (ADMIN)' },
+      { key: PERMISSIONS.FACILITIES_MANAGEMENT_PAGE, label: 'View Facilities Management', description: 'Access the facilities management page (ADMIN)' },
+      { key: PERMISSIONS.BOOKINGS_MANAGEMENT_PAGE_USER, label: 'View Bookings Management (User)', description: 'Access the bookings management page for users (USER)' },
+      { key: PERMISSIONS.BOOKINGS_MANAGEMENT_PAGE_ADMIN, label: 'View Bookings Management (Admin)', description: 'Access the bookings management page for admins (ADMIN)' },
+      { key: PERMISSIONS.TICKETS_MANAGEMENT_PAGE_USER, label: 'View Tickets Management (User)', description: 'Access the tickets management page for users (USER)' },
+      { key: PERMISSIONS.TICKETS_MANAGEMENT_PAGE_TECHNICIAN, label: 'View Tickets Management (Admin)', description: 'Access the tickets management page for admins (ADMIN)' },
     ],
   },
 ] as const;

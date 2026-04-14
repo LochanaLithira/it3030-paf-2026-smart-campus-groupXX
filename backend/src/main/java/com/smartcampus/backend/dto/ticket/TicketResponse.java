@@ -1,7 +1,6 @@
 package com.smartcampus.backend.dto.ticket;
 
 import com.smartcampus.backend.dto.auth.UserSummaryResponse;
-import com.smartcampus.backend.dto.resource.ResourceLocationResponse;
 import com.smartcampus.backend.model.enums.TicketCategory;
 import com.smartcampus.backend.model.enums.TicketPriority;
 import com.smartcampus.backend.model.enums.TicketStatus;

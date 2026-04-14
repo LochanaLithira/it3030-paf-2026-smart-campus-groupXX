@@ -11,7 +11,6 @@ import {
 } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ResourceEditorDialog } from '@/components/resources/ResourceEditorDialog';
-import { useLocations } from '@/hooks/useLocations';
 import {
   useDeleteResource,
   useResources,
@@ -28,7 +27,6 @@ export function ResourceManagementPage() {
   const [selectedResource, setSelectedResource] = useState<ResourceResponse | null>(null);
   const [statusFilter, setStatusFilter] = useState<ResourceStatus | ''>('');
 
-  const { data: locations = [] } = useLocations();
   const { data, isLoading, isFetching, refetch } = useResources({
     search: search || undefined,
     status: statusFilter || undefined,
@@ -75,7 +73,7 @@ export function ResourceManagementPage() {
       <div className="flex flex-col gap-2 md:flex-row md:items-center">
         <Input
           className="max-w-sm"
-          placeholder="Search by name or description..."
+          placeholder="Search by resource name..."
           value={search}
           onChange={(event) => {
             setSearch(event.target.value);
@@ -108,8 +106,6 @@ export function ResourceManagementPage() {
             <TableRow>
               <TableHead>Name</TableHead>
               <TableHead>Type</TableHead>
-              <TableHead>Location</TableHead>
-              <TableHead>Capacity</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -117,13 +113,13 @@ export function ResourceManagementPage() {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={6} className="h-20 text-center text-muted-foreground">
+                <TableCell colSpan={4} className="h-20 text-center text-muted-foreground">
                   Loading resources...
                 </TableCell>
               </TableRow>
             ) : rows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="h-20 text-center text-muted-foreground">
+                <TableCell colSpan={4} className="h-20 text-center text-muted-foreground">
                   No resources found.
                 </TableCell>
               </TableRow>
@@ -132,12 +128,6 @@ export function ResourceManagementPage() {
                 <TableRow key={resource.resourceId}>
                   <TableCell className="font-medium">{resource.name}</TableCell>
                   <TableCell>{resource.type}</TableCell>
-                  <TableCell>
-                    {resource.location
-                      ? `${resource.location.buildingName} F${resource.location.floorNumber}`
-                      : '-'}
-                  </TableCell>
-                  <TableCell>{resource.capacity}</TableCell>
                   <TableCell>
                     <Select
                       value={resource.status}
@@ -206,7 +196,6 @@ export function ResourceManagementPage() {
         open={editorOpen}
         onClose={() => setEditorOpen(false)}
         resource={selectedResource}
-        locations={locations}
       />
     </div>
   );

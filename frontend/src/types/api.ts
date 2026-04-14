@@ -118,6 +118,53 @@ export interface NotificationResponse {
   readAt: string | null;
 }
 
+export type NotificationCategory = 'BOOKING' | 'TICKET' | 'COMMENT' | 'SYSTEM';
+
+export type NotificationType =
+  | 'BOOKING_APPROVED'
+  | 'BOOKING_REJECTED'
+  | 'BOOKING_CANCELLED'
+  | 'TICKET_CREATED'
+  | 'TICKET_STATUS_CHANGED'
+  | 'TICKET_ASSIGNED'
+  | 'TICKET_RESOLVED'
+  | 'TICKET_REJECTED'
+  | 'COMMENT_ADDED'
+  | 'GENERAL';
+
+export interface NotificationDTO {
+  id: string;
+  recipientUserId: string;
+  category: NotificationCategory;
+  type: NotificationType;
+  title: string;
+  message: string;
+  isRead: boolean;
+  createdAt: string;
+  referenceId: string | null;
+  referenceType: 'BOOKING' | 'TICKET' | 'COMMENT' | string | null;
+}
+
+export interface NotificationPreferenceDTO {
+  id: string;
+  userId: string;
+  category: NotificationCategory;
+  enabled: boolean;
+}
+
+export interface UpdatePreferenceRequest {
+  category: NotificationCategory;
+  enabled: boolean;
+}
+
+export interface UnreadCountResponse {
+  count: number;
+}
+
+export interface BulkReadResponse {
+  updated: number;
+}
+
 // -- Facilities & Assets ------------------------------------------------------
 
 export type ResourceType = 'LECTURE_HALL' | 'LAB' | 'MEETING_ROOM' | 'EQUIPMENT';
@@ -130,7 +177,8 @@ export type AvailabilityRecurrenceType = 'DAILY' | 'WEEKLY' | 'MONTHLY';
 export type BookingStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
 
 export interface BookingCreateRequest {
-  resourceId: string;
+  resourceId?: string;
+  locationId?: string;
   bookingDate: string; // YYYY-MM-DD
   startTime: string; // HH:mm
   endTime: string; // HH:mm
@@ -139,7 +187,8 @@ export interface BookingCreateRequest {
 }
 
 export interface BookingResourceSummary {
-  resourceId: string;
+  resourceId: string | null;
+  locationId: string | null;
   name: string;
   type: ResourceType;
 }
@@ -253,11 +302,7 @@ export interface ResourceLocationResponse {
 export interface ResourceRequest {
   name: string;
   type: ResourceType;
-  capacity: number;
-  locationId?: string;
   status?: ResourceStatus;
-  description?: string;
-  imageUrl?: string;
   tagIds?: string[];
   availability?: ResourceAvailabilityRequest[];
 }
@@ -266,13 +311,9 @@ export interface ResourceResponse {
   resourceId: string;
   name: string;
   type: ResourceType;
-  capacity: number;
   status: ResourceStatus;
-  description: string | null;
-  imageUrl: string | null;
   createdBy: string | null;
   createdAt: string;
-  location: ResourceLocationResponse | null;
   tags: ResourceTagResponse[];
   availability: ResourceAvailabilityResponse[];
 }
@@ -289,10 +330,8 @@ export interface LocationsListParams {
 export interface ResourcesListParams {
   type?: ResourceType;
   status?: ResourceStatus;
-  locationId?: string;
   tags?: string;
   search?: string;
-  minCapacity?: number;
   page?: number;
   size?: number;
   sort?: string;
@@ -312,14 +351,15 @@ export type TicketCategory =
   | 'OTHER';
 
 export interface TicketResourceResponse {
-  resourceId: string;
+  resourceId: string | null;
+  locationId: string | null;
   name: string;
   type: ResourceType;
-  location: ResourceLocationResponse | null;
 }
 
 export interface TicketRequest {
-  resourceId: string;
+  resourceId?: string;
+  locationId?: string;
   category: TicketCategory;
   description: string;
   priority: TicketPriority;
@@ -413,6 +453,7 @@ export interface TicketsListParams {
   priority?: TicketPriority;
   category?: TicketCategory;
   resourceId?: string;
+  locationId?: string;
   assignedTechId?: string;
   page?: number;
   size?: number;

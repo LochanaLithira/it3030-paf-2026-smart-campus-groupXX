@@ -1,15 +1,24 @@
 package com.smartcampus.backend.model.enums;
 
 public enum NotificationType {
-    BOOKING_CREATED,
-    BOOKING_APPROVED,
-    BOOKING_REJECTED,
-    BOOKING_CANCELLED,
-    TICKET_CREATED,
-    TICKET_ASSIGNED,
-    TICKET_UPDATED,
-    TICKET_RESOLVED,
-    MAINTENANCE_ALERT,
-    SYSTEM,
-    ROLE_CHANGE
+    BOOKING_APPROVED(NotificationCategory.BOOKING),
+    BOOKING_REJECTED(NotificationCategory.BOOKING),
+    BOOKING_CANCELLED(NotificationCategory.BOOKING),
+    TICKET_CREATED(NotificationCategory.TICKET),
+    TICKET_STATUS_CHANGED(NotificationCategory.TICKET),
+    TICKET_ASSIGNED(NotificationCategory.TICKET),
+    TICKET_RESOLVED(NotificationCategory.TICKET),
+    TICKET_REJECTED(NotificationCategory.TICKET),
+    COMMENT_ADDED(NotificationCategory.COMMENT),
+    GENERAL(NotificationCategory.SYSTEM);
+
+    private final NotificationCategory category;
+
+    NotificationType(NotificationCategory category) {
+        this.category = category;
+    }
+
+    public NotificationCategory getCategory() {
+        return category;
+    }
 }

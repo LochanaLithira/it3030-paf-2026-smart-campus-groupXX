@@ -210,17 +210,6 @@ export function TicketDetailPage() {
                   <span className="text-sm font-medium text-gray-500">Type:</span>
                   <p className="text-base">{ticket.resource.type.replace('_', ' ')}</p>
                 </div>
-                {ticket.resource.location && (
-                  <div>
-                    <span className="text-sm font-medium text-gray-500">Location:</span>
-                    <p className="text-base">
-                      {ticket.resource.location.buildingName} - Floor{' '}
-                      {ticket.resource.location.floorNumber}
-                      {ticket.resource.location.roomNumber &&
-                        `, Room ${ticket.resource.location.roomNumber}`}
-                    </p>
-                  </div>
-                )}
               </div>
             </CardContent>
           </Card>

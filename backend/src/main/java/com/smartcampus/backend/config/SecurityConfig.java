@@ -54,7 +54,8 @@ public class SecurityConfig {
                     .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
                     .requestMatchers("/swagger-ui.html", "/swagger-ui/**",
                                      "/v3/api-docs/**", "/v3/api-docs").permitAll()
-                    .requestMatchers("/actuator/health", "/actuator/info").permitAll()                    .requestMatchers("/files/**").permitAll()                    // Everything else requires authentication
+                    .requestMatchers("/actuator/health", "/actuator/info").permitAll()
+                    .requestMatchers("/files/**").permitAll()                    // Everything else requires authentication
                     .anyRequest().authenticated())
             .oauth2Login(oauth2 -> oauth2
                     .userInfoEndpoint(ui -> ui.userService(customOAuth2UserService))

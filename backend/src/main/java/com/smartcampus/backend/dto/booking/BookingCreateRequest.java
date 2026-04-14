@@ -1,5 +1,6 @@
 package com.smartcampus.backend.dto.booking;
 
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -10,8 +11,9 @@ import java.time.LocalTime;
 import java.util.UUID;
 
 public record BookingCreateRequest(
-        @NotNull(message = "Resource ID is required")
         UUID resourceId,
+
+        UUID locationId,
 
         @NotNull(message = "Booking date is required")
         LocalDate bookingDate,
@@ -29,5 +31,10 @@ public record BookingCreateRequest(
         @NotNull(message = "Expected attendees is required")
         @Positive(message = "Expected attendees must be greater than 0")
         Integer expectedAttendees
-) {}
+) {
+        @AssertTrue(message = "Either resourceId or locationId must be provided, but not both")
+        public boolean hasExactlyOneTarget() {
+                return (resourceId != null) ^ (locationId != null);
+        }
+}
 

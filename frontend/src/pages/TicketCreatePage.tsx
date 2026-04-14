@@ -13,7 +13,8 @@ export function TicketCreatePage() {
   const handleSubmit = async (values: TicketFormValues) => {
     try {
       const ticket = await createTicket.mutateAsync({
-        resourceId: values.resourceId,
+        resourceId: values.resourceId || undefined,
+        locationId: values.locationId || undefined,
         category: values.category,
         priority: values.priority,
         description: values.description,
