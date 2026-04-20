@@ -24,6 +24,8 @@ public record TicketResponse(
     Instant resolvedAt,
     String preferredContactEmail,      // PDF requirement (Member 3)
     String preferredContactPhone,      // PDF requirement (Member 3)
+    Long timeToFirstResponseSeconds,
+    Long timeToResolutionSeconds,
     List<TicketAttachmentResponse> attachments,
     List<TicketCommentResponse> comments,
     List<StatusHistoryResponse> statusHistory,

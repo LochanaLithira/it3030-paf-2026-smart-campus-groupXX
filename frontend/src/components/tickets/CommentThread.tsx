@@ -5,7 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar } from '@/components/ui/avatar';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useAuthStore } from '@/store/authStore';
+import { PERMISSIONS } from '@/lib/permissions';
 import { useAddComment, useUpdateComment, useDeleteComment } from '@/hooks/useTickets';
 import type { TicketCommentResponse } from '@/types/api';
 
@@ -15,10 +17,12 @@ interface CommentThreadProps {
 }
 
 export function CommentThread({ ticketId, comments }: CommentThreadProps) {
-  const { user } = useAuthStore();
+  const { user, hasPermission } = useAuthStore();
   const [newComment, setNewComment] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState('');
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [isPolicyDelete, setIsPolicyDelete] = useState(false);
 
   const addComment = useAddComment();
   const updateComment = useUpdateComment();
@@ -58,17 +62,32 @@ export function CommentThread({ ticketId, comments }: CommentThreadProps) {
     setEditText('');
   };
 
-  const handleDeleteComment = async (commentId: string) => {
-    if (!confirm('Are you sure you want to delete this comment?')) return;
+  const initiateDelete = (comment: TicketCommentResponse) => {
+    const isAuthor = comment.author.userId === user?.userId;
+    setIsPolicyDelete(!isAuthor);
+    setDeleteId(comment.commentId);
+  };
+
+  const handleDeleteComment = async () => {
+    if (!deleteId) return;
 
     await deleteComment.mutateAsync({
       ticketId,
-      commentId,
+      commentId: deleteId,
     });
+    setDeleteId(null);
   };
 
+  // Only the comment author can edit their own comment
   const canEditComment = (comment: TicketCommentResponse) => {
     return comment.author.userId === user?.userId;
+  };
+
+  // Author can delete their own comment; admins/managers can delete any comment for policy compliance
+  const canDeleteComment = (comment: TicketCommentResponse) => {
+    const isAuthor = comment.author.userId === user?.userId;
+    const isAdmin = hasPermission(PERMISSIONS.TICKETS_VIEW_ALL);
+    return isAuthor || isAdmin;
   };
 
   const sortedComments = [...comments].sort(
@@ -77,6 +96,21 @@ export function CommentThread({ ticketId, comments }: CommentThreadProps) {
 
   return (
     <div className="space-y-4">
+      <ConfirmDialog
+        open={!!deleteId}
+        onOpenChange={(open) => !open && setDeleteId(null)}
+        variant={isPolicyDelete ? 'warning' : 'danger'}
+        title={isPolicyDelete ? 'Remove Comment (Policy Compliance)' : 'Delete Comment'}
+        description={
+          isPolicyDelete
+            ? "You are about to remove another user's comment. This action is permanent and cannot be undone."
+            : 'Are you sure you want to delete this comment? This action cannot be undone.'
+        }
+        confirmLabel={isPolicyDelete ? 'Remove Comment' : 'Delete Comment'}
+        onConfirm={handleDeleteComment}
+        isPending={deleteComment.isPending}
+      />
+
       {/* Comments List */}
       {sortedComments.length === 0 ? (
         <div className="text-center py-8 text-muted-foreground">
@@ -109,24 +143,37 @@ export function CommentThread({ ticketId, comments }: CommentThreadProps) {
                         </span>
                       </div>
 
-                      {canEditComment(comment) && (
+                      {(canEditComment(comment) || canDeleteComment(comment)) && (
                         <div className="flex items-center gap-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEditComment(comment)}
-                            disabled={editingId !== null}
-                          >
-                            <Pencil className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeleteComment(comment.commentId)}
-                            disabled={deleteComment.isPending}
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
+                          {/* Edit — author only */}
+                          {canEditComment(comment) && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditComment(comment)}
+                              disabled={editingId !== null}
+                              title="Edit comment"
+                            >
+                              <Pencil className="h-3 w-3" />
+                            </Button>
+                          )}
+                          {/* Delete — author OR admin (policy compliance) */}
+                          {canDeleteComment(comment) && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => initiateDelete(comment)}
+                              disabled={deleteComment.isPending}
+                              title={
+                                canEditComment(comment)
+                                  ? 'Delete comment'
+                                  : 'Remove comment (policy compliance)'
+                              }
+                              className={!canEditComment(comment) ? 'text-destructive hover:text-destructive' : ''}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          )}
                         </div>
                       )}
                     </div>

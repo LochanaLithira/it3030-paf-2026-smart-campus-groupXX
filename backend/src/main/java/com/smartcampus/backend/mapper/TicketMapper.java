@@ -41,6 +41,24 @@ public interface TicketMapper {
         return null;
     }
 
+    default Long calculateTTFR(Ticket ticket) {
+        if (ticket.getStatusHistory() == null || ticket.getCreatedAt() == null) return null;
+        return ticket.getStatusHistory().stream()
+                .filter(h -> h.getNewStatus() == com.smartcampus.backend.model.enums.TicketStatus.IN_PROGRESS)
+                .map(h -> java.time.Duration.between(ticket.getCreatedAt(), h.getChangedAt()).getSeconds())
+                .findFirst()
+                .orElse(null);
+    }
+
+    default Long calculateTTR(Ticket ticket) {
+        if (ticket.getStatusHistory() == null || ticket.getCreatedAt() == null) return null;
+        return ticket.getStatusHistory().stream()
+                .filter(h -> h.getNewStatus() == com.smartcampus.backend.model.enums.TicketStatus.RESOLVED)
+                .map(h -> java.time.Duration.between(ticket.getCreatedAt(), h.getChangedAt()).getSeconds())
+                .findFirst()
+                .orElse(null);
+    }
+
     // Ticket full response with all associations
     @Mapping(target = "ticketId", source = "ticketId")
     @Mapping(target = "resource", expression = "java(toTicketResourceResponse(ticket))")
@@ -55,6 +73,8 @@ public interface TicketMapper {
     @Mapping(target = "resolvedAt", source = "resolvedAt")
     @Mapping(target = "preferredContactEmail", source = "preferredContactEmail")  // PDF requirement
     @Mapping(target = "preferredContactPhone", source = "preferredContactPhone")  // PDF requirement
+    @Mapping(target = "timeToFirstResponseSeconds", expression = "java(calculateTTFR(ticket))")
+    @Mapping(target = "timeToResolutionSeconds", expression = "java(calculateTTR(ticket))")
     @Mapping(target = "attachments", source = "attachments")
     @Mapping(target = "comments", source = "comments")
     @Mapping(target = "statusHistory", source = "statusHistory")
@@ -73,6 +93,8 @@ public interface TicketMapper {
     @Mapping(target = "status", source = "ticket.status")
     @Mapping(target = "preferredContactEmail", source = "ticket.preferredContactEmail")  // PDF requirement
     @Mapping(target = "preferredContactPhone", source = "ticket.preferredContactPhone")  // PDF requirement
+    @Mapping(target = "timeToFirstResponseSeconds", expression = "java(calculateTTFR(ticket))")
+    @Mapping(target = "timeToResolutionSeconds", expression = "java(calculateTTR(ticket))")
     @Mapping(target = "attachmentCount", source = "attachmentCount")
     @Mapping(target = "commentCount", source = "commentCount")
     @Mapping(target = "dueDate", source = "ticket.dueDate")

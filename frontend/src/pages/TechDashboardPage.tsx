@@ -15,7 +15,6 @@ import {
   AlertCircle,
   Clock,
   CheckCircle2,
-  Wrench,
   ArrowRight,
   Filter,
 } from 'lucide-react';
@@ -115,7 +114,6 @@ export default function TechDashboardPage() {
             Manage and track your assigned maintenance tickets
           </p>
         </div>
-        <Wrench className="h-10 w-10 text-muted-foreground" />
       </div>
 
       {/* Stats Cards */}
