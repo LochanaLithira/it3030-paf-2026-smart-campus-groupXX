@@ -51,7 +51,13 @@ const ticketFormSchema = z
       'PLUMBING',
       'HVAC',
       'IT',
+      'HARDWARE',
+      'SOFTWARE',
+      'NETWORK',
+      'EQUIPMENT_DAMAGE',
       'FURNITURE',
+      'CLEANING',
+      'SAFETY_HAZARD',
       'GENERAL_MAINTENANCE',
       'OTHER',
     ] as const, {
@@ -68,6 +74,10 @@ const ticketFormSchema = z
     preferredContactEmail: z
       .string()
       .email('Invalid email format')
+      .refine(
+        (val) => !val || val.endsWith('@my.sliit.lk') || val.endsWith('@gmail.com'),
+        'Email must be a @my.sliit.lk or @gmail.com address'
+      )
       .max(150, 'Email must not exceed 150 characters')
       .optional()
       .or(z.literal('')),
@@ -116,7 +126,13 @@ const CATEGORY_LABELS: Record<TicketCategory, string> = {
   PLUMBING: 'Plumbing',
   HVAC: 'HVAC',
   IT: 'IT / Technology',
+  HARDWARE: 'Hardware',
+  SOFTWARE: 'Software / Access',
+  NETWORK: 'Network / Wi-Fi',
+  EQUIPMENT_DAMAGE: 'Equipment Damage',
   FURNITURE: 'Furniture',
+  CLEANING: 'Cleaning / Janitorial',
+  SAFETY_HAZARD: 'Safety Hazard',
   GENERAL_MAINTENANCE: 'General Maintenance',
   OTHER: 'Other',
 };
@@ -208,16 +224,16 @@ export function TicketForm({ onSubmit, onCancel, isLoading, defaultValues }: Tic
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
         <div className="space-y-2">
-          <Label>Filter by resource type</Label>
+          <Label>Filter by type</Label>
           <Select
-            value={resourceTypeFilter || '__all__'}
-            onValueChange={(value) => setResourceTypeFilter(value === '__all__' ? '' : (value as ResourceType))}
+            value={resourceTypeFilter || 'ALL'}
+            onValueChange={(value) => setResourceTypeFilter(value === 'ALL' ? '' : (value as ResourceType))}
           >
             <SelectTrigger>
-              <SelectValue placeholder="All resource types" />
+              <SelectValue placeholder="All types" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="__all__">All resource types</SelectItem>
+              <SelectItem value="ALL">All types</SelectItem>
               {RESOURCE_TYPE_OPTIONS.map((type) => (
                 <SelectItem key={type} value={type}>
                   {type.replace(/_/g, ' ')}
@@ -435,7 +451,7 @@ export function TicketForm({ onSubmit, onCancel, isLoading, defaultValues }: Tic
               <FormControl>
                 <Input
                   type="email"
-                  placeholder="your.email@university.edu"
+                  placeholder="youremail@my.sliit.lk or youremail@gmail.com "
                   {...field}
                 />
               </FormControl>

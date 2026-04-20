@@ -346,7 +346,13 @@ export type TicketCategory =
   | 'PLUMBING' 
   | 'HVAC' 
   | 'IT' 
+  | 'HARDWARE'
+  | 'SOFTWARE'
+  | 'NETWORK'
+  | 'EQUIPMENT_DAMAGE'
   | 'FURNITURE' 
+  | 'CLEANING'
+  | 'SAFETY_HAZARD'
   | 'GENERAL_MAINTENANCE' 
   | 'OTHER';
 
