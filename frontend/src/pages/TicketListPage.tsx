@@ -320,7 +320,13 @@ export function TicketListPage() {
               <SelectItem value="PLUMBING">Plumbing</SelectItem>
               <SelectItem value="HVAC">HVAC</SelectItem>
               <SelectItem value="IT">IT</SelectItem>
+              <SelectItem value="HARDWARE">Hardware</SelectItem>
+              <SelectItem value="SOFTWARE">Software / Access</SelectItem>
+              <SelectItem value="NETWORK">Network / Wi-Fi</SelectItem>
+              <SelectItem value="EQUIPMENT_DAMAGE">Equipment Damage</SelectItem>
               <SelectItem value="FURNITURE">Furniture</SelectItem>
+              <SelectItem value="CLEANING">Cleaning / Janitorial</SelectItem>
+              <SelectItem value="SAFETY_HAZARD">Safety Hazard</SelectItem>
               <SelectItem value="GENERAL_MAINTENANCE">General Maintenance</SelectItem>
               <SelectItem value="OTHER">Other</SelectItem>
             </SelectContent>
