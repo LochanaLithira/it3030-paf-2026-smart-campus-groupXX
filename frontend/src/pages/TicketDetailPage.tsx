@@ -13,6 +13,7 @@ import {
   StatusUpdateDialog,
   StatusTimeline,
   AttachmentUploader,
+  SLATimerCard,
 } from '@/components/tickets';
 import {
   ArrowLeft,
@@ -34,6 +35,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import type { TicketStatus, TicketPriority } from '@/types/api';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 // Status badge (same as list page)
 function getStatusBadge(status: TicketStatus) {
@@ -83,6 +85,7 @@ export function TicketDetailPage() {
   // Dialog states
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
   const canAssign = hasPermission(PERMISSIONS.TICKETS_ASSIGN);
   const canUpdateStatus = hasPermission(PERMISSIONS.TICKETS_UPDATE_STATUS);
@@ -93,8 +96,8 @@ export function TicketDetailPage() {
 
   const handleDeleteTicket = async () => {
     if (!ticket || !canDeleteThisTicket) return;
-    if (!confirm('Delete this ticket permanently? This action cannot be undone.')) return;
     await deleteTicket.mutateAsync(ticket.ticketId);
+    setDeleteConfirmOpen(false);
     navigate({ to: '/tickets' });
   };
 
@@ -166,19 +169,19 @@ export function TicketDetailPage() {
             <Button
               size="sm"
               variant="destructive"
-              onClick={handleDeleteTicket}
+              onClick={() => setDeleteConfirmOpen(true)}
               disabled={deleteTicket.isPending}
             >
               <Trash2 className="h-4 w-4 mr-2" />
-              {deleteTicket.isPending ? 'Deleting...' : 'Delete Ticket'}
+              Delete Ticket
             </Button>
           )}
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Content */}
-        <div className="col-span-2 space-y-6">
+        <div className="col-span-1 lg:col-span-2 space-y-6">
           {/* Description */}
           <Card>
             <CardHeader>
@@ -272,7 +275,7 @@ export function TicketDetailPage() {
             </Card>
           )}
 
-          {/* Comments */}
+          {/* Comments Section */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -281,42 +284,27 @@ export function TicketDetailPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {ticket.comments.length === 0 ? (
-                <p className="text-sm text-gray-500 text-center py-8">
-                  No comments yet. Be the first to comment!
-                </p>
-              ) : (
-                <div className="space-y-4">
-                  {ticket.comments.map((comment) => (
-                    <div key={comment.commentId} className="border-l-2 border-gray-200 pl-4">
-                      <div className="flex items-start justify-between mb-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-sm">{comment.author.fullName}</span>
-                          <span className="text-xs text-gray-500">
-                            {format(new Date(comment.createdAt), 'MMM d, h:mm a')}
-                          </span>
-                          {comment.createdAt !== comment.updatedAt && (
-                            <span className="text-xs text-gray-400 italic">(edited)</span>
-                          )}
-                        </div>
-                      </div>
-                      <p className="text-sm text-gray-700">{comment.content}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Add Comment Button */}
-              {(isReporter || isAssignedTech || hasPermission(PERMISSIONS.TICKETS_VIEW_ALL)) && (
-                <div className="mt-4 pt-4 border-t">
-                  <Button variant="outline" size="sm" className="w-full">
-                    <MessageSquare className="h-4 w-4 mr-2" />
-                    Add Comment
-                  </Button>
-                </div>
-              )}
+              <CommentThread ticketId={ticket.ticketId} comments={ticket.comments} />
             </CardContent>
           </Card>
+
+          {/* Attachments Upload Section */}
+          {(isReporter || isAssignedTech || canAssign) && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <ImageIcon className="h-5 w-5" />
+                  Add More Attachments
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <AttachmentUploader
+                  ticketId={ticket.ticketId}
+                  currentAttachmentCount={ticket.attachments.length}
+                />
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* Sidebar */}
@@ -428,6 +416,9 @@ export function TicketDetailPage() {
             </CardContent>
           </Card>
 
+          {/* SLA Timers */}
+          <SLATimerCard ticket={ticket} />
+
           {/* Status History - Using StatusTimeline Component */}
           <Card>
             <CardHeader>
@@ -439,37 +430,6 @@ export function TicketDetailPage() {
           </Card>
         </div>
       </div>
-
-      {/* Comments Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MessageSquare className="h-5 w-5" />
-            Comments ({ticket.comments.length})
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <CommentThread ticketId={ticket.ticketId} comments={ticket.comments} />
-        </CardContent>
-      </Card>
-
-      {/* Attachments Section */}
-      {(isReporter || isAssignedTech || canAssign) && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <ImageIcon className="h-5 w-5" />
-              Add More Attachments
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <AttachmentUploader
-              ticketId={ticket.ticketId}
-              currentAttachmentCount={ticket.attachments.length}
-            />
-          </CardContent>
-        </Card>
-      )}
 
       {/* Dialogs */}
       <AssignDialog
@@ -484,6 +444,25 @@ export function TicketDetailPage() {
         currentStatus={ticket.status}
         open={statusDialogOpen}
         onOpenChange={setStatusDialogOpen}
+      />
+
+      {/* Delete Ticket Confirmation */}
+      <ConfirmDialog
+        open={deleteConfirmOpen}
+        onOpenChange={setDeleteConfirmOpen}
+        variant="danger"
+        title="Delete Ticket"
+        description={
+          <>
+            You are about to permanently delete{' '}
+            <span className="font-semibold">Ticket #{ticket.ticketId.slice(0, 8)}</span>.
+            {' '}This will remove all comments, attachments, and history.{' '}
+            <span className="font-semibold">This action cannot be undone.</span>
+          </>
+        }
+        confirmLabel="Delete Ticket"
+        onConfirm={handleDeleteTicket}
+        isPending={deleteTicket.isPending}
       />
     </div>
   );

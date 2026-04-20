@@ -28,7 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Link } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import {
   RefreshCw,
   Loader2,
@@ -84,6 +84,7 @@ function getPriorityBadge(priority: TicketPriority) {
 
 export function TicketListPage() {
   const { hasPermission } = useAuthStore();
+  const navigate = useNavigate();
   const [sorting, setSorting] = useState<SortingState>([{ id: 'createdAt', desc: true }]);
   const [page, setPage] = useState(0);
   
@@ -108,13 +109,9 @@ export function TicketListPage() {
     columnHelper.accessor('ticketId', {
       header: 'ID',
       cell: (info) => (
-        <Link
-          to="/tickets/$ticketId"
-          params={{ ticketId: info.getValue() }}
-          className="font-mono text-xs text-blue-600 hover:underline"
-        >
-          {info.getValue().slice(0, 8)}
-        </Link>
+        <span className="font-mono text-sm font-semibold text-gray-700">
+          #{info.getValue().slice(0, 8)}
+        </span>
       ),
     }),
     columnHelper.accessor('resource', {
@@ -140,7 +137,7 @@ export function TicketListPage() {
     columnHelper.accessor('description', {
       header: 'Description',
       cell: (info) => (
-        <div className="max-w-[300px] text-sm text-gray-700 truncate">
+        <div className="max-w-[150px] text-sm text-gray-700 truncate" title={info.getValue()}>
           {info.getValue()}
         </div>
       ),
@@ -169,6 +166,38 @@ export function TicketListPage() {
           <div className="text-sm font-medium">{tech.fullName}</div>
         ) : (
           <span className="text-xs text-gray-400 italic">Unassigned</span>
+        );
+      },
+    }),
+    columnHelper.display({
+      id: 'sla_timers',
+      header: 'Response',
+      cell: (info) => {
+        const ticket = info.row.original;
+        const ttfr = ticket.timeToFirstResponseSeconds;
+        const ttr = ticket.timeToResolutionSeconds;
+
+        const formatSec = (sec: number | null) => {
+            if (sec === null) return '-';
+            const m = Math.floor(sec / 60);
+            const h = Math.floor(m / 60);
+            const d = Math.floor(h / 24);
+            if (d > 0) return `${d}d ${h % 24}h`;
+            if (h > 0) return `${h}h ${m % 60}m`;
+            return `${m}m`;
+        };
+
+        return (
+          <div className="text-xs space-y-1">
+            <div className="flex gap-1 items-center">
+              <span className="text-gray-500 w-10">Reply:</span>
+              <span className="font-medium text-gray-700">{formatSec(ttfr)}</span>
+            </div>
+            <div className="flex gap-1 items-center">
+              <span className="text-gray-500 w-10">Fixed:</span>
+              <span className="font-medium text-gray-700">{formatSec(ttr)}</span>
+            </div>
+          </div>
         );
       },
     }),
@@ -209,7 +238,7 @@ export function TicketListPage() {
   const totalPages = data?.totalPages || 0;
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -245,8 +274,8 @@ export function TicketListPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex items-center gap-4 bg-gray-50 p-4 rounded-lg">
-        <div className="flex-1 space-y-1">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-gray-50 p-4 rounded-lg border border-gray-100">
+        <div className="space-y-1">
           <label className="text-xs font-medium text-gray-700">Status</label>
           <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
             <SelectTrigger className="w-full">
@@ -263,7 +292,7 @@ export function TicketListPage() {
           </Select>
         </div>
 
-        <div className="flex-1 space-y-1">
+        <div className="space-y-1">
           <label className="text-xs font-medium text-gray-700">Priority</label>
           <Select value={priorityFilter} onValueChange={(v) => setPriorityFilter(v as any)}>
             <SelectTrigger className="w-full">
@@ -279,7 +308,7 @@ export function TicketListPage() {
           </Select>
         </div>
 
-        <div className="flex-1 space-y-1">
+        <div className="space-y-1">
           <label className="text-xs font-medium text-gray-700">Category</label>
           <Select value={categoryFilter} onValueChange={(v) => setCategoryFilter(v as any)}>
             <SelectTrigger className="w-full">
@@ -317,7 +346,7 @@ export function TicketListPage() {
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id}>
                   {headerGroup.headers.map((header) => (
-                    <TableHead key={header.id} className="bg-gray-50">
+                    <TableHead key={header.id} className="bg-gray-50 py-4 px-4 text-sm font-semibold text-gray-600">
                       {header.isPlaceholder ? null : (
                         <div
                           className={
@@ -341,9 +370,13 @@ export function TicketListPage() {
             </TableHeader>
             <TableBody>
               {table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id} className="hover:bg-gray-50">
+                <TableRow 
+                  key={row.id} 
+                  className="hover:bg-gray-50 cursor-pointer transition-colors"
+                  onClick={() => navigate({ to: '/tickets/$ticketId', params: { ticketId: row.original.ticketId } })}
+                >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
+                    <TableCell key={cell.id} className="py-4 px-4">
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}

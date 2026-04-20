@@ -380,6 +380,8 @@ export interface TicketResponse {
   status: TicketStatus;
   preferredContactEmail: string | null;   // PDF requirement (Member 3)
   preferredContactPhone: string | null;   // PDF requirement (Member 3)
+  timeToFirstResponseSeconds: number | null;
+  timeToResolutionSeconds: number | null;
   resolutionNotes: string | null;
   dueDate: string | null; // ISO date string
   resolvedAt: string | null; // ISO timestamp
@@ -401,6 +403,8 @@ export interface TicketSummaryResponse {
   status: TicketStatus;
   preferredContactEmail: string | null;   // PDF requirement (Member 3)
   preferredContactPhone: string | null;   // PDF requirement (Member 3)
+  timeToFirstResponseSeconds: number | null;
+  timeToResolutionSeconds: number | null;
   attachmentCount: number;
   commentCount: number;
   dueDate: string | null;

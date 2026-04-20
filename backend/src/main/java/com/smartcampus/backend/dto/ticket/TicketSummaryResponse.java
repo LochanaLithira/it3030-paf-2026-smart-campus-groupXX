@@ -20,6 +20,8 @@ public record TicketSummaryResponse(
     TicketStatus status,
     String preferredContactEmail,      // PDF requirement (Member 3)
     String preferredContactPhone,      // PDF requirement (Member 3)
+    Long timeToFirstResponseSeconds,
+    Long timeToResolutionSeconds,
     int attachmentCount,
     int commentCount,
     LocalDate dueDate,
