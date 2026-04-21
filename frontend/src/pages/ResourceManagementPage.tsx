@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Edit, Plus, RefreshCw, Trash2 } from 'lucide-react';
+import { Edit, Plus, RefreshCw, Trash2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -10,6 +10,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { ResourceEditorDialog } from '@/components/resources/ResourceEditorDialog';
 import { ResourceHeatmap } from '@/components/resources/ResourceHeatmap';
 import {
@@ -71,44 +73,63 @@ export function ResourceManagementPage() {
         </div>
       </div>
 
-      <div className="flex flex-col gap-2 md:flex-row md:items-center">
-        <Input
-          className="max-w-sm"
-          placeholder="Search by resource name..."
-          value={search}
-          onChange={(event) => {
-            setSearch(event.target.value);
-            setPage(0);
-          }}
-        />
-        <Select
-          value={statusFilter || '__all__'}
-          onValueChange={(value) => {
-            const next = value === '__all__' ? '' : (value as ResourceStatus);
-            setStatusFilter(next);
-            setPage(0);
-          }}
-        >
-          <SelectTrigger className="w-56">
-            <SelectValue placeholder="Filter by status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="__all__">All statuses</SelectItem>
-            {STATUS_OPTIONS.map((status) => (
-              <SelectItem key={status} value={status}>{status}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      <Card className="shadow-sm">
+        <CardContent className="pt-6">
+          <div className="flex flex-col gap-4 md:flex-row md:items-end">
+            <div className="flex-1">
+              <label className="text-sm font-medium mb-2 block">Search Resources</label>
+              <Input
+                className="max-w-sm"
+                placeholder="Search by resource name..."
+                value={search}
+                onChange={(event) => {
+                  setSearch(event.target.value);
+                  setPage(0);
+                }}
+              />
+            </div>
+            <div className="flex-1">
+              <label className="text-sm font-medium mb-2 block">Filter by Status</label>
+              <Select
+                value={statusFilter || '__all__'}
+                onValueChange={(value) => {
+                  const next = value === '__all__' ? '' : (value as ResourceStatus);
+                  setStatusFilter(next);
+                  setPage(0);
+                }}
+              >
+                <SelectTrigger className="w-56">
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">All statuses</SelectItem>
+                  {STATUS_OPTIONS.map((status) => (
+                    <SelectItem key={status} value={status}>
+                      <div className="flex items-center gap-2">
+                        <div className={`w-2 h-2 rounded-full ${
+                          status === 'ACTIVE' ? 'bg-green-500' :
+                          status === 'OUT_OF_SERVICE' ? 'bg-red-500' :
+                          'bg-yellow-500'
+                        }`} />
+                        {status}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-      <div className="rounded-md border">
+      <div className="rounded-md border shadow-sm">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+            <TableRow className="bg-muted/50">
+              <TableHead className="font-semibold">Name</TableHead>
+              <TableHead className="font-semibold">Type</TableHead>
+              <TableHead className="font-semibold">Status</TableHead>
+              <TableHead className="text-right font-semibold">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -125,10 +146,14 @@ export function ResourceManagementPage() {
                 </TableCell>
               </TableRow>
             ) : (
-              rows.map((resource) => (
-                <TableRow key={resource.resourceId}>
+              rows.map((resource, index) => (
+                <TableRow key={resource.resourceId} className={`hover:bg-muted/30 transition-colors ${index % 2 === 0 ? 'bg-background' : 'bg-muted/20'}`}>
                   <TableCell className="font-medium">{resource.name}</TableCell>
-                  <TableCell>{resource.type}</TableCell>
+                  <TableCell>
+                    <Badge variant="secondary" className="text-xs">
+                      {resource.type}
+                    </Badge>
+                  </TableCell>
                   <TableCell>
                     <Select
                       value={resource.status}
@@ -139,12 +164,25 @@ export function ResourceManagementPage() {
                         })
                       }
                     >
-                      <SelectTrigger className="w-44">
+                      <SelectTrigger className={`w-44 border-0 shadow-none p-0 h-auto font-medium ${
+                        resource.status === 'ACTIVE' ? 'text-green-700 dark:text-green-400' :
+                        resource.status === 'OUT_OF_SERVICE' ? 'text-red-700 dark:text-red-400' :
+                        'text-yellow-700 dark:text-yellow-400'
+                      }`}>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         {STATUS_OPTIONS.map((status) => (
-                          <SelectItem key={status} value={status}>{status}</SelectItem>
+                          <SelectItem key={status} value={status}>
+                            <div className="flex items-center gap-2">
+                              <div className={`w-2 h-2 rounded-full ${
+                                status === 'ACTIVE' ? 'bg-green-500' :
+                                status === 'OUT_OF_SERVICE' ? 'bg-red-500' :
+                                'bg-yellow-500'
+                              }`} />
+                              {status}
+                            </div>
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -154,6 +192,7 @@ export function ResourceManagementPage() {
                       <Button
                         size="icon-sm"
                         variant="ghost"
+                        className="hover:bg-primary/10 hover:text-primary"
                         onClick={() => {
                           setSelectedResource(resource);
                           setEditorOpen(true);
@@ -164,6 +203,7 @@ export function ResourceManagementPage() {
                       <Button
                         size="icon-sm"
                         variant="ghost"
+                        className="hover:bg-destructive/10 hover:text-destructive"
                         onClick={() => deleteResource.mutate(resource.resourceId)}
                       >
                         <Trash2 className="h-4 w-4 text-destructive" />
@@ -178,19 +218,78 @@ export function ResourceManagementPage() {
       </div>
 
       {data && data.totalPages > 1 && (
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">
-            Page {page + 1} of {data.totalPages}
-          </p>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage((p) => p - 1)}>
-              Previous
-            </Button>
-            <Button variant="outline" size="sm" disabled={page + 1 >= data.totalPages} onClick={() => setPage((p) => p + 1)}>
-              Next
-            </Button>
-          </div>
-        </div>
+        <Card className="shadow-sm">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <p className="text-sm text-muted-foreground">
+                  Showing <span className="font-medium">{data.numberOfElements}</span> of{' '}
+                  <span className="font-medium">{data.totalElements}</span> resources
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Page <span className="font-medium">{page + 1}</span> of{' '}
+                  <span className="font-medium">{data.totalPages}</span>
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={page === 0}
+                  onClick={() => setPage(0)}
+                  className="hidden sm:flex"
+                >
+                  <ChevronsLeft className="h-4 w-4" />
+                  First
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={page === 0}
+                  onClick={() => setPage((p) => p - 1)}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Previous
+                </Button>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(5, data.totalPages) }, (_, i) => {
+                    const pageNum = Math.max(0, Math.min(data.totalPages - 1, page - 2 + i));
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={pageNum === page ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setPage(pageNum)}
+                        className="w-10 h-10 p-0"
+                      >
+                        {pageNum + 1}
+                      </Button>
+                    );
+                  })}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={page + 1 >= data.totalPages}
+                  onClick={() => setPage((p) => p + 1)}
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={page + 1 >= data.totalPages}
+                  onClick={() => setPage(data.totalPages - 1)}
+                  className="hidden sm:flex"
+                >
+                  Last
+                  <ChevronsRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       <ResourceHeatmap />
