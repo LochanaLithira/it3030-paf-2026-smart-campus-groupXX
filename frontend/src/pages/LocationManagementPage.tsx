@@ -79,22 +79,23 @@ export function LocationManagementPage() {
         />
       </div>
 
-      <div className="rounded-md border shadow-sm">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-muted/50">
-              <TableHead className="font-semibold">Building</TableHead>
-              <TableHead className="font-semibold">Floor</TableHead>
-              <TableHead className="font-semibold">Room</TableHead>
-              <TableHead className="font-semibold">Type</TableHead>
-              <TableHead className="font-semibold">Capacity</TableHead>
-              <TableHead className="font-semibold">Status</TableHead>
-              <TableHead className="font-semibold">Tags</TableHead>
-              <TableHead className="font-semibold">Availability</TableHead>
-              <TableHead className="text-right font-semibold">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
+      <div className="rounded-md border shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/50">
+                <TableHead className="font-semibold min-w-[120px]">Building</TableHead>
+                <TableHead className="font-semibold min-w-[80px]">Floor</TableHead>
+                <TableHead className="font-semibold min-w-[100px]">Room</TableHead>
+                <TableHead className="font-semibold min-w-[120px]">Type</TableHead>
+                <TableHead className="font-semibold min-w-[80px]">Capacity</TableHead>
+                <TableHead className="font-semibold min-w-[120px]">Status</TableHead>
+                <TableHead className="font-semibold min-w-[100px]">Tags</TableHead>
+                <TableHead className="font-semibold min-w-[100px]">Availability</TableHead>
+                <TableHead className="text-right font-semibold min-w-[100px]">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
             {isLoading ? (
               Array.from({ length: 5 }).map((_, index) => (
                 <TableRow key={`skeleton-${index}`}>
@@ -171,6 +172,7 @@ export function LocationManagementPage() {
             )}
           </TableBody>
         </Table>
+        </div>
       </div>
 
       <Card className="shadow-sm">

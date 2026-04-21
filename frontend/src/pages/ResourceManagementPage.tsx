@@ -128,17 +128,18 @@ export function ResourceManagementPage() {
         </CardContent>
       </Card>
 
-      <div className="rounded-md border shadow-sm">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-muted/50">
-              <TableHead className="font-semibold">Name</TableHead>
-              <TableHead className="font-semibold">Type</TableHead>
-              <TableHead className="font-semibold">Status</TableHead>
-              <TableHead className="text-right font-semibold">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
+      <div className="rounded-md border shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/50">
+                <TableHead className="font-semibold min-w-[200px]">Name</TableHead>
+                <TableHead className="font-semibold min-w-[120px]">Type</TableHead>
+                <TableHead className="font-semibold min-w-[140px]">Status</TableHead>
+                <TableHead className="text-right font-semibold min-w-[100px]">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
             {isLoading ? (
               Array.from({ length: 5 }).map((_, index) => (
                 <TableRow key={`skeleton-${index}`}>
@@ -229,6 +230,7 @@ export function ResourceManagementPage() {
             )}
           </TableBody>
         </Table>
+        </div>
       </div>
 
       {data && data.totalPages > 1 && (
@@ -254,7 +256,7 @@ export function ResourceManagementPage() {
                   className="hidden sm:flex"
                 >
                   <ChevronsLeft className="h-4 w-4" />
-                  First
+                  <span className="hidden md:inline">First</span>
                 </Button>
                 <Button
                   variant="outline"
@@ -263,9 +265,9 @@ export function ResourceManagementPage() {
                   onClick={() => setPage((p) => p - 1)}
                 >
                   <ChevronLeft className="h-4 w-4" />
-                  Previous
+                  <span className="hidden md:inline ml-1">Previous</span>
                 </Button>
-                <div className="flex items-center gap-1">
+                <div className="hidden sm:flex items-center gap-1">
                   {Array.from({ length: Math.min(5, data.totalPages) }, (_, i) => {
                     const pageNum = Math.max(0, Math.min(data.totalPages - 1, page - 2 + i));
                     return (
@@ -287,7 +289,7 @@ export function ResourceManagementPage() {
                   disabled={page + 1 >= data.totalPages}
                   onClick={() => setPage((p) => p + 1)}
                 >
-                  Next
+                  <span className="hidden md:inline mr-1">Next</span>
                   <ChevronRight className="h-4 w-4" />
                 </Button>
                 <Button
@@ -297,7 +299,7 @@ export function ResourceManagementPage() {
                   onClick={() => setPage(data.totalPages - 1)}
                   className="hidden sm:flex"
                 >
-                  Last
+                  <span className="hidden md:inline">Last</span>
                   <ChevronsRight className="h-4 w-4" />
                 </Button>
               </div>
