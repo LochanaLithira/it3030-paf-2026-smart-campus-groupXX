@@ -520,3 +520,20 @@ export interface TicketsListParams {
   size?: number;
   sort?: string;
 }
+
+// ── Analytics ────────────────────────────────────────────────────
+
+export interface TopResourceResponse {
+  resourceName: string;
+  bookingCount: number;
+}
+
+export interface PeakHourResponse {
+  hourOfDay: number;
+  bookingCount: number;
+}
+
+export interface TopHourItemResponse {
+  itemName: string;
+  bookingCount: number;
+}

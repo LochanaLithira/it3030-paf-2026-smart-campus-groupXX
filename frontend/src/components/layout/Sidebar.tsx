@@ -73,12 +73,7 @@ const NAV_ITEMS: NavItem[] = [
     // Visible to any role with any ticket-view permission
     permission: PERMISSIONS.TICKETS_MANAGEMENT_PAGE_USER,
   },
-  {
-    label: 'Tech Dashboard',
-    href: '/tech-dashboard',
-    icon: Wrench,
-    permission: PERMISSIONS.TICKETS_MANAGEMENT_PAGE_TECHNICIAN,
-  },
+
   {
     label: 'Profile',
     href: '/profile',

@@ -21,7 +21,6 @@ import { ResourceManagementPage } from '@/pages/ResourceManagementPage';
 import { TicketListPage } from '@/pages/TicketListPage';
 import { TicketDetailPage } from '@/pages/TicketDetailPage';
 import { TicketCreatePage } from '@/pages/TicketCreatePage';
-import TechDashboardPage from '@/pages/TechDashboardPage';
 import { BookingListPage } from '@/pages/BookingListPage';
 import { BookingDetailPage } from '@/pages/BookingDetailPage';
 import { BookingCreatePage } from '@/pages/BookingCreatePage';
@@ -244,19 +243,6 @@ const ticketCreateRoute = createRoute({
   },
 });
 
-const techDashboardRoute = createRoute({
-  getParentRoute: () => protectedLayoutRoute,
-  path: '/tech-dashboard',
-  component: TechDashboardPage,
-  beforeLoad: () => {
-    const { hasPermission } = useAuthStore.getState();
-    // Only technicians with assigned ticket permissions
-    if (!hasPermission(PERMISSIONS.TICKETS_MANAGEMENT_PAGE_TECHNICIAN)) {
-      throw redirect({ to: '/dashboard' });
-    }
-  },
-});
-
 // ── Router ───────────────────────────────────────────────────────
 
 const routeTree = rootRoute.addChildren([
@@ -276,7 +262,6 @@ const routeTree = rootRoute.addChildren([
     ticketsRoute,
     ticketCreateRoute,
     ticketDetailRoute,
-    techDashboardRoute,
     profileRoute,
     notificationsRoute,
   ]),

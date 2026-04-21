@@ -234,4 +234,83 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
 
         Integer getUtilizationPct();
     }
+
+    @Query(value = """
+            SELECT
+                r.name AS "resourceName",
+                COUNT(b.booking_id)::INT AS "bookingCount"
+            FROM bookings b
+            JOIN resources r ON b.resource_id = r.resource_id
+            WHERE b.status = 'APPROVED'
+            GROUP BY r.resource_id, r.name
+            ORDER BY "bookingCount" DESC
+            LIMIT :limit
+            """, nativeQuery = true)
+    List<TopResourceAggregate> findTopResources(@Param("limit") int limit);
+
+    interface TopResourceAggregate {
+        String getResourceName();
+        Integer getBookingCount();
+    }
+
+    @Query(value = """
+            WITH booking_hours AS (
+                SELECT
+                    generate_series(
+                        DATE_PART('hour', b.start_time)::INT,
+                        CASE 
+                            WHEN DATE_PART('minute', b.end_time) > 0 THEN DATE_PART('hour', b.end_time)::INT
+                            ELSE DATE_PART('hour', b.end_time)::INT - 1
+                        END
+                    ) AS hour_val,
+                    b.booking_id
+                FROM bookings b
+                WHERE b.status = 'APPROVED'
+            )
+            SELECT
+                hour_val AS "hourOfDay",
+                COUNT(booking_id)::INT AS "bookingCount"
+            FROM booking_hours
+            GROUP BY hour_val
+            ORDER BY "bookingCount" DESC
+            """, nativeQuery = true)
+    List<PeakHourAggregate> findPeakBookingHours();
+
+    @Query(value = """
+            WITH booking_hours AS (
+                SELECT
+                    generate_series(
+                        DATE_PART('hour', b.start_time)::INT,
+                        CASE 
+                            WHEN DATE_PART('minute', b.end_time) > 0 THEN DATE_PART('hour', b.end_time)::INT
+                            ELSE DATE_PART('hour', b.end_time)::INT - 1
+                        END
+                    ) AS hour_val,
+                    b.resource_id,
+                    b.location_id
+                FROM bookings b
+                WHERE b.status = 'APPROVED'
+            )
+            SELECT
+                COALESCE(r.name, l.building_name || COALESCE(' ' || l.room_number, '')) AS "itemName",
+                COUNT(*)::INT AS "bookingCount"
+            FROM booking_hours bh
+            LEFT JOIN resources r ON r.resource_id = bh.resource_id
+            LEFT JOIN locations l ON l.location_id = bh.location_id
+            WHERE bh.hour_val = :hourOfDay
+            GROUP BY COALESCE(r.name, l.building_name || COALESCE(' ' || l.room_number, ''))
+            ORDER BY "bookingCount" DESC
+            LIMIT :limit
+            """, nativeQuery = true)
+    List<HourItemAggregate> findTopItemsForHour(@Param("hourOfDay") int hourOfDay, @Param("limit") int limit);
+
+    interface HourItemAggregate {
+        String getItemName();
+        Integer getBookingCount();
+    }
+
+    interface PeakHourAggregate {
+        Integer getHourOfDay();
+        Integer getBookingCount();
+    }
 }
