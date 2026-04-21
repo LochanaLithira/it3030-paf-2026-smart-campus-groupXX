@@ -280,11 +280,11 @@ export function TicketForm({ onSubmit, onCancel, isLoading, defaultValues }: Tic
                       {(() => {
                         if (field.value) {
                           const r = resources.find(x => x.resourceId === field.value);
-                          if (r) return `${r.name} — ${r.type.replace(/_/g, ' ')}`;
+                          if (r) return r.name;
                         }
                         if (selectedLocationId) {
                           const l = locations.find(x => x.locationId === selectedLocationId) as LocationResponse | undefined;
-                          if (l) return `${l.buildingName} — Floor ${l.floorNumber}${l.roomNumber ? `, Room ${l.roomNumber}` : ''} (${l.type.replace(/_/g, ' ')})`;
+                          if (l) return l.buildingName;
                         }
                         return 'Select a resource or location';
                       })()}
