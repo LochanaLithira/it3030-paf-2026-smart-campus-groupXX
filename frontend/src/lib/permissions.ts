@@ -13,7 +13,6 @@ export const PERMISSIONS = {
   BOOKINGS_MANAGEMENT_PAGE_ADMIN: 'pages.bookings_management_page_admin',
   TICKETS_MANAGEMENT_PAGE_USER: 'pages.tickets_management_page_user',
   TICKETS_MANAGEMENT_PAGE_TECHNICIAN: 'pages.tickets_management_page_technician',
-  TICKETS_MANAGEMENT_PAGE_ADMIN: 'pages.tickets_management_page_admin',
 
 
 
@@ -150,7 +149,6 @@ export const PERMISSION_GROUPS = [
       { key: PERMISSIONS.BOOKINGS_MANAGEMENT_PAGE_ADMIN, label: 'View Bookings Management (Admin)', description: 'Access the bookings management page for admins (ADMIN)' },
       { key: PERMISSIONS.TICKETS_MANAGEMENT_PAGE_USER, label: 'View Tickets Management (User)', description: 'Access the tickets management page for users (USER)' },
       { key: PERMISSIONS.TICKETS_MANAGEMENT_PAGE_TECHNICIAN, label: 'View Tickets Management (Technician)', description: 'Access the tickets management page for technicians (TECHNICIAN)' },
-      { key: PERMISSIONS.TICKETS_MANAGEMENT_PAGE_ADMIN, label: 'View Tickets Management (Admin)', description: 'Access the tickets management page for admins (ADMIN)' },
     ],
   },
 ] as const;
