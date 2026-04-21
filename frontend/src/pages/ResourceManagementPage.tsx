@@ -54,7 +54,7 @@ export function ResourceManagementPage() {
         </div>
         <div className="flex items-center gap-2">
           <Tooltip>
-            <TooltipTrigger asChild>
+            <TooltipTrigger>
               <Button
                 variant="outline"
                 size="sm"
@@ -149,110 +149,110 @@ export function ResourceManagementPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-            {isLoading ? (
-              Array.from({ length: 5 }).map((_, index) => (
-                <TableRow key={`skeleton-${index}`}>
-                  <TableCell><Skeleton className="h-4 w-32" /></TableCell>
-                  <TableCell><Skeleton className="h-5 w-20 rounded-full" /></TableCell>
-                  <TableCell><Skeleton className="h-8 w-32 rounded" /></TableCell>
-                  <TableCell className="text-right">
-                    <div className="inline-flex gap-1">
-                      <Skeleton className="h-8 w-8" />
-                      <Skeleton className="h-8 w-8" />
-                    </div>
+              {isLoading ? (
+                Array.from({ length: 5 }).map((_, index) => (
+                  <TableRow key={`skeleton-${index}`}>
+                    <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-20 rounded-full" /></TableCell>
+                    <TableCell><Skeleton className="h-8 w-32 rounded" /></TableCell>
+                    <TableCell className="text-right">
+                      <div className="inline-flex gap-1">
+                        <Skeleton className="h-8 w-8" />
+                        <Skeleton className="h-8 w-8" />
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : rows.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="h-20 text-center text-muted-foreground">
+                    No resources found.
                   </TableCell>
                 </TableRow>
-              ))
-            ) : rows.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={4} className="h-20 text-center text-muted-foreground">
-                  No resources found.
-                </TableCell>
-              </TableRow>
-            ) : (
-              rows.map((resource, index) => (
-                <TableRow key={resource.resourceId} className={`hover:bg-muted/30 transition-colors ${index % 2 === 0 ? 'bg-background' : 'bg-muted/20'}`}>
-                  <TableCell className="font-medium">{resource.name}</TableCell>
-                  <TableCell>
-                    <Badge variant="secondary" className="text-xs">
-                      {resource.type}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Select
-                      value={resource.status}
-                      onValueChange={(value) =>
-                        updateStatus.mutate({
-                          resourceId: resource.resourceId,
-                          status: value as ResourceStatus,
-                        })
-                      }
-                    >
-                      <SelectTrigger className={`w-44 border-0 shadow-none p-0 h-auto font-medium ${
-                        resource.status === 'ACTIVE' ? 'text-green-700 dark:text-green-400' :
-                        resource.status === 'OUT_OF_SERVICE' ? 'text-red-700 dark:text-red-400' :
-                        'text-yellow-700 dark:text-yellow-400'
-                      }`}>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {STATUS_OPTIONS.map((status) => (
-                          <SelectItem key={status} value={status}>
-                            <div className="flex items-center gap-2">
-                              <div className={`w-2 h-2 rounded-full ${
-                                status === 'ACTIVE' ? 'bg-green-500' :
-                                status === 'OUT_OF_SERVICE' ? 'bg-red-500' :
-                                'bg-yellow-500'
-                              }`} />
-                              {status}
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="inline-flex gap-1">
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            size="icon-sm"
-                            variant="ghost"
-                            className="hover:bg-primary/10 hover:text-primary"
-                            onClick={() => {
-                              setSelectedResource(resource);
-                              setEditorOpen(true);
-                            }}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Edit resource</p>
-                        </TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            size="icon-sm"
-                            variant="ghost"
-                            className="hover:bg-destructive/10 hover:text-destructive"
-                            onClick={() => deleteResource.mutate(resource.resourceId)}
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Delete resource</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+              ) : (
+                rows.map((resource, index) => (
+                  <TableRow key={resource.resourceId} className={`hover:bg-muted/30 transition-colors ${index % 2 === 0 ? 'bg-background' : 'bg-muted/20'}`}>
+                    <TableCell className="font-medium">{resource.name}</TableCell>
+                    <TableCell>
+                      <Badge variant="secondary" className="text-xs">
+                        {resource.type}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Select
+                        value={resource.status}
+                        onValueChange={(value) =>
+                          updateStatus.mutate({
+                            resourceId: resource.resourceId,
+                            status: value as ResourceStatus,
+                          })
+                        }
+                      >
+                        <SelectTrigger className={`w-44 border-0 shadow-none p-0 h-auto font-medium ${
+                          resource.status === 'ACTIVE' ? 'text-green-700 dark:text-green-400' :
+                          resource.status === 'OUT_OF_SERVICE' ? 'text-red-700 dark:text-red-400' :
+                          'text-yellow-700 dark:text-yellow-400'
+                        }`}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {STATUS_OPTIONS.map((status) => (
+                            <SelectItem key={status} value={status}>
+                              <div className="flex items-center gap-2">
+                                <div className={`w-2 h-2 rounded-full ${
+                                  status === 'ACTIVE' ? 'bg-green-500' :
+                                  status === 'OUT_OF_SERVICE' ? 'bg-red-500' :
+                                  'bg-yellow-500'
+                                }`} />
+                                {status}
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="inline-flex gap-1">
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Button
+                              size="icon-sm"
+                              variant="ghost"
+                              className="hover:bg-primary/10 hover:text-primary"
+                              onClick={() => {
+                                setSelectedResource(resource);
+                                setEditorOpen(true);
+                              }}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Edit resource</p>
+                          </TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Button
+                              size="icon-sm"
+                              variant="ghost"
+                              className="hover:bg-destructive/10 hover:text-destructive"
+                              onClick={() => deleteResource.mutate(resource.resourceId)}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Delete resource</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
         </div>
       </div>
 
@@ -262,7 +262,7 @@ export function ResourceManagementPage() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <p className="text-sm text-muted-foreground">
-                  Showing <span className="font-medium">{data.numberOfElements}</span> of{' '}
+                  Showing <span className="font-medium">{rows.length}</span> of{' '}
                   <span className="font-medium">{data.totalElements}</span> resources
                 </p>
                 <p className="text-sm text-muted-foreground">
