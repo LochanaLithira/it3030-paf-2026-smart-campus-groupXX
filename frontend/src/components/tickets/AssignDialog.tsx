@@ -77,7 +77,9 @@ export function AssignDialog({
             <label className="text-sm font-medium">Technician</label>
             <Select value={selectedTechId} onValueChange={(value) => setSelectedTechId(value ?? '')}>
               <SelectTrigger>
-                <SelectValue placeholder="Select a technician" />
+                <SelectValue placeholder="Select a technician">
+                  {selectedTechId && technicians.find(t => t.userId === selectedTechId)?.fullName}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {usersLoading && (
