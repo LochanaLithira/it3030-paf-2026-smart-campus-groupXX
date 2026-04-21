@@ -11,6 +11,8 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Badge } from '@/components/ui/badge';
+import { TrendingUp, Clock, Calendar, Info } from 'lucide-react';
 import { useResourceHeatmap, useResources } from '@/hooks/useResources';
 import type { DayOfWeek, ResourceHeatmapPeriod, ResourceType } from '@/types/api';
 
@@ -194,27 +196,90 @@ export function ResourceHeatmap({ resourceId }: ResourceHeatmapProps) {
         </div>
 
         <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-          <Card size="sm">
-            <CardHeader>
-              <CardTitle className="text-sm">Peak Slot</CardTitle>
+          <Card className="shadow-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <TrendingUp className="h-4 w-4 text-green-600" />
+                Peak Slot
+              </CardTitle>
             </CardHeader>
-            <CardContent className="text-sm font-medium">{peakSlotLabel}</CardContent>
-          </Card>
-          <Card size="sm">
-            <CardHeader>
-              <CardTitle className="text-sm">Avg Utilization</CardTitle>
-            </CardHeader>
-            <CardContent className="text-sm font-medium">
-              {heatmap ? `${heatmap.summary.avgUtilizationPct}%` : 'N/A'}
+            <CardContent>
+              <p className="text-lg font-bold text-green-700 dark:text-green-400">{peakSlotLabel}</p>
+              <p className="text-xs text-muted-foreground">Highest utilization</p>
             </CardContent>
           </Card>
-          <Card size="sm">
-            <CardHeader>
-              <CardTitle className="text-sm">Idle Slots</CardTitle>
+
+          <Card className="shadow-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-blue-600" />
+                Avg Utilization
+              </CardTitle>
             </CardHeader>
-            <CardContent className="text-sm font-medium">{heatmap ? heatmap.summary.idleSlots : 'N/A'}</CardContent>
+            <CardContent>
+              <p className="text-lg font-bold text-blue-700 dark:text-blue-400">
+                {heatmap ? `${heatmap.summary.avgUtilizationPct}%` : 'N/A'}
+              </p>
+              <p className="text-xs text-muted-foreground">Across all slots</p>
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Clock className="h-4 w-4 text-orange-600" />
+                Idle Slots
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-lg font-bold text-orange-700 dark:text-orange-400">
+                {heatmap ? heatmap.summary.idleSlots : 'N/A'}
+              </p>
+              <p className="text-xs text-muted-foreground">Available time slots</p>
+            </CardContent>
           </Card>
         </div>
+
+        {/* Color Legend */}
+        <Card className="shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Info className="h-4 w-4" />
+              Utilization Legend
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-6">
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded border" style={{ backgroundColor: 'var(--heatmap-0-bg)' }} />
+                <span className="text-xs">0%</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded border" style={{ backgroundColor: 'var(--heatmap-1-20-bg)' }} />
+                <span className="text-xs">1-20%</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded border" style={{ backgroundColor: 'var(--heatmap-21-40-bg)' }} />
+                <span className="text-xs">21-40%</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded border" style={{ backgroundColor: 'var(--heatmap-41-60-bg)' }} />
+                <span className="text-xs">41-60%</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded border" style={{ backgroundColor: 'var(--heatmap-61-80-bg)' }} />
+                <span className="text-xs">61-80%</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded border" style={{ backgroundColor: 'var(--heatmap-81-100-bg)' }} />
+                <span className="text-xs">81-100%</span>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              Higher percentages indicate more bookings relative to available slots
+            </p>
+          </CardContent>
+        </Card>
 
         {warning && (
           <Alert className={warning.className}>
@@ -242,14 +307,17 @@ export function ResourceHeatmap({ resourceId }: ResourceHeatmapProps) {
         )}
 
         {!selectedResourceId && (
-          <div className="rounded-md border p-4 text-sm text-muted-foreground">
-            Select a resource to view utilization.
-          </div>
+          <Card className="shadow-sm">
+            <CardContent className="py-8 text-center">
+              <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-sm text-muted-foreground">Select a resource to view utilization heatmap</p>
+            </CardContent>
+          </Card>
         )}
 
         {selectedResourceId && (
           <div className="overflow-x-auto">
-            <div className="min-w-[520px]">
+            <div className="min-w-[520px] max-w-full">
               {showSkeleton ? (
                 <HeatmapSkeleton />
               ) : heatmap ? (
@@ -258,9 +326,12 @@ export function ResourceHeatmap({ resourceId }: ResourceHeatmapProps) {
                   rows={heatmap.heatmap}
                 />
               ) : (
-                <div className="rounded-md border p-4 text-sm text-muted-foreground">
-                  Unable to load heatmap data.
-                </div>
+                <Card className="shadow-sm">
+                  <CardContent className="py-8 text-center">
+                    <Info className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-sm text-muted-foreground">Unable to load heatmap data.</p>
+                  </CardContent>
+                </Card>
               )}
             </div>
           </div>
@@ -321,12 +392,26 @@ function HeatmapGrid({
                   {value > 0 ? `${value}%` : ''}
                 </TooltipTrigger>
                 <TooltipContent className="max-w-none">
-                  <div className="space-y-0.5">
-                    <p className="font-medium">{resourceName}</p>
-                    <p>{DAY_LABELS[day]}</p>
-                    <p>{formatHourRange(row.hourSlot)}</p>
-                    <p>Utilization: {value}%</p>
-                    <p>Bookings: {bookingCount}</p>
+                  <div className="space-y-1">
+                    <p className="font-semibold text-sm">{resourceName}</p>
+                    <div className="grid grid-cols-2 gap-3 text-xs">
+                      <div>
+                        <p className="text-muted-foreground">Day</p>
+                        <p className="font-medium">{DAY_LABELS[day]}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Time Slot</p>
+                        <p className="font-medium">{formatHourRange(row.hourSlot)}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Utilization</p>
+                        <p className="font-medium">{value}%</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Bookings</p>
+                        <p className="font-medium">{bookingCount}</p>
+                      </div>
+                    </div>
                   </div>
                 </TooltipContent>
               </Tooltip>
