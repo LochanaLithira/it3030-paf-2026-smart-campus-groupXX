@@ -13,6 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { ResourceEditorDialog } from '@/components/resources/ResourceEditorDialog';
 import { ResourceHeatmap } from '@/components/resources/ResourceHeatmap';
 import {
@@ -52,20 +53,28 @@ export function ResourceManagementPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => refetch()}
-            disabled={isFetching}
-            className="transition-all duration-200"
-          >
-            {isFetching ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <RefreshCw className="mr-2 h-4 w-4" />
-            )}
-            {isFetching ? 'Refreshing...' : 'Refresh'}
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => refetch()}
+                disabled={isFetching}
+                className="transition-all duration-200"
+                aria-label={isFetching ? "Refreshing resources" : "Refresh resources"}
+              >
+                {isFetching ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                )}
+                {isFetching ? 'Refreshing...' : 'Refresh'}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Refresh resource data</p>
+            </TooltipContent>
+          </Tooltip>
           <Button
             size="sm"
             onClick={() => {
@@ -204,25 +213,39 @@ export function ResourceManagementPage() {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="inline-flex gap-1">
-                      <Button
-                        size="icon-sm"
-                        variant="ghost"
-                        className="hover:bg-primary/10 hover:text-primary"
-                        onClick={() => {
-                          setSelectedResource(resource);
-                          setEditorOpen(true);
-                        }}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="icon-sm"
-                        variant="ghost"
-                        className="hover:bg-destructive/10 hover:text-destructive"
-                        onClick={() => deleteResource.mutate(resource.resourceId)}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            size="icon-sm"
+                            variant="ghost"
+                            className="hover:bg-primary/10 hover:text-primary"
+                            onClick={() => {
+                              setSelectedResource(resource);
+                              setEditorOpen(true);
+                            }}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Edit resource</p>
+                        </TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            size="icon-sm"
+                            variant="ghost"
+                            className="hover:bg-destructive/10 hover:text-destructive"
+                            onClick={() => deleteResource.mutate(resource.resourceId)}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Delete resource</p>
+                        </TooltipContent>
+                      </Tooltip>
                     </div>
                   </TableCell>
                 </TableRow>

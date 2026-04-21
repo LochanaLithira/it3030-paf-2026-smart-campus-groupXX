@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useDeleteLocation, useLocations } from '@/hooks/useLocations';
 import { LocationEditorDialog } from '@/components/resources/LocationEditorDialog';
 import { useCreateResourceTag, useDeleteResourceTag, useResourceTags, useUpdateResourceTag } from '@/hooks/useResources';
@@ -44,20 +45,28 @@ export function LocationManagementPage() {
           <p className="text-muted-foreground">{locations.length} location(s)</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => refetch()}
-            disabled={isFetching}
-            className="transition-all duration-200"
-          >
-            {isFetching ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <RefreshCw className="mr-2 h-4 w-4" />
-            )}
-            {isFetching ? 'Refreshing...' : 'Refresh'}
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => refetch()}
+                disabled={isFetching}
+                className="transition-all duration-200"
+                aria-label={isFetching ? "Refreshing locations" : "Refresh locations"}
+              >
+                {isFetching ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                )}
+                {isFetching ? 'Refreshing...' : 'Refresh'}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Refresh location data</p>
+            </TooltipContent>
+          </Tooltip>
           <Button
             size="sm"
             onClick={() => {
@@ -146,25 +155,39 @@ export function LocationManagementPage() {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="inline-flex gap-1">
-                      <Button
-                        size="icon-sm"
-                        variant="ghost"
-                        className="hover:bg-primary/10 hover:text-primary"
-                        onClick={() => {
-                          setSelectedLocation(location);
-                          setEditorOpen(true);
-                        }}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="icon-sm"
-                        variant="ghost"
-                        className="hover:bg-destructive/10 hover:text-destructive"
-                        onClick={() => deleteLocation.mutate(location.locationId)}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            size="icon-sm"
+                            variant="ghost"
+                            className="hover:bg-primary/10 hover:text-primary"
+                            onClick={() => {
+                              setSelectedLocation(location);
+                              setEditorOpen(true);
+                            }}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Edit location</p>
+                        </TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            size="icon-sm"
+                            variant="ghost"
+                            className="hover:bg-destructive/10 hover:text-destructive"
+                            onClick={() => deleteLocation.mutate(location.locationId)}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Delete location</p>
+                        </TooltipContent>
+                      </Tooltip>
                     </div>
                   </TableCell>
                 </TableRow>
