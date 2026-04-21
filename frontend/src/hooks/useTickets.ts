@@ -68,8 +68,8 @@ export function useTicketById(
 export function useUpdateTicketStatus() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ ticketId, newStatus, note }: { ticketId: string; newStatus: TicketStatus; note?: string }) =>
-      ticketsApi.updateStatus(ticketId, { newStatus, note }),
+    mutationFn: ({ ticketId, newStatus, note, resolutionNotes }: { ticketId: string; newStatus: TicketStatus; note?: string; resolutionNotes?: string }) =>
+      ticketsApi.updateStatus(ticketId, { newStatus, note, resolutionNotes }),
     onSuccess: (updated) => {
       qc.setQueryData(ticketKeys.detail(updated.ticketId), updated);
       qc.invalidateQueries({ queryKey: ticketKeys.lists() });

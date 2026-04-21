@@ -505,7 +505,8 @@ export interface TicketAssignRequest {
 
 export interface TicketStatusUpdateRequest {
   newStatus: TicketStatus;
-  note?: string;  // Backend uses 'note' not 'notes'
+  note?: string;  // For history/timeline
+  resolutionNotes?: string; // Explicit field for resolution
 }
 
 export interface TicketsListParams {

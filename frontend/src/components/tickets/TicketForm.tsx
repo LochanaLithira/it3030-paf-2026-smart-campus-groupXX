@@ -68,6 +68,7 @@ const ticketFormSchema = z
     }),
     description: z
       .string()
+      .trim()
       .min(10, 'Description must be at least 10 characters')
       .max(2000, 'Description must not exceed 2000 characters'),
     // PDF requirement: separate email and phone fields
@@ -86,7 +87,7 @@ const ticketFormSchema = z
       .regex(/^[+]?[0-9]{10,15}$/, 'Invalid phone format (10-15 digits, + optional)')
       .optional()
       .or(z.literal('')),
-    dueDate: z.date().optional(),
+    dueDate: z.date().min(new Date(new Date().setHours(0, 0, 0, 0)), 'Due date cannot be in the past').optional(),
     attachments: z
       .array(z.instanceof(File))
       .max(MAX_ATTACHMENTS, `Maximum ${MAX_ATTACHMENTS} attachments allowed`)
@@ -173,9 +174,22 @@ export function TicketForm({ onSubmit, onCancel, isLoading, defaultValues }: Tic
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    const newFiles = [...selectedFiles, ...files].slice(0, MAX_ATTACHMENTS);
+    
+    if (selectedFiles.length + files.length > MAX_ATTACHMENTS) {
+      form.setError('attachments', { 
+        type: 'custom', 
+        message: `Maximum ${MAX_ATTACHMENTS} attachments allowed. Cannot add more.` 
+      });
+      // Optionally reset the file input
+      e.target.value = '';
+      return; // Do not add any of the files if they exceed the limit
+    }
+
+    const newFiles = [...selectedFiles, ...files];
     setSelectedFiles(newFiles);
     form.setValue('attachments', newFiles, { shouldValidate: true });
+    // Reset file input so same files can be selected again if removed
+    e.target.value = '';
   };
 
   const removeFile = (index: number) => {
@@ -230,7 +244,11 @@ export function TicketForm({ onSubmit, onCancel, isLoading, defaultValues }: Tic
             onValueChange={(value) => setResourceTypeFilter(value === 'ALL' ? '' : (value as ResourceType))}
           >
             <SelectTrigger>
-              <SelectValue placeholder="All types" />
+              <SelectValue placeholder="All types">
+                {resourceTypeFilter === ''
+                  ? 'All types'
+                  : resourceTypeFilter.replace(/_/g, ' ')}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="ALL">All types</SelectItem>
@@ -272,7 +290,19 @@ export function TicketForm({ onSubmit, onCancel, isLoading, defaultValues }: Tic
               >
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select a resource or location" />
+                    <SelectValue placeholder="Select a resource or location">
+                      {(() => {
+                        if (field.value) {
+                          const r = resources.find(x => x.resourceId === field.value);
+                          if (r) return r.name;
+                        }
+                        if (selectedLocationId) {
+                          const l = locations.find(x => x.locationId === selectedLocationId) as LocationResponse | undefined;
+                          if (l) return l.buildingName;
+                        }
+                        return 'Select a resource or location';
+                      })()}
+                    </SelectValue>
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -336,7 +366,9 @@ export function TicketForm({ onSubmit, onCancel, isLoading, defaultValues }: Tic
               <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select a category" />
+                    <SelectValue placeholder="Select a category">
+                      {field.value ? CATEGORY_LABELS[field.value] : 'Select a category'}
+                    </SelectValue>
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -365,7 +397,9 @@ export function TicketForm({ onSubmit, onCancel, isLoading, defaultValues }: Tic
               <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select priority" />
+                    <SelectValue placeholder="Select priority">
+                      {field.value ? PRIORITY_LABELS[field.value] : 'Select priority'}
+                    </SelectValue>
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
