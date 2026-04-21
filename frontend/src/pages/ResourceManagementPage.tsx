@@ -12,6 +12,7 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { ResourceEditorDialog } from '@/components/resources/ResourceEditorDialog';
 import { ResourceHeatmap } from '@/components/resources/ResourceHeatmap';
 import {
@@ -56,9 +57,14 @@ export function ResourceManagementPage() {
             size="sm"
             onClick={() => refetch()}
             disabled={isFetching}
+            className="transition-all duration-200"
           >
-            <RefreshCw className={`mr-2 h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
-            Refresh
+            {isFetching ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="mr-2 h-4 w-4" />
+            )}
+            {isFetching ? 'Refreshing...' : 'Refresh'}
           </Button>
           <Button
             size="sm"
@@ -134,11 +140,19 @@ export function ResourceManagementPage() {
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={4} className="h-20 text-center text-muted-foreground">
-                  Loading resources...
-                </TableCell>
-              </TableRow>
+              Array.from({ length: 5 }).map((_, index) => (
+                <TableRow key={`skeleton-${index}`}>
+                  <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+                  <TableCell><Skeleton className="h-5 w-20 rounded-full" /></TableCell>
+                  <TableCell><Skeleton className="h-8 w-32 rounded" /></TableCell>
+                  <TableCell className="text-right">
+                    <div className="inline-flex gap-1">
+                      <Skeleton className="h-8 w-8" />
+                      <Skeleton className="h-8 w-8" />
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
             ) : rows.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={4} className="h-20 text-center text-muted-foreground">

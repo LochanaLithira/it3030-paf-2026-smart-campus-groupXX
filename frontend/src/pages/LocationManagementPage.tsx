@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react';
-import { Plus, RefreshCw, Trash2, Edit, Tag, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, RefreshCw, Trash2, Edit, Tag, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useDeleteLocation, useLocations } from '@/hooks/useLocations';
 import { LocationEditorDialog } from '@/components/resources/LocationEditorDialog';
 import { useCreateResourceTag, useDeleteResourceTag, useResourceTags, useUpdateResourceTag } from '@/hooks/useResources';
@@ -48,9 +49,14 @@ export function LocationManagementPage() {
             size="sm"
             onClick={() => refetch()}
             disabled={isFetching}
+            className="transition-all duration-200"
           >
-            <RefreshCw className={`mr-2 h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
-            Refresh
+            {isFetching ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="mr-2 h-4 w-4" />
+            )}
+            {isFetching ? 'Refreshing...' : 'Refresh'}
           </Button>
           <Button
             size="sm"
@@ -90,11 +96,24 @@ export function LocationManagementPage() {
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={9} className="h-20 text-center text-muted-foreground">
-                  Loading locations...
-                </TableCell>
-              </TableRow>
+              Array.from({ length: 5 }).map((_, index) => (
+                <TableRow key={`skeleton-${index}`}>
+                  <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-8" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-12" /></TableCell>
+                  <TableCell><Skeleton className="h-6 w-20 rounded-full" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-8" /></TableCell>
+                  <TableCell className="text-right">
+                    <div className="inline-flex gap-1">
+                      <Skeleton className="h-8 w-8" />
+                      <Skeleton className="h-8 w-8" />
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
             ) : sorted.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={9} className="h-20 text-center text-muted-foreground">
