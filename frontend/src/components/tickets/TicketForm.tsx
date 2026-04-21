@@ -68,6 +68,7 @@ const ticketFormSchema = z
     }),
     description: z
       .string()
+      .trim()
       .min(10, 'Description must be at least 10 characters')
       .max(2000, 'Description must not exceed 2000 characters'),
     // PDF requirement: separate email and phone fields
@@ -86,7 +87,7 @@ const ticketFormSchema = z
       .regex(/^[+]?[0-9]{10,15}$/, 'Invalid phone format (10-15 digits, + optional)')
       .optional()
       .or(z.literal('')),
-    dueDate: z.date().optional(),
+    dueDate: z.date().min(new Date(new Date().setHours(0, 0, 0, 0)), 'Due date cannot be in the past').optional(),
     attachments: z
       .array(z.instanceof(File))
       .max(MAX_ATTACHMENTS, `Maximum ${MAX_ATTACHMENTS} attachments allowed`)
@@ -173,9 +174,22 @@ export function TicketForm({ onSubmit, onCancel, isLoading, defaultValues }: Tic
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    const newFiles = [...selectedFiles, ...files].slice(0, MAX_ATTACHMENTS);
+    
+    if (selectedFiles.length + files.length > MAX_ATTACHMENTS) {
+      form.setError('attachments', { 
+        type: 'custom', 
+        message: `Maximum ${MAX_ATTACHMENTS} attachments allowed. Cannot add more.` 
+      });
+      // Optionally reset the file input
+      e.target.value = '';
+      return; // Do not add any of the files if they exceed the limit
+    }
+
+    const newFiles = [...selectedFiles, ...files];
     setSelectedFiles(newFiles);
     form.setValue('attachments', newFiles, { shouldValidate: true });
+    // Reset file input so same files can be selected again if removed
+    e.target.value = '';
   };
 
   const removeFile = (index: number) => {

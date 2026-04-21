@@ -91,10 +91,17 @@ export function StatusUpdateDialog({
       return;
     }
 
+    // Require resolution notes for RESOLVED status
+    if (newStatus === 'RESOLVED' && !notes.trim()) {
+      alert('Please provide resolution notes.');
+      return;
+    }
+
     await updateStatus.mutateAsync({
       ticketId,
       newStatus,
-      note: notes.trim() || undefined,
+      note: newStatus !== 'RESOLVED' ? (notes.trim() || undefined) : undefined,
+      resolutionNotes: newStatus === 'RESOLVED' ? notes.trim() : undefined,
     });
 
     onOpenChange(false);
@@ -148,12 +155,15 @@ export function StatusUpdateDialog({
           {/* Notes */}
           <div className="space-y-2">
             <label className="text-sm font-medium">
-              Notes {newStatus === 'REJECTED' && <span className="text-destructive">*</span>}
+              {newStatus === 'RESOLVED' ? 'Resolution Notes ' : 'Notes '}
+              {(newStatus === 'REJECTED' || newStatus === 'RESOLVED') && <span className="text-destructive">*</span>}
             </label>
             <Textarea
               placeholder={
                 newStatus === 'REJECTED'
                   ? 'Explain why this ticket is being rejected...'
+                  : newStatus === 'RESOLVED'
+                  ? 'Explain how this ticket was resolved...'
                   : 'Add any notes about this status change...'
               }
               value={notes}
@@ -163,6 +173,11 @@ export function StatusUpdateDialog({
             {newStatus === 'REJECTED' && (
               <p className="text-xs text-muted-foreground">
                 A rejection reason is required.
+              </p>
+            )}
+            {newStatus === 'RESOLVED' && (
+              <p className="text-xs text-muted-foreground">
+                Resolution notes are required.
               </p>
             )}
           </div>
