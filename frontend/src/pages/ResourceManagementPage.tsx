@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Edit, Plus, RefreshCw, Trash2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { Edit, Loader2, Plus, RefreshCw, Trash2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
