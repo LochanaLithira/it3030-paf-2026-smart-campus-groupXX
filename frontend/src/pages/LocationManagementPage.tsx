@@ -71,19 +71,19 @@ export function LocationManagementPage() {
         />
       </div>
 
-      <div className="rounded-md border">
+      <div className="rounded-md border shadow-sm">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead>Building</TableHead>
-              <TableHead>Floor</TableHead>
-              <TableHead>Room</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Capacity</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Tags</TableHead>
-              <TableHead>Availability</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+            <TableRow className="bg-muted/50">
+              <TableHead className="font-semibold">Building</TableHead>
+              <TableHead className="font-semibold">Floor</TableHead>
+              <TableHead className="font-semibold">Room</TableHead>
+              <TableHead className="font-semibold">Type</TableHead>
+              <TableHead className="font-semibold">Capacity</TableHead>
+              <TableHead className="font-semibold">Status</TableHead>
+              <TableHead className="font-semibold">Tags</TableHead>
+              <TableHead className="font-semibold">Availability</TableHead>
+              <TableHead className="text-right font-semibold">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -100,21 +100,34 @@ export function LocationManagementPage() {
                 </TableCell>
               </TableRow>
             ) : (
-              sorted.map((location) => (
-                <TableRow key={location.locationId}>
-                  <TableCell>{location.buildingName}</TableCell>
+              sorted.map((location, index) => (
+                <TableRow key={location.locationId} className={`hover:bg-muted/30 transition-colors ${index % 2 === 0 ? 'bg-background' : 'bg-muted/20'}`}>
+                  <TableCell className="font-medium">{location.buildingName}</TableCell>
                   <TableCell>{location.floorNumber}</TableCell>
                   <TableCell>{location.roomNumber ?? '-'}</TableCell>
                   <TableCell>{location.type}</TableCell>
                   <TableCell>{location.capacity}</TableCell>
-                  <TableCell>{location.status}</TableCell>
+                  <TableCell>
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                      location.status === 'ACTIVE' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' :
+                      location.status === 'OUT_OF_SERVICE' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300' :
+                      'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300'
+                    }`}>
+                      {location.status}
+                    </span>
+                  </TableCell>
                   <TableCell>{location.tags.map((tag) => tag.tagName).join(', ') || '-'}</TableCell>
-                  <TableCell>{location.availability.length}</TableCell>
+                  <TableCell>
+                    <span className={`font-medium ${location.availability.length > 0 ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}`}>
+                      {location.availability.length}
+                    </span>
+                  </TableCell>
                   <TableCell className="text-right">
                     <div className="inline-flex gap-1">
                       <Button
                         size="icon-sm"
                         variant="ghost"
+                        className="hover:bg-primary/10 hover:text-primary"
                         onClick={() => {
                           setSelectedLocation(location);
                           setEditorOpen(true);
@@ -125,6 +138,7 @@ export function LocationManagementPage() {
                       <Button
                         size="icon-sm"
                         variant="ghost"
+                        className="hover:bg-destructive/10 hover:text-destructive"
                         onClick={() => deleteLocation.mutate(location.locationId)}
                       >
                         <Trash2 className="h-4 w-4 text-destructive" />
