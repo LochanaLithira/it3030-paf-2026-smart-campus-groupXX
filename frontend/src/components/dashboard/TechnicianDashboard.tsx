@@ -52,7 +52,7 @@ const STATUS_CONFIG = {
   REJECTED: { color: 'bg-red-100 text-red-800', label: 'Rejected' },
 };
 
-export default function TechDashboardPage() {
+export function TechnicianDashboard() {
   const navigate = useNavigate();
   const [statusFilter, setStatusFilter] = useState<TicketStatus | 'all'>('all');
   
@@ -105,11 +105,11 @@ export default function TechDashboardPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-in fade-in duration-500">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">My Assigned Tickets</h1>
+          <h2 className="text-2xl font-semibold tracking-tight">My Assigned Tickets</h2>
           <p className="text-muted-foreground mt-1">
             Manage and track your assigned maintenance tickets
           </p>
