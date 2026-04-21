@@ -87,7 +87,7 @@ export function TicketListPage() {
   const navigate = useNavigate();
   const [sorting, setSorting] = useState<SortingState>([{ id: 'createdAt', desc: true }]);
   const [page, setPage] = useState(0);
-  
+
   // Filters
   const [statusFilter, setStatusFilter] = useState<TicketStatus | 'ALL'>('ALL');
   const [priorityFilter, setPriorityFilter] = useState<TicketPriority | 'ALL'>('ALL');
@@ -178,13 +178,13 @@ export function TicketListPage() {
         const ttr = ticket.timeToResolutionSeconds;
 
         const formatSec = (sec: number | null) => {
-            if (sec === null) return '-';
-            const m = Math.floor(sec / 60);
-            const h = Math.floor(m / 60);
-            const d = Math.floor(h / 24);
-            if (d > 0) return `${d}d ${h % 24}h`;
-            if (h > 0) return `${h}h ${m % 60}m`;
-            return `${m}m`;
+          if (sec === null) return '-';
+          const m = Math.floor(sec / 60);
+          const h = Math.floor(m / 60);
+          const d = Math.floor(h / 24);
+          if (d > 0) return `${d}d ${h % 24}h`;
+          if (h > 0) return `${h}h ${m % 60}m`;
+          return `${m}m`;
         };
 
         return (
@@ -214,7 +214,7 @@ export function TicketListPage() {
       cell: (info) => {
         const dueDate = info.getValue();
         if (!dueDate) return <span className="text-xs text-gray-400">-</span>;
-        
+
         const isPast = new Date(dueDate) < new Date();
         return (
           <div className={`text-sm ${isPast ? 'text-red-600 font-medium' : 'text-gray-700'}`}>
@@ -344,7 +344,6 @@ export function TicketListPage() {
           <div className="flex flex-col items-center justify-center h-64 text-gray-500">
             <AlertCircle className="h-12 w-12 mb-2 text-gray-300" />
             <p className="text-lg font-medium">No tickets found</p>
-            <p className="text-sm">Try adjusting your filters</p>
           </div>
         ) : (
           <Table>
@@ -376,8 +375,8 @@ export function TicketListPage() {
             </TableHeader>
             <TableBody>
               {table.getRowModel().rows.map((row) => (
-                <TableRow 
-                  key={row.id} 
+                <TableRow
+                  key={row.id}
                   className="hover:bg-gray-50 cursor-pointer transition-colors"
                   onClick={() => navigate({ to: '/tickets/$ticketId', params: { ticketId: row.original.ticketId } })}
                 >
