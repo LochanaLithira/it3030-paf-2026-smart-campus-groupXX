@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ResourceEditorDialog } from '@/components/resources/ResourceEditorDialog';
+import { ResourceHeatmap } from '@/components/resources/ResourceHeatmap';
 import {
   useDeleteResource,
   useResources,
@@ -191,6 +192,8 @@ export function ResourceManagementPage() {
           </div>
         </div>
       )}
+
+      <ResourceHeatmap />
 
       <ResourceEditorDialog
         open={editorOpen}
