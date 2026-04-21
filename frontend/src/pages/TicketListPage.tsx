@@ -106,14 +106,6 @@ export function TicketListPage() {
   const canViewAll = hasPermission(PERMISSIONS.TICKETS_VIEW_ALL);
 
   const columns = [
-    columnHelper.accessor('ticketId', {
-      header: 'ID',
-      cell: (info) => (
-        <span className="font-mono text-sm font-semibold text-gray-700">
-          #{info.getValue().slice(0, 8)}
-        </span>
-      ),
-    }),
     columnHelper.accessor('resource', {
       header: 'Resource',
       cell: (info) => {
