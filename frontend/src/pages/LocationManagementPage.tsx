@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react';
-import { Plus, RefreshCw, Trash2, Edit } from 'lucide-react';
+import { Plus, RefreshCw, Trash2, Edit, Tag, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useDeleteLocation, useLocations } from '@/hooks/useLocations';
 import { LocationEditorDialog } from '@/components/resources/LocationEditorDialog';
 import { useCreateResourceTag, useDeleteResourceTag, useResourceTags, useUpdateResourceTag } from '@/hooks/useResources';
@@ -12,6 +13,7 @@ export function LocationManagementPage() {
   const [search, setSearch] = useState('');
   const [editorOpen, setEditorOpen] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<LocationResponse | null>(null);
+  const [tagsExpanded, setTagsExpanded] = useState(false);
   const { data: locations = [], isLoading, isFetching, refetch } = useLocations({
     building: search || undefined,
   });
@@ -152,48 +154,73 @@ export function LocationManagementPage() {
         </Table>
       </div>
 
-      <div className="rounded-md border p-4 space-y-3">
-        <h2 className="text-lg font-semibold">Tag Management</h2>
-        <div className="flex gap-2">
-          <Input
-            placeholder="New tag name"
-            value={newTagName}
-            onChange={(event) => setNewTagName(event.target.value)}
-          />
-          <Button
-            onClick={() => {
-              const trimmed = newTagName.trim();
-              if (!trimmed) return;
-              createTag.mutate({ tagName: trimmed }, { onSuccess: () => setNewTagName('') });
-            }}
-            disabled={createTag.isPending}
+      <Card className="shadow-sm">
+        <CardHeader className="pb-3">
+          <CardTitle
+            className="flex items-center justify-between cursor-pointer hover:text-primary transition-colors"
+            onClick={() => setTagsExpanded(!tagsExpanded)}
           >
-            Add Tag
-          </Button>
-        </div>
-        <div className="space-y-2">
-          {tags.map((tag) => (
-            <div key={tag.tagId} className="flex items-center gap-2">
+            <div className="flex items-center gap-2">
+              <Tag className="h-5 w-5" />
+              Tag Management
+              <span className="text-sm font-normal text-muted-foreground">({tags.length} tags)</span>
+            </div>
+            {tagsExpanded ? (
+              <ChevronUp className="h-4 w-4 text-muted-foreground" />
+            ) : (
+              <ChevronDown className="h-4 w-4 text-muted-foreground" />
+            )}
+          </CardTitle>
+        </CardHeader>
+        {tagsExpanded && (
+          <CardContent className="space-y-4">
+            <div className="flex gap-2">
               <Input
-                defaultValue={tag.tagName}
-                onBlur={(event) => {
-                  const next = event.target.value.trim();
-                  if (!next || next === tag.tagName) return;
-                  updateTag.mutate({ tagId: tag.tagId, request: { tagName: next } });
-                }}
+                placeholder="New tag name"
+                value={newTagName}
+                onChange={(event) => setNewTagName(event.target.value)}
+                className="flex-1"
               />
               <Button
-                variant="ghost"
-                size="icon-sm"
-                onClick={() => deleteTag.mutate(tag.tagId)}
-                disabled={deleteTag.isPending}
+                onClick={() => {
+                  const trimmed = newTagName.trim();
+                  if (!trimmed) return;
+                  createTag.mutate({ tagName: trimmed }, { onSuccess: () => setNewTagName('') });
+                }}
+                disabled={createTag.isPending}
+                className="shrink-0"
               >
-                <Trash2 className="h-4 w-4 text-destructive" />
+                <Plus className="mr-2 h-4 w-4" />
+                Add Tag
               </Button>
             </div>
-          ))}
-        </div>
-      </div>
+            <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
+              {tags.map((tag) => (
+                <div key={tag.tagId} className="flex items-center gap-2 p-2 rounded-md border bg-card hover:bg-muted/50 transition-colors">
+                  <Input
+                    defaultValue={tag.tagName}
+                    onBlur={(event) => {
+                      const next = event.target.value.trim();
+                      if (!next || next === tag.tagName) return;
+                      updateTag.mutate({ tagId: tag.tagId, request: { tagName: next } });
+                    }}
+                    className="flex-1 h-8 text-sm"
+                  />
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive shrink-0"
+                    onClick={() => deleteTag.mutate(tag.tagId)}
+                    disabled={deleteTag.isPending}
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        )}
+      </Card>
 
       <LocationEditorDialog
         open={editorOpen}
