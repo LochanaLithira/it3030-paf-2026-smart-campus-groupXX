@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Clock, Timer, CheckCircle, AlertCircle } from 'lucide-react';
+import { Clock, Timer, CheckCircle } from 'lucide-react';
 import type { TicketResponse, TicketPriority } from '@/types/api';
-import { formatDistanceToNowStrict } from 'date-fns';
 
 interface SLATimerCardProps {
   ticket: TicketResponse;

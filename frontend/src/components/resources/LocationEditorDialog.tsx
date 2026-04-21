@@ -214,7 +214,15 @@ export function LocationEditorDialog({ open, onClose, location, tags }: Location
             <div className="space-y-1.5">
               <Label>Type</Label>
               <Select value={selectedType} onValueChange={(value) => setValue('type', value as FormValues['type'])}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select type">
+                    {{
+                      LECTURE_HALL: 'Lecture Hall',
+                      LAB: 'Lab',
+                      MEETING_ROOM: 'Meeting Room',
+                    }[selectedType] || 'Select type'}
+                  </SelectValue>
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="LECTURE_HALL">Lecture Hall</SelectItem>
                   <SelectItem value="LAB">Lab</SelectItem>
@@ -227,7 +235,15 @@ export function LocationEditorDialog({ open, onClose, location, tags }: Location
           <div className="space-y-1.5">
             <Label>Status</Label>
             <Select value={selectedStatus} onValueChange={(value) => setValue('status', value as FormValues['status'])}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue placeholder="Select status">
+                  {{
+                    ACTIVE: 'Active',
+                    OUT_OF_SERVICE: 'Out of Service',
+                    UNDER_MAINTENANCE: 'Under Maintenance',
+                  }[selectedStatus] || 'Select status'}
+                </SelectValue>
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ACTIVE">Active</SelectItem>
                 <SelectItem value="OUT_OF_SERVICE">Out of Service</SelectItem>

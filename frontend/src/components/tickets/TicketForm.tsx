@@ -230,7 +230,11 @@ export function TicketForm({ onSubmit, onCancel, isLoading, defaultValues }: Tic
             onValueChange={(value) => setResourceTypeFilter(value === 'ALL' ? '' : (value as ResourceType))}
           >
             <SelectTrigger>
-              <SelectValue placeholder="All types" />
+              <SelectValue placeholder="All types">
+                {resourceTypeFilter === ''
+                  ? 'All types'
+                  : resourceTypeFilter.replace(/_/g, ' ')}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="ALL">All types</SelectItem>
@@ -272,7 +276,19 @@ export function TicketForm({ onSubmit, onCancel, isLoading, defaultValues }: Tic
               >
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select a resource or location" />
+                    <SelectValue placeholder="Select a resource or location">
+                      {(() => {
+                        if (field.value) {
+                          const r = resources.find(x => x.resourceId === field.value);
+                          if (r) return `${r.name} — ${r.type.replace(/_/g, ' ')}`;
+                        }
+                        if (selectedLocationId) {
+                          const l = locations.find(x => x.locationId === selectedLocationId) as LocationResponse | undefined;
+                          if (l) return `${l.buildingName} — Floor ${l.floorNumber}${l.roomNumber ? `, Room ${l.roomNumber}` : ''} (${l.type.replace(/_/g, ' ')})`;
+                        }
+                        return 'Select a resource or location';
+                      })()}
+                    </SelectValue>
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -336,7 +352,9 @@ export function TicketForm({ onSubmit, onCancel, isLoading, defaultValues }: Tic
               <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select a category" />
+                    <SelectValue placeholder="Select a category">
+                      {field.value ? CATEGORY_LABELS[field.value] : 'Select a category'}
+                    </SelectValue>
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -365,7 +383,9 @@ export function TicketForm({ onSubmit, onCancel, isLoading, defaultValues }: Tic
               <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select priority" />
+                    <SelectValue placeholder="Select priority">
+                      {field.value ? PRIORITY_LABELS[field.value] : 'Select priority'}
+                    </SelectValue>
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
