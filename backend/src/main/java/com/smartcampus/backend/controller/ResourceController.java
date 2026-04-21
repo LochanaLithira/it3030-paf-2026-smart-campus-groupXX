@@ -4,6 +4,7 @@ import com.smartcampus.backend.dto.common.PageResponse;
 import com.smartcampus.backend.dto.resource.*;
 import com.smartcampus.backend.model.enums.ResourceStatus;
 import com.smartcampus.backend.model.enums.ResourceType;
+import com.smartcampus.backend.service.ResourceHeatmapService;
 import com.smartcampus.backend.service.ResourceService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -14,8 +15,10 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -26,6 +29,7 @@ import java.util.UUID;
 public class ResourceController {
 
     private final ResourceService resourceService;
+    private final ResourceHeatmapService resourceHeatmapService;
 
     @Operation(summary = "List resources with filters")
     @GetMapping
@@ -47,6 +51,18 @@ public class ResourceController {
     @PreAuthorize("hasAuthority('resources.read')")
     public ResponseEntity<ResourceResponse> getResourceById(@PathVariable UUID resourceId) {
         return ResponseEntity.ok(resourceService.getResourceById(resourceId));
+    }
+
+    @Operation(summary = "Get resource utilization heatmap")
+    @GetMapping("/{resourceId}/heatmap")
+    @PreAuthorize("hasAuthority('resources.read')")
+    public ResponseEntity<ResourceHeatmapResponse> getHeatmap(
+            @PathVariable UUID resourceId,
+            @RequestParam(required = false, defaultValue = "this_week") String period,
+            @RequestParam(name = "start_date", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(name = "end_date", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate
+    ) {
+        return ResponseEntity.ok(resourceHeatmapService.getResourceHeatmap(resourceId, period, startDate, endDate));
     }
 
     @Operation(summary = "Create resource (admin)")
