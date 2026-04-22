@@ -15,8 +15,9 @@
 4. [Resources](#4-resources)
 5. [Bookings](#5-bookings)
 6. [Tickets](#6-tickets)
-7. [Notifications](#7-notifications)
-8. [Common Models](#8-common-models)
+7. [Analytics](#7-analytics)
+8. [Notifications](#8-notifications)
+9. [Common Models](#9-common-models)
 
 ---
 
@@ -661,7 +662,51 @@ List all comments for a ticket (paginated).
 
 ---
 
-## 7. Notifications
+## 7. Analytics
+
+### GET `/analytics/top-resources`
+
+Get the most frequently booked resources. Requires `locations.view_all` or `bookings.view_all` permission.
+
+**Query params:** `?limit=5`
+
+**Response 200:**
+```json
+[
+  { "resourceName": "Physics Lab 3", "bookingCount": 42 },
+  { "resourceName": "Lecture Hall A", "bookingCount": 37 }
+]
+```
+
+### GET `/analytics/peak-hours`
+
+Get overall booking peak hours. Requires `locations.view_all` or `bookings.view_all` permission.
+
+**Response 200:**
+```json
+[
+  { "hourOfDay": 9, "bookingCount": 18 },
+  { "hourOfDay": 14, "bookingCount": 14 }
+]
+```
+
+### GET `/analytics/peak-hours/{hour}/top-items`
+
+Get top booked items for a specific hour. Requires `locations.view_all` or `bookings.view_all` permission.
+
+**Path params:** `hour` (0-23)
+
+**Query params:** `?limit=3`
+
+**Response 200:**
+```json
+[
+  { "itemName": "Physics Lab 3", "bookingCount": 8 },
+  { "itemName": "Lecture Hall A", "bookingCount": 5 }
+]
+```
+
+## 8. Notifications
 
 ### GET `/notifications`
 
@@ -705,7 +750,7 @@ Mark all notifications as read for the current user. Returns `204`.
 
 ---
 
-## 8. Common Models
+## 9. Common Models
 
 ### Error Response
 
