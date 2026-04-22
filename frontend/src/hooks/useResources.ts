@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { HTTPError } from 'ky';
 import { toast } from 'sonner';
-import { resourcesApi, type ResourceHeatmapParams } from '@/api/resources';
+import { resourcesApi } from '@/api/resources';
 import type {
   ResourceRequest,
   ResourcesListParams,
@@ -15,8 +15,6 @@ export const resourceKeys = {
   list: (params: ResourcesListParams) => [...resourceKeys.lists(), params] as const,
   detail: (id: string) => [...resourceKeys.all, id] as const,
   tags: () => [...resourceKeys.all, 'tags'] as const,
-  heatmap: (resourceId: string, params: ResourceHeatmapParams) =>
-    [...resourceKeys.all, 'heatmap', resourceId, params] as const,
 };
 
 async function extractApiErrorMessage(error: unknown, fallback: string): Promise<string> {
@@ -45,13 +43,7 @@ export function useResourceTags() {
   });
 }
 
-export function useResourceHeatmap(resourceId: string | null, params: ResourceHeatmapParams = {}) {
-  return useQuery({
-    queryKey: resourceId ? resourceKeys.heatmap(resourceId, params) : [...resourceKeys.all, 'heatmap', 'none'],
-    queryFn: () => resourcesApi.getHeatmap(resourceId as string, params),
-    enabled: Boolean(resourceId),
-  });
-}
+
 
 export function useCreateResource() {
   const qc = useQueryClient();

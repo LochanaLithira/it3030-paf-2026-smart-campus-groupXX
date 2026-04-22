@@ -3,19 +3,13 @@ import type {
   PageResponse,
   ResourceRequest,
   ResourceResponse,
-  ResourceHeatmapPeriod,
-  ResourceHeatmapResponse,
   ResourcesListParams,
   ResourceTagRequest,
   ResourceTagResponse,
   UpdateResourceStatusRequest,
 } from '@/types/api';
 
-export interface ResourceHeatmapParams {
-  period?: ResourceHeatmapPeriod;
-  startDate?: string;
-  endDate?: string;
-}
+
 
 export const resourcesApi = {
   list: async (params: ResourcesListParams = {}): Promise<PageResponse<ResourceResponse>> => {
@@ -59,17 +53,5 @@ export const resourcesApi = {
     await apiClient.delete(`resources/tags/${tagId}`);
   },
 
-  getHeatmap: async (
-    resourceId: string,
-    params: ResourceHeatmapParams = {}
-  ): Promise<ResourceHeatmapResponse> => {
-    const searchParams = new URLSearchParams();
-    if (params.period) searchParams.set('period', params.period);
-    if (params.startDate) searchParams.set('start_date', params.startDate);
-    if (params.endDate) searchParams.set('end_date', params.endDate);
 
-    return apiClient
-      .get(`resources/${resourceId}/heatmap`, { searchParams })
-      .json<ResourceHeatmapResponse>();
-  },
 };

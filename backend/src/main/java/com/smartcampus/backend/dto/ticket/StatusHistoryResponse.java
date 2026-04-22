@@ -11,6 +11,6 @@ public record StatusHistoryResponse(
     UserSummaryResponse changedBy,
     TicketStatus oldStatus,
     TicketStatus newStatus,
-    String note,
+    String notes,
     Instant changedAt
 ) {}

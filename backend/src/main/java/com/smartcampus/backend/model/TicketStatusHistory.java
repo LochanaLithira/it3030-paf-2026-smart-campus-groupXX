@@ -42,7 +42,7 @@ public class TicketStatusHistory {
     private TicketStatus newStatus;
 
     @Column(name = "note", columnDefinition = "TEXT")
-    private String note;
+    private String notes;
 
     @Column(name = "changed_at", nullable = false, updatable = false)
     @Builder.Default

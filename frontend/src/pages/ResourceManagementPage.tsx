@@ -16,7 +16,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { ResourceEditorDialog } from '@/components/resources/ResourceEditorDialog';
-import { ResourceHeatmap } from '@/components/resources/ResourceHeatmap';
 import {
   useDeleteResource,
   useResources,
@@ -337,7 +336,7 @@ export function ResourceManagementPage() {
         </Card>
       )}
 
-      <ResourceHeatmap />
+
 
       <ConfirmDialog
         open={deleteDialogOpen}

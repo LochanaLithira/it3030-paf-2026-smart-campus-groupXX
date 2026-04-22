@@ -1,6 +1,6 @@
 import { useParams, Link, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
-import { useDeleteTicket, useTicketById } from '@/hooks/useTickets';
+import { useDeleteTicket, useTicketById, useDeleteTicketAttachment } from '@/hooks/useTickets';
 import { useAuthStore } from '@/store/authStore';
 import { PERMISSIONS } from '@/lib/permissions';
 import { Button } from '@/components/ui/button';
@@ -81,6 +81,7 @@ export function TicketDetailPage() {
   const { data: ticket, isLoading, error } = useTicketById(ticketId);
   const { user, hasPermission } = useAuthStore();
   const deleteTicket = useDeleteTicket();
+  const deleteAttachment = useDeleteTicketAttachment();
 
   // Dialog states
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
@@ -99,6 +100,13 @@ export function TicketDetailPage() {
     await deleteTicket.mutateAsync(ticket.ticketId);
     setDeleteConfirmOpen(false);
     navigate({ to: '/tickets' });
+  };
+
+  const handleDeleteAttachment = async (attachmentId: string) => {
+    if (!ticket) return;
+    if (confirm('Are you sure you want to delete this attachment?')) {
+      await deleteAttachment.mutateAsync({ ticketId: ticket.ticketId, attachmentId });
+    }
   };
 
   if (isLoading) {
@@ -242,10 +250,22 @@ export function TicketDetailPage() {
                         <a
                           href={attachment.fileUrl}
                           download
-                          className="p-2 bg-white rounded-full"
+                          className="p-2 bg-white rounded-full hover:bg-gray-100 transition-colors"
+                          title="Download"
                         >
-                          <Download className="h-5 w-5 text-gray-900" />
+                          <Download className="h-4 w-4 text-gray-900" />
                         </a>
+                        {((ticket.status === 'OPEN' && attachment.uploadedBy.userId === user?.userId) || 
+                          (canDelete && ticket.status !== 'CLOSED')) && (
+                          <button
+                            onClick={() => handleDeleteAttachment(attachment.attachmentId)}
+                            className="p-2 bg-red-100 rounded-full hover:bg-red-200 transition-colors"
+                            title="Delete Attachment"
+                            disabled={deleteAttachment.isPending}
+                          >
+                            <Trash2 className="h-4 w-4 text-red-600" />
+                          </button>
+                        )}
                       </div>
                       <div className="absolute bottom-0 left-0 right-0 bg-white/90 p-2">
                         <p className="text-xs font-medium truncate">{attachment.fileName}</p>
@@ -260,17 +280,46 @@ export function TicketDetailPage() {
             </Card>
           )}
 
-          {/* Resolution Notes */}
-          {ticket.resolutionNotes && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5 text-green-600" />
+          {/* Resolution History */}
+          {ticket.statusHistory.some(h => h.newStatus === 'RESOLVED') && (
+            <Card className="border-green-200 dark:border-green-900 shadow-sm overflow-hidden">
+              <CardHeader className="bg-green-50/50 dark:bg-green-950/20 border-b border-green-100 dark:border-green-900/50">
+                <CardTitle className="flex items-center gap-2 text-green-700 dark:text-green-400">
+                  <CheckCircle className="h-5 w-5" />
                   Resolution Notes
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <p className="text-gray-700 whitespace-pre-wrap">{ticket.resolutionNotes}</p>
+              <CardContent className="p-0">
+                <div className="divide-y divide-green-100 dark:divide-green-900/50">
+                  {ticket.statusHistory
+                    .filter(h => h.newStatus === 'RESOLVED')
+                    .sort((a, b) => new Date(b.changedAt).getTime() - new Date(a.changedAt).getTime())
+                    .map((res, idx) => (
+                      <div key={res.historyId} className="p-4 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="bg-green-100/50 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800">
+                              {idx === 0 ? 'Latest Resolution' : `Previous Resolution #${ticket.statusHistory.filter(h => h.newStatus === 'RESOLVED').length - idx}`}
+                            </Badge>
+                            <span className="text-xs text-muted-foreground">
+                              {format(new Date(res.changedAt), 'MMM d, yyyy h:mm a')}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
+                            <User className="h-3 w-3" />
+                            {res.changedBy.fullName}
+                          </div>
+                        </div>
+                        {res.notes || (res as any).note ? (
+                          <p className="text-gray-700 dark:text-gray-300 text-sm whitespace-pre-wrap leading-relaxed">
+                            {res.notes || (res as any).note}
+                          </p>
+                        ) : (
+                          <p className="text-sm italic text-muted-foreground">No resolution notes provided.</p>
+                        )}
+                      </div>
+                    ))}
+                </div>
               </CardContent>
             </Card>
           )}
@@ -289,7 +338,7 @@ export function TicketDetailPage() {
           </Card>
 
           {/* Attachments Upload Section */}
-          {(isReporter || isAssignedTech || canAssign) && (
+          {(isReporter || isAssignedTech || canAssign) && ticket.status === 'OPEN' && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -358,11 +407,10 @@ export function TicketDetailPage() {
                     <div className="flex items-center gap-2 mt-1">
                       <Calendar className="h-4 w-4 text-gray-400" />
                       <p
-                        className={`text-sm ${
-                          new Date(ticket.dueDate) < new Date()
+                        className={`text-sm ${new Date(ticket.dueDate) < new Date()
                             ? 'text-red-600 font-medium'
                             : 'text-gray-700'
-                        }`}
+                          }`}
                       >
                         {format(new Date(ticket.dueDate), 'MMM d, yyyy')}
                       </p>

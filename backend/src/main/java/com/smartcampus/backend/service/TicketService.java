@@ -49,8 +49,7 @@ public class TicketService {
     private static final long MAX_FILE_SIZE = 3 * 1024 * 1024; // 3MB
     private static final int MAX_ATTACHMENTS = 3;
     private static final Set<String> ALLOWED_MIME_TYPES = Set.of(
-        "image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"
-    );
+            "image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp");
 
     @Transactional(readOnly = true)
     public Page<TicketSummaryResponse> listTickets(
@@ -59,8 +58,7 @@ public class TicketService {
             TicketCategory category,
             UUID resourceId,
             UUID locationId,
-            Pageable pageable
-    ) {
+            Pageable pageable) {
         UUID currentUserId = SecurityUtils.getCurrentUserId();
         User currentUser = userRepository.findById(currentUserId)
                 .orElseThrow(() -> new ResourceNotFoundException("Current user not found"));
@@ -81,17 +79,19 @@ public class TicketService {
             }
         }
 
-        // Strip sort from pageable: the native query already sorts by priority DESC, created_at DESC.
-        // If we pass a Pageable with sort, Spring Data JPA appends the Java field name (e.g. "createdAt")
-        // directly to the SQL, which PostgreSQL rejects because the column is "created_at".
+        // Strip sort from pageable: the native query already sorts by priority DESC,
+        // created_at DESC.
+        // If we pass a Pageable with sort, Spring Data JPA appends the Java field name
+        // (e.g. "createdAt")
+        // directly to the SQL, which PostgreSQL rejects because the column is
+        // "created_at".
         Pageable unsortedPageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
 
         Page<Ticket> tickets = ticketRepository.findAllWithFilters(
-                status  == null ? null : status.name(),
+                status == null ? null : status.name(),
                 priority == null ? null : priority.name(),
                 category == null ? null : category.name(),
-            resourceId, locationId, reporterId, assignedTechId, unsortedPageable
-        );
+                resourceId, locationId, reporterId, assignedTechId, unsortedPageable);
 
         return tickets.map(ticketMapper::toTicketSummaryResponse);
     }
@@ -117,23 +117,25 @@ public class TicketService {
 
         if (request.resourceId() != null) {
             resource = resourceRepository.findById(request.resourceId())
-                .orElseThrow(() -> new ResourceNotFoundException("Resource not found with ID: " + request.resourceId()));
+                    .orElseThrow(
+                            () -> new ResourceNotFoundException("Resource not found with ID: " + request.resourceId()));
         } else {
             location = locationRepository.findById(request.locationId())
-                .orElseThrow(() -> new ResourceNotFoundException("Location not found with ID: " + request.locationId()));
+                    .orElseThrow(
+                            () -> new ResourceNotFoundException("Location not found with ID: " + request.locationId()));
         }
 
         Ticket ticket = Ticket.builder()
                 .resource(resource)
-            .location(location)
+                .location(location)
                 .reporter(reporter)
                 .category(request.category())
                 .description(request.description())
                 .priority(request.priority())
                 .status(TicketStatus.OPEN)
-                .preferredContactEmail(request.preferredContactEmail())    // PDF requirement
-                .preferredContactPhone(request.preferredContactPhone())    // PDF requirement
-                .dueDate(request.dueDate())                                // optional due date
+                .preferredContactEmail(request.preferredContactEmail()) // PDF requirement
+                .preferredContactPhone(request.preferredContactPhone()) // PDF requirement
+                .dueDate(request.dueDate()) // optional due date
                 .build();
 
         Ticket savedTicket = ticketRepository.save(ticket);
@@ -151,14 +153,14 @@ public class TicketService {
         String targetName = resource != null ? resource.getName() : formatLocationName(location);
         notifyAdmins("New Ticket Created",
                 String.format("Ticket #%s: %s - %s",
-                    savedTicket.getTicketId().toString().substring(0, 8),
-                    savedTicket.getCategory(),
-                    savedTicket.getDescription().substring(0, Math.min(50, savedTicket.getDescription().length()))),
+                        savedTicket.getTicketId().toString().substring(0, 8),
+                        savedTicket.getCategory(),
+                        savedTicket.getDescription().substring(0, Math.min(50, savedTicket.getDescription().length()))),
                 NotificationType.TICKET_CREATED,
                 savedTicket.getTicketId());
 
-        log.info("Created ticket {} for target {} by user {}", 
-            savedTicket.getTicketId(), targetName, currentUserId);
+        log.info("Created ticket {} for target {} by user {}",
+                savedTicket.getTicketId(), targetName, currentUserId);
 
         return ticketMapper.toTicketResponse(savedTicket);
     }
@@ -175,8 +177,8 @@ public class TicketService {
 
         // Verify technician has appropriate role
         boolean isTechnician = technician.getUserRoles().stream()
-                .anyMatch(ur -> ur.getRole().getRoleName().equals("TECHNICIAN") || 
-                               ur.getRole().getRoleName().equals("ADMIN"));
+                .anyMatch(ur -> ur.getRole().getRoleName().equals("TECHNICIAN") ||
+                        ur.getRole().getRoleName().equals("ADMIN"));
 
         if (!isTechnician) {
             throw new AppException("User is not a technician", HttpStatus.BAD_REQUEST);
@@ -185,18 +187,19 @@ public class TicketService {
         TicketStatus oldStatus = ticket.getStatus();
         ticket.setAssignedTech(technician);
         ticket.setDueDate(request.dueDate());
-        
+
         if (ticket.getStatus() == TicketStatus.OPEN) {
             ticket.setStatus(TicketStatus.IN_PROGRESS);
         }
 
         Ticket savedTicket = ticketRepository.save(ticket);
 
-        // Log status change if it changed
-        if (oldStatus != savedTicket.getStatus()) {
-            logStatusChange(savedTicket, oldStatus, savedTicket.getStatus(), 
-                    "Assigned to " + technician.getFullName());
-        }
+        // Always log assignment changes to track phase duration and technician changes
+        String assignmentNote = oldStatus == savedTicket.getStatus()
+                ? "Reassigned to " + technician.getFullName()
+                : "Assigned to " + technician.getFullName();
+
+        logStatusChange(savedTicket, oldStatus, savedTicket.getStatus(), assignmentNote);
 
         // Notify the assigned technician
         notificationService.notifyTechnicianAssigned(savedTicket, technician.getUserId());
@@ -228,11 +231,15 @@ public class TicketService {
         Ticket savedTicket = ticketRepository.save(ticket);
 
         // Log status change
-        logStatusChange(savedTicket, oldStatus, request.newStatus(), request.note());
+        String historyNote = request.note();
+        if ((historyNote == null || historyNote.isBlank()) && request.newStatus() == TicketStatus.RESOLVED) {
+            historyNote = request.resolutionNotes();
+        }
+        logStatusChange(savedTicket, oldStatus, request.newStatus(), historyNote);
 
         // Notify reporter about status change
         String statusMessage = switch (request.newStatus()) {
-            case RESOLVED -> "Your ticket has been resolved: " + 
+            case RESOLVED -> "Your ticket has been resolved: " +
                     (request.resolutionNotes() != null ? request.resolutionNotes() : "Issue fixed");
             case CLOSED -> "Your ticket has been closed";
             case REJECTED -> "Your ticket has been rejected";
@@ -258,7 +265,7 @@ public class TicketService {
     public TicketCommentResponse addComment(UUID ticketId, TicketCommentRequest request) {
         Ticket ticket = findTicketOrThrow(ticketId);
         UUID currentUserId = SecurityUtils.getCurrentUserId();
-        
+
         checkTicketAccess(ticket);
 
         User author = userRepository.findById(currentUserId)
@@ -328,15 +335,16 @@ public class TicketService {
             throw new ForbiddenException("Only the ticket reporter can upload attachments");
         }
 
-        // Cannot upload to resolved or closed tickets
-        if (ticket.getStatus() == TicketStatus.RESOLVED || ticket.getStatus() == TicketStatus.CLOSED) {
-            throw new AppException("Cannot upload attachments to resolved or closed tickets", HttpStatus.BAD_REQUEST);
+        // Cannot upload unless ticket is OPEN
+        if (ticket.getStatus() != TicketStatus.OPEN) {
+            throw new AppException("Cannot upload attachments after the ticket has been picked up or closed", HttpStatus.BAD_REQUEST);
         }
 
         // Check attachment count
         long currentCount = attachmentRepository.countByTicket_TicketId(ticketId);
         if (currentCount >= MAX_ATTACHMENTS) {
-            throw new AppException("Maximum " + MAX_ATTACHMENTS + " attachments allowed per ticket", HttpStatus.BAD_REQUEST);
+            throw new AppException("Maximum " + MAX_ATTACHMENTS + " attachments allowed per ticket",
+                    HttpStatus.BAD_REQUEST);
         }
 
         // Validate file
@@ -377,16 +385,30 @@ public class TicketService {
                 .orElseThrow(() -> new ResourceNotFoundException("Attachment not found"));
 
         UUID currentUserId = SecurityUtils.getCurrentUserId();
-        
-        // Only uploader can delete
-        if (!attachment.getUploadedBy().getUserId().equals(currentUserId)) {
-            throw new ForbiddenException("You can only delete your own attachments");
+
+        User currentUser = userRepository.findById(currentUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        boolean isAdmin = hasPermission(currentUser, "tickets.delete");
+
+        boolean isUploader = attachment.getUploadedBy().getUserId().equals(currentUserId);
+
+        // Permission check
+        if (!isUploader && !isAdmin) {
+            throw new ForbiddenException("You do not have permission to delete this attachment");
         }
 
-        // Cannot delete from resolved/closed tickets
-        if (attachment.getTicket().getStatus() == TicketStatus.RESOLVED || 
-            attachment.getTicket().getStatus() == TicketStatus.CLOSED) {
-            throw new AppException("Cannot delete attachments from resolved or closed tickets", HttpStatus.BAD_REQUEST);
+        // Rules for Uploader
+        if (isUploader && !isAdmin) {
+            if (attachment.getTicket().getStatus() != TicketStatus.OPEN) {
+                throw new AppException("You can only delete your attachments when the ticket is OPEN", HttpStatus.BAD_REQUEST);
+            }
+        }
+
+        // Rules for Admin
+        if (isAdmin) {
+            if (attachment.getTicket().getStatus() == TicketStatus.CLOSED) {
+                throw new AppException("Attachments cannot be deleted from a CLOSED ticket", HttpStatus.BAD_REQUEST);
+            }
         }
 
         // Delete file from filesystem
@@ -430,8 +452,8 @@ public class TicketService {
 
         boolean canViewAll = hasPermission(currentUser, "tickets.view_all");
         boolean isReporter = ticket.getReporter().getUserId().equals(currentUserId);
-        boolean isAssignedTech = ticket.getAssignedTech() != null && 
-                                 ticket.getAssignedTech().getUserId().equals(currentUserId);
+        boolean isAssignedTech = ticket.getAssignedTech() != null &&
+                ticket.getAssignedTech().getUserId().equals(currentUserId);
 
         if (!canViewAll && !isReporter && !isAssignedTech) {
             throw new ForbiddenException("You do not have access to this ticket");
@@ -446,30 +468,29 @@ public class TicketService {
         boolean isAdmin = hasPermission(user, "tickets.close");
         boolean isTech = hasPermission(user, "tickets.update_status");
 
-        // Admin can reject from OPEN only
+        // Admin can reject from OPEN or IN_PROGRESS
         if (newStatus == TicketStatus.REJECTED) {
             if (!isAdmin) {
                 throw new ForbiddenException("Only admins can reject tickets");
             }
-            if (currentStatus != TicketStatus.OPEN) {
-                throw new AppException("Can only reject tickets that are OPEN", HttpStatus.BAD_REQUEST);
+            if (currentStatus != TicketStatus.OPEN && currentStatus != TicketStatus.IN_PROGRESS) {
+                throw new AppException("Can only reject tickets that are OPEN or IN_PROGRESS", HttpStatus.BAD_REQUEST);
             }
             return;
         }
 
         // Validate state machine transitions
         boolean isValidTransition = switch (currentStatus) {
-            case OPEN -> newStatus == TicketStatus.IN_PROGRESS || newStatus == TicketStatus.REJECTED || newStatus == TicketStatus.CLOSED;
-            case IN_PROGRESS -> newStatus == TicketStatus.RESOLVED || newStatus == TicketStatus.CLOSED;
+            case OPEN -> newStatus == TicketStatus.IN_PROGRESS || newStatus == TicketStatus.REJECTED;
+            case IN_PROGRESS -> newStatus == TicketStatus.RESOLVED || newStatus == TicketStatus.REJECTED;
             case RESOLVED -> newStatus == TicketStatus.CLOSED || newStatus == TicketStatus.IN_PROGRESS;
             case CLOSED, REJECTED -> false; // Terminal states
         };
 
         if (!isValidTransition) {
             throw new AppException(
-                String.format("Invalid status transition from %s to %s", currentStatus, newStatus),
-                HttpStatus.BAD_REQUEST
-            );
+                    String.format("Invalid status transition from %s to %s", currentStatus, newStatus),
+                    HttpStatus.BAD_REQUEST);
         }
 
         // Permission checks
@@ -492,9 +513,10 @@ public class TicketService {
                 .changedBy(changedBy)
                 .oldStatus(oldStatus)
                 .newStatus(newStatus)
-                .note(note)
+                .notes(note)
                 .build();
 
+        ticket.addStatusHistory(history);
         statusHistoryRepository.save(history);
     }
 
@@ -554,7 +576,7 @@ public class TicketService {
      * never roll back the parent ticket transaction.
      */
     private void sendNotificationSafe(UUID userId, String title, String message,
-                                      NotificationType type, UUID relatedEntityId) {
+            NotificationType type, UUID relatedEntityId) {
         try {
             notificationService.sendNotification(
                     userId,
@@ -562,8 +584,7 @@ public class TicketService {
                     title,
                     message,
                     relatedEntityId != null ? relatedEntityId.toString() : null,
-                    "TICKET"
-            );
+                    "TICKET");
         } catch (Exception ex) {
             log.warn("Failed to send {} notification to user {}: {}", type, userId, ex.getMessage());
         }

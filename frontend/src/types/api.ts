@@ -337,55 +337,7 @@ export interface ResourcesListParams {
   sort?: string;
 }
 
-export type ResourceHeatmapPeriod = 'this_week' | 'last_week' | 'this_month';
 
-export interface ResourceHeatmapResolvedPeriod {
-  key: ResourceHeatmapPeriod | 'custom';
-  startDate: string;
-  endDate: string;
-}
-
-export interface ResourceHeatmapPeakSlot {
-  day: DayOfWeek;
-  hourSlot: string;
-  utilizationPct: number;
-}
-
-export interface ResourceHeatmapSummary {
-  peakSlot: ResourceHeatmapPeakSlot | null;
-  avgUtilizationPct: number;
-  idleSlots: number;
-}
-
-export interface ResourceHeatmapLocation {
-  buildingName: string | null;
-  floorNumber: number | null;
-  roomNumber: string | null;
-}
-
-export interface ResourceHeatmapAvailabilityWindow {
-  day: DayOfWeek;
-  startTime: string;
-  endTime: string;
-}
-
-export interface ResourceHeatmapRow {
-  hourSlot: string;
-  days: Record<DayOfWeek, number | null>;
-  bookingCounts: Record<DayOfWeek, number | null>;
-}
-
-export interface ResourceHeatmapResponse {
-  resourceId: string;
-  resourceName: string;
-  resourceType: ResourceType;
-  resourceStatus: ResourceStatus;
-  location: ResourceHeatmapLocation;
-  resolvedPeriod: ResourceHeatmapResolvedPeriod;
-  summary: ResourceHeatmapSummary;
-  availabilityWindows: ResourceHeatmapAvailabilityWindow[];
-  heatmap: ResourceHeatmapRow[];
-}
 
 // ── Tickets ──────────────────────────────────────────────────────
 
@@ -474,6 +426,7 @@ export interface TicketAttachmentResponse {
   fileUrl: string;
   fileSize: number;
   mimeType: string;
+  uploadedBy: UserSummaryResponse;
   uploadedAt: string;
 }
 

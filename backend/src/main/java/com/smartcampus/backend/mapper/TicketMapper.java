@@ -137,7 +137,6 @@ public interface TicketMapper {
     @Mapping(target = "changedBy", source = "changedBy")
     @Mapping(target = "oldStatus", source = "oldStatus")
     @Mapping(target = "newStatus", source = "newStatus")
-    @Mapping(target = "note", source = "note")
     @Mapping(target = "changedAt", source = "changedAt")
     StatusHistoryResponse toStatusHistoryResponse(TicketStatusHistory history);
 

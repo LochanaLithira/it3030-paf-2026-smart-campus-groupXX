@@ -70,8 +70,8 @@ const STATUS_CONFIG: Record<TicketStatus, { label: string; description: string; 
 };
 
 const VALID_TRANSITIONS: Record<TicketStatus, TicketStatus[]> = {
-  OPEN: ['IN_PROGRESS', 'REJECTED', 'CLOSED'],
-  IN_PROGRESS: ['RESOLVED', 'CLOSED'],
+  OPEN: ['IN_PROGRESS', 'REJECTED'],
+  IN_PROGRESS: ['RESOLVED', 'REJECTED'],
   RESOLVED: ['CLOSED', 'IN_PROGRESS'],
   CLOSED: [],
   REJECTED: [],
@@ -98,7 +98,7 @@ export function StatusUpdateDialog({
   const [newStatus, setNewStatus] = useState<TicketStatus>(currentStatus);
   const [notes, setNotes] = useState('');
   const [error, setError] = useState<string | null>(null);
-  
+
   const { isAdmin } = useAuthStore();
   const updateStatus = useUpdateTicketStatus();
 
@@ -140,7 +140,7 @@ export function StatusUpdateDialog({
     await updateStatus.mutateAsync({
       ticketId,
       newStatus,
-      note: newStatus !== 'RESOLVED' ? (notes.trim() || undefined) : undefined,
+      note: notes.trim(),
       resolutionNotes: newStatus === 'RESOLVED' ? notes.trim() : undefined,
     });
 
@@ -149,7 +149,7 @@ export function StatusUpdateDialog({
 
   const validStatuses = VALID_TRANSITIONS[currentStatus];
   const availableStatuses = (Object.keys(STATUS_CONFIG) as TicketStatus[]).filter(
-    (status) => 
+    (status) =>
       (status === currentStatus || validStatuses.includes(status)) &&
       (!STATUS_CONFIG[status].requireAdmin || isAdmin())
   );
@@ -210,15 +210,15 @@ export function StatusUpdateDialog({
 
           {newStatus !== currentStatus && (
             <div className="flex items-center justify-center gap-4 py-3 rounded-lg bg-gray-50 border border-gray-100">
-               <div className="flex flex-col items-center gap-1.5">
-                  <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Current</span>
-                  <StatusBadge status={currentStatus} />
-               </div>
-               <ArrowRight className="h-5 w-5 text-gray-300" />
-               <div className="flex flex-col items-center gap-1.5">
-                  <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">New</span>
-                  <StatusBadge status={newStatus} />
-               </div>
+              <div className="flex flex-col items-center gap-1.5">
+                <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Current</span>
+                <StatusBadge status={currentStatus} />
+              </div>
+              <ArrowRight className="h-5 w-5 text-gray-300" />
+              <div className="flex flex-col items-center gap-1.5">
+                <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">New</span>
+                <StatusBadge status={newStatus} />
+              </div>
             </div>
           )}
 
@@ -232,8 +232,8 @@ export function StatusUpdateDialog({
                 newStatus === 'REJECTED'
                   ? 'Please explain the reason for rejecting this ticket...'
                   : newStatus === 'RESOLVED'
-                  ? 'Please describe how this issue was resolved...'
-                  : 'Add any relevant updates or comments...'
+                    ? 'Please describe how this issue was resolved...'
+                    : 'Add any relevant updates or comments...'
               }
               value={notes}
               onChange={(e) => handleNotesChange(e.target.value)}
