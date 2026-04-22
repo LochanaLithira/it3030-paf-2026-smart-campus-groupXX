@@ -10,10 +10,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { ResourceEditorDialog } from '@/components/resources/ResourceEditorDialog';
 import {
   useDeleteResource,
@@ -30,6 +31,8 @@ export function ResourceManagementPage() {
   const [editorOpen, setEditorOpen] = useState(false);
   const [selectedResource, setSelectedResource] = useState<ResourceResponse | null>(null);
   const [statusFilter, setStatusFilter] = useState<ResourceStatus | ''>('');
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteResourceId, setDeleteResourceId] = useState<string | null>(null);
 
   const { data, isLoading, isFetching, refetch } = useResources({
     search: search || undefined,
@@ -236,7 +239,10 @@ export function ResourceManagementPage() {
                               size="icon-sm"
                               variant="ghost"
                               className="hover:bg-destructive/10 hover:text-destructive"
-                              onClick={() => deleteResource.mutate(resource.resourceId)}
+                              onClick={() => {
+                                setDeleteResourceId(resource.resourceId);
+                                setDeleteDialogOpen(true);
+                              }}
                             >
                               <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>
@@ -331,6 +337,26 @@ export function ResourceManagementPage() {
       )}
 
 
+
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Delete Resource"
+        description="Are you sure you want to delete this resource? This action cannot be undone and will remove all associated data."
+        confirmLabel="Delete"
+        variant="danger"
+        onConfirm={() => {
+          if (deleteResourceId) {
+            deleteResource.mutate(deleteResourceId, {
+              onSuccess: () => {
+                setDeleteDialogOpen(false);
+                setDeleteResourceId(null);
+              },
+            });
+          }
+        }}
+        isPending={deleteResource.isPending}
+      />
 
       <ResourceEditorDialog
         open={editorOpen}

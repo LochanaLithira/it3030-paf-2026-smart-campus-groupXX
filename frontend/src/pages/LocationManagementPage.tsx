@@ -6,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useDeleteLocation, useLocations } from '@/hooks/useLocations';
 import { LocationEditorDialog } from '@/components/resources/LocationEditorDialog';
 import { useCreateResourceTag, useDeleteResourceTag, useResourceTags, useUpdateResourceTag } from '@/hooks/useResources';
@@ -16,6 +17,8 @@ export function LocationManagementPage() {
   const [editorOpen, setEditorOpen] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<LocationResponse | null>(null);
   const [tagsExpanded, setTagsExpanded] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteLocationId, setDeleteLocationId] = useState<string | null>(null);
   const { data: locations = [], isLoading, isFetching, refetch } = useLocations({
     building: search || undefined,
   });
@@ -46,7 +49,7 @@ export function LocationManagementPage() {
         </div>
         <div className="flex items-center gap-2">
           <Tooltip>
-            <TooltipTrigger asChild>
+            <TooltipTrigger>
               <Button
                 variant="outline"
                 size="sm"
@@ -156,7 +159,7 @@ export function LocationManagementPage() {
                   <TableCell className="text-right">
                     <div className="inline-flex gap-1">
                       <Tooltip>
-                        <TooltipTrigger asChild>
+                        <TooltipTrigger>
                           <Button
                             size="icon-sm"
                             variant="ghost"
@@ -174,12 +177,15 @@ export function LocationManagementPage() {
                         </TooltipContent>
                       </Tooltip>
                       <Tooltip>
-                        <TooltipTrigger asChild>
+                        <TooltipTrigger>
                           <Button
                             size="icon-sm"
                             variant="ghost"
                             className="hover:bg-destructive/10 hover:text-destructive"
-                            onClick={() => deleteLocation.mutate(location.locationId)}
+                            onClick={() => {
+                              setDeleteLocationId(location.locationId);
+                              setDeleteDialogOpen(true);
+                            }}
                           >
                             <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
@@ -265,6 +271,26 @@ export function LocationManagementPage() {
           </CardContent>
         )}
       </Card>
+
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Delete Location"
+        description="Are you sure you want to delete this location? This action cannot be undone and will remove all associated data."
+        confirmLabel="Delete"
+        variant="danger"
+        onConfirm={() => {
+          if (deleteLocationId) {
+            deleteLocation.mutate(deleteLocationId, {
+              onSuccess: () => {
+                setDeleteDialogOpen(false);
+                setDeleteLocationId(null);
+              },
+            });
+          }
+        }}
+        isPending={deleteLocation.isPending}
+      />
 
       <LocationEditorDialog
         open={editorOpen}
