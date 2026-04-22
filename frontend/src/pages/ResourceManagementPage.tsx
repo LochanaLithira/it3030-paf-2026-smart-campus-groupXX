@@ -15,7 +15,6 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { ResourceEditorDialog } from '@/components/resources/ResourceEditorDialog';
-import { ResourceHeatmap } from '@/components/resources/ResourceHeatmap';
 import {
   useDeleteResource,
   useResources,
@@ -331,7 +330,7 @@ export function ResourceManagementPage() {
         </Card>
       )}
 
-      <ResourceHeatmap />
+
 
       <ResourceEditorDialog
         open={editorOpen}

@@ -199,41 +199,7 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
         );
     }
 
-    @Query(value = """
-            SELECT
-                UPPER(TRIM(TO_CHAR(b.booking_date, 'DY'))) AS dayAbbr,
-                DATE_PART('hour', b.start_time)::INT AS hourOfDay,
-                COUNT(*)::INT AS bookingCount,
-                COUNT(DISTINCT b.booking_date)::INT AS distinctBookingDates,
-                ROUND(COUNT(*) * 100.0 / NULLIF(COUNT(DISTINCT b.booking_date), 0))::INT AS utilizationPct
-            FROM bookings b
-            WHERE b.resource_id = :resourceId
-              AND b.status = 'APPROVED'
-              AND b.booking_date BETWEEN :startDate AND :endDate
-            GROUP BY
-                UPPER(TRIM(TO_CHAR(b.booking_date, 'DY'))),
-                DATE_PART('hour', b.start_time)
-            ORDER BY
-                DATE_PART('hour', b.start_time),
-                UPPER(TRIM(TO_CHAR(b.booking_date, 'DY')))
-            """, nativeQuery = true)
-    List<ResourceHeatmapAggregate> aggregateResourceHeatmap(
-            @Param("resourceId") UUID resourceId,
-            @Param("startDate") LocalDate startDate,
-            @Param("endDate") LocalDate endDate
-    );
 
-    interface ResourceHeatmapAggregate {
-        String getDayAbbr();
-
-        Integer getHourOfDay();
-
-        Integer getBookingCount();
-
-        Integer getDistinctBookingDates();
-
-        Integer getUtilizationPct();
-    }
 
     @Query(value = """
             SELECT

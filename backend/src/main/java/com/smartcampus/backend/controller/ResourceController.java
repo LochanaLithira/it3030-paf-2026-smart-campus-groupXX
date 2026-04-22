@@ -4,7 +4,6 @@ import com.smartcampus.backend.dto.common.PageResponse;
 import com.smartcampus.backend.dto.resource.*;
 import com.smartcampus.backend.model.enums.ResourceStatus;
 import com.smartcampus.backend.model.enums.ResourceType;
-import com.smartcampus.backend.service.ResourceHeatmapService;
 import com.smartcampus.backend.service.ResourceService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -29,7 +28,6 @@ import java.util.UUID;
 public class ResourceController {
 
     private final ResourceService resourceService;
-    private final ResourceHeatmapService resourceHeatmapService;
 
     @Operation(summary = "List resources with filters")
     @GetMapping
@@ -53,17 +51,7 @@ public class ResourceController {
         return ResponseEntity.ok(resourceService.getResourceById(resourceId));
     }
 
-    @Operation(summary = "Get resource utilization heatmap")
-    @GetMapping("/{resourceId}/heatmap")
-    @PreAuthorize("hasAuthority('resources.read')")
-    public ResponseEntity<ResourceHeatmapResponse> getHeatmap(
-            @PathVariable UUID resourceId,
-            @RequestParam(required = false, defaultValue = "this_week") String period,
-            @RequestParam(name = "start_date", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam(name = "end_date", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate
-    ) {
-        return ResponseEntity.ok(resourceHeatmapService.getResourceHeatmap(resourceId, period, startDate, endDate));
-    }
+
 
     @Operation(summary = "Create resource (admin)")
     @PostMapping
