@@ -183,7 +183,7 @@ export function LocationEditorDialog({ open, onClose, location, tags }: Location
 
   return (
     <Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && onClose()}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-6xl w-[95vw] max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Building className="h-5 w-5" />
@@ -284,9 +284,9 @@ export function LocationEditorDialog({ open, onClose, location, tags }: Location
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
+              <div className="flex flex-wrap gap-3">
                 {tags.map((tag) => (
-                  <label key={tag.tagId} className="flex items-center gap-2 p-2 rounded-md border hover:bg-muted/50 cursor-pointer transition-colors">
+                  <label key={tag.tagId} className="flex items-center gap-2 p-2 rounded-md border hover:bg-muted/50 cursor-pointer transition-colors min-w-[160px]">
                     <Checkbox
                       checked={selectedTagIds.includes(tag.tagId)}
                       onCheckedChange={(checked) => toggleTag(tag.tagId, Boolean(checked))}
