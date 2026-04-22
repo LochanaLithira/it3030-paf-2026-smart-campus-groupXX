@@ -1,0 +1,194 @@
+{
+  "info": {
+    "name": "Smart Campus - Module C (Full Tickets API)",
+    "description": "Complete Postman collection covering all 11 endpoints for Maintenance & Incident Ticketing.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Ticket Management (Core)",
+      "item": [
+        {
+          "name": "Create Ticket (POST /tickets)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{user_token}}" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "request", "value": "{\"resourceId\":\"{{resource_id}}\",\"category\":\"ELECTRICAL\",\"priority\":\"HIGH\",\"description\":\"Lights are flickering in the lab.\"}", "type": "text", "contentType": "application/json" }
+              ]
+            },
+            "url": { "raw": "{{base_url}}/api/v1/tickets", "host": ["{{base_url}}"], "path": ["api", "v1", "tickets"] }
+          }
+        },
+        {
+          "name": "List Tickets (GET /tickets)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{user_token}}" }],
+            "url": { "raw": "{{base_url}}/api/v1/tickets?status=OPEN&priority=HIGH", "host": ["{{base_url}}"], "path": ["api", "v1", "tickets"], "query": [{ "key": "status", "value": "OPEN" }, { "key": "priority", "value": "HIGH" }] }
+          }
+        },
+        {
+          "name": "Get Ticket Details (GET /tickets/:id)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{user_token}}" }],
+            "url": { "raw": "{{base_url}}/api/v1/tickets/{{ticket_id}}", "host": ["{{base_url}}"], "path": ["api", "v1", "tickets", "{{ticket_id}}"] }
+          }
+        },
+        {
+          "name": "Assign Ticket (PATCH /tickets/:id/assign)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"assignedTechId\": \"{{technician_id}}\",\n  \"dueDate\": \"2026-12-31T23:59:59Z\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/api/v1/tickets/{{ticket_id}}/assign", "host": ["{{base_url}}"], "path": ["api", "v1", "tickets", "{{ticket_id}}", "assign"] }
+          }
+        },
+        {
+          "name": "Update Status (PATCH /tickets/:id/status)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{tech_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"newStatus\": \"IN_PROGRESS\",\n  \"note\": \"Starting investigation.\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/api/v1/tickets/{{ticket_id}}/status", "host": ["{{base_url}}"], "path": ["api", "v1", "tickets", "{{ticket_id}}", "status"] }
+          }
+        },
+        {
+          "name": "Delete Ticket (DELETE /tickets/:id)",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": { "raw": "{{base_url}}/api/v1/tickets/{{ticket_id}}", "host": ["{{base_url}}"], "path": ["api", "v1", "tickets", "{{ticket_id}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Comments",
+      "item": [
+        {
+          "name": "Add Comment (POST /tickets/:id/comments)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{tech_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"I will need new parts for this repair.\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/api/v1/tickets/{{ticket_id}}/comments", "host": ["{{base_url}}"], "path": ["api", "v1", "tickets", "{{ticket_id}}", "comments"] }
+          }
+        },
+        {
+          "name": "Update Comment (PUT /tickets/:id/comments/:c_id)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{tech_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Updated: I ordered the parts, arriving tomorrow.\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/api/v1/tickets/{{ticket_id}}/comments/{{comment_id}}", "host": ["{{base_url}}"], "path": ["api", "v1", "tickets", "{{ticket_id}}", "comments", "{{comment_id}}"] }
+          }
+        },
+        {
+          "name": "Delete Comment (DELETE /tickets/:id/comments/:c_id)",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tech_token}}" }],
+            "url": { "raw": "{{base_url}}/api/v1/tickets/{{ticket_id}}/comments/{{comment_id}}", "host": ["{{base_url}}"], "path": ["api", "v1", "tickets", "{{ticket_id}}", "comments", "{{comment_id}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Attachments",
+      "item": [
+        {
+          "name": "Upload Attachment (POST /tickets/:id/attachments)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{user_token}}" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "file", "src": [], "type": "file" }
+              ]
+            },
+            "url": { "raw": "{{base_url}}/api/v1/tickets/{{ticket_id}}/attachments", "host": ["{{base_url}}"], "path": ["api", "v1", "tickets", "{{ticket_id}}", "attachments"] }
+          }
+        },
+        {
+          "name": "Delete Attachment (DELETE /tickets/:id/attachments/:a_id)",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{user_token}}" }],
+            "url": { "raw": "{{base_url}}/api/v1/tickets/{{ticket_id}}/attachments/{{attachment_id}}", "host": ["{{base_url}}"], "path": ["api", "v1", "tickets", "{{ticket_id}}", "attachments", "{{attachment_id}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Validation & Error Flows (Failures)",
+      "item": [
+        {
+          "name": "Fail: Invalid Status Transition (OPEN -> CLOSED)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"newStatus\": \"CLOSED\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/api/v1/tickets/{{ticket_id}}/status", "host": ["{{base_url}}"], "path": ["api", "v1", "tickets", "{{ticket_id}}", "status"] }
+          }
+        },
+        {
+          "name": "Fail: Admin Deleting CLOSED Ticket",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": { "raw": "{{base_url}}/api/v1/tickets/{{closed_ticket_id}}", "host": ["{{base_url}}"], "path": ["api", "v1", "tickets", "{{closed_ticket_id}}"] }
+          }
+        },
+        {
+          "name": "Fail: Upload Evidence While IN_PROGRESS",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{user_token}}" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "file", "src": [], "type": "file" }
+              ]
+            },
+            "url": { "raw": "{{base_url}}/api/v1/tickets/{{in_progress_ticket_id}}/attachments", "host": ["{{base_url}}"], "path": ["api", "v1", "tickets", "{{in_progress_ticket_id}}", "attachments"] }
+          }
+        }
+      ]
+    }
+  ]
+}
