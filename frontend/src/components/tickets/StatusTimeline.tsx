@@ -109,11 +109,11 @@ export function StatusTimeline({ history }: StatusTimelineProps) {
                       </p>
 
                       {/* Notes */}
-                      {entry.notes && (
+                      {(entry.notes || (entry as any).note) && (
                         <div className="mt-3 rounded-md bg-muted p-3">
                           <p className="text-sm font-medium mb-1">Notes:</p>
                           <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                            {entry.notes}
+                            {entry.notes || (entry as any).note}
                           </p>
                         </div>
                       )}
