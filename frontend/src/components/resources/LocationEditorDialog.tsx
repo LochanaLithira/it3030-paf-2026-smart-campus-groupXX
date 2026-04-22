@@ -183,7 +183,7 @@ export function LocationEditorDialog({ open, onClose, location, tags }: Location
 
   return (
     <Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && onClose()}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Building className="h-5 w-5" />
@@ -193,28 +193,28 @@ export function LocationEditorDialog({ open, onClose, location, tags }: Location
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <Card>
-            <CardHeader className="pb-3">
+            <CardHeader className="pb-4">
               <CardTitle className="text-base flex items-center gap-2">
                 <MapPin className="h-4 w-4" />
                 Location Details
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="pt-6 space-y-5">
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <Label htmlFor="location-building" className="text-sm font-medium">Building Name *</Label>
                   <Input id="location-building" {...register('buildingName')} className={errors.buildingName ? 'border-destructive' : ''} />
                   {errors.buildingName && <p className="text-xs text-destructive">{errors.buildingName.message}</p>}
                 </div>
 
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <Label htmlFor="location-floor" className="text-sm font-medium">Floor Number *</Label>
                   <Input id="location-floor" type="number" {...register('floorNumber', { valueAsNumber: true })} className={errors.floorNumber ? 'border-destructive' : ''} />
                   {errors.floorNumber && <p className="text-xs text-destructive">{errors.floorNumber.message}</p>}
                 </div>
               </div>
 
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label htmlFor="location-room" className="text-sm font-medium">Room Number</Label>
                 <Input id="location-room" {...register('roomNumber')} placeholder="Optional" />
               </div>
@@ -222,20 +222,20 @@ export function LocationEditorDialog({ open, onClose, location, tags }: Location
           </Card>
 
           <Card>
-            <CardHeader className="pb-3">
+            <CardHeader className="pb-4">
               <CardTitle className="text-base flex items-center gap-2">
                 <Users className="h-4 w-4" />
                 Configuration
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="pt-6 space-y-5">
               <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <Label htmlFor="location-capacity" className="text-sm font-medium">Capacity *</Label>
                   <Input id="location-capacity" type="number" {...register('capacity', { valueAsNumber: true })} className={errors.capacity ? 'border-destructive' : ''} />
                   {errors.capacity && <p className="text-xs text-destructive">{errors.capacity.message}</p>}
                 </div>
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <Label className="text-sm font-medium">Type *</Label>
                   <Select value={selectedType} onValueChange={(value) => setValue('type', value as FormValues['type'])}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
@@ -246,7 +246,7 @@ export function LocationEditorDialog({ open, onClose, location, tags }: Location
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <Label className="text-sm font-medium">Status *</Label>
                   <Select value={selectedStatus} onValueChange={(value) => setValue('status', value as FormValues['status'])}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
@@ -277,14 +277,14 @@ export function LocationEditorDialog({ open, onClose, location, tags }: Location
           </Card>
 
           <Card>
-            <CardHeader className="pb-3">
+            <CardHeader className="pb-4">
               <CardTitle className="text-base flex items-center gap-2">
                 <Tag className="h-4 w-4" />
                 Tags
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-3">
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
                 {tags.map((tag) => (
                   <label key={tag.tagId} className="flex items-center gap-2 p-2 rounded-md border hover:bg-muted/50 cursor-pointer transition-colors">
                     <Checkbox
@@ -302,7 +302,7 @@ export function LocationEditorDialog({ open, onClose, location, tags }: Location
           </Card>
 
           <Card>
-            <CardHeader className="pb-3">
+            <CardHeader className="pb-4">
               <CardTitle className="text-base flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Clock className="h-4 w-4" />
@@ -328,12 +328,12 @@ export function LocationEditorDialog({ open, onClose, location, tags }: Location
                   <p className="text-xs text-muted-foreground mt-1">Add slots to define when this location is available for booking.</p>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {fields.map((field, index) => (
                     <Card key={field.id} className="border-l-4 border-l-primary/20">
                       <CardContent className="pt-4">
-                        <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_1fr_1fr_1fr_auto]">
-                          <div className="space-y-1.5">
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-[1fr_1fr_1fr_1fr_auto]">
+                          <div className="space-y-2">
                             <Label className="text-xs font-medium text-muted-foreground">Recurrence</Label>
                             <Select
                               value={watch(`availability.${index}.recurrenceType`)}
@@ -352,7 +352,7 @@ export function LocationEditorDialog({ open, onClose, location, tags }: Location
                                 }
                               }}
                             >
-                              <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
+                              <SelectTrigger><SelectValue /></SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="DAILY">Daily</SelectItem>
                                 <SelectItem value="WEEKLY">Weekly</SelectItem>
@@ -362,7 +362,7 @@ export function LocationEditorDialog({ open, onClose, location, tags }: Location
                           </div>
 
                           {watch(`availability.${index}.recurrenceType`) === 'WEEKLY' ? (
-                            <div className="space-y-1.5">
+                            <div className="space-y-2">
                               <Label className="text-xs font-medium text-muted-foreground">Day</Label>
                               <Select
                                 value={watch(`availability.${index}.dayOfWeek`) || '__none__'}
@@ -374,7 +374,7 @@ export function LocationEditorDialog({ open, onClose, location, tags }: Location
                                   )
                                 }
                               >
-                                <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
+                                <SelectTrigger><SelectValue /></SelectTrigger>
                                 <SelectContent>
                                   <SelectItem value="__none__" disabled>Select day</SelectItem>
                                   {WEEK_DAYS.map((day) => (
@@ -384,13 +384,12 @@ export function LocationEditorDialog({ open, onClose, location, tags }: Location
                               </Select>
                             </div>
                           ) : watch(`availability.${index}.recurrenceType`) === 'MONTHLY' ? (
-                            <div className="space-y-1.5">
+                            <div className="space-y-2">
                               <Label className="text-xs font-medium text-muted-foreground">Day of Month</Label>
                               <Input
                                 type="number"
                                 min={1}
                                 max={31}
-                                className="h-8"
                                 value={watch(`availability.${index}.dayOfMonth`) ?? ''}
                                 onChange={(event) =>
                                   setValue(
@@ -403,20 +402,20 @@ export function LocationEditorDialog({ open, onClose, location, tags }: Location
                               />
                             </div>
                           ) : (
-                            <div className="space-y-1.5">
+                            <div className="space-y-2">
                               <Label className="text-xs font-medium text-muted-foreground">Schedule</Label>
-                              <Input value="Every day" disabled className="h-8" />
+                              <Input value="Every day" disabled />
                             </div>
                           )}
 
-                          <div className="space-y-1.5">
+                          <div className="space-y-2">
                             <Label className="text-xs font-medium text-muted-foreground">Start Time</Label>
-                            <Input type="time" {...register(`availability.${index}.startTime`)} className="h-8" />
+                            <Input type="time" {...register(`availability.${index}.startTime`)} />
                           </div>
 
-                          <div className="space-y-1.5">
+                          <div className="space-y-2">
                             <Label className="text-xs font-medium text-muted-foreground">End Time</Label>
-                            <Input type="time" {...register(`availability.${index}.endTime`)} className="h-8" />
+                            <Input type="time" {...register(`availability.${index}.endTime`)} />
                           </div>
 
                           <div className="flex items-end">
@@ -424,7 +423,7 @@ export function LocationEditorDialog({ open, onClose, location, tags }: Location
                               type="button"
                               size="icon"
                               variant="ghost"
-                              className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive"
+                              className="h-9 w-9 hover:bg-destructive/10 hover:text-destructive"
                               onClick={() => remove(index)}
                             >
                               <Trash2 className="h-4 w-4" />
