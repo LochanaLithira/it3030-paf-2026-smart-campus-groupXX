@@ -138,8 +138,8 @@ public class TicketController {
     }
 
     @DeleteMapping("/{ticketId}/attachments/{attachmentId}")
-    @PreAuthorize("hasAuthority('tickets.create')")
-    @Operation(summary = "Delete attachment", description = "Delete your own attachment (only before ticket is resolved)")
+    @PreAuthorize("hasAuthority('tickets.create') or hasAuthority('tickets.delete')")
+    @Operation(summary = "Delete attachment", description = "Delete an attachment. Uploader can delete when OPEN, Admin can delete anytime unless CLOSED.")
     public ResponseEntity<Void> deleteAttachment(
             @PathVariable UUID ticketId,
             @PathVariable UUID attachmentId

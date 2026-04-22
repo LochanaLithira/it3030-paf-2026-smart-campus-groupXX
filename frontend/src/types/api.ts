@@ -426,6 +426,7 @@ export interface TicketAttachmentResponse {
   fileUrl: string;
   fileSize: number;
   mimeType: string;
+  uploadedBy: UserSummaryResponse;
   uploadedAt: string;
 }
 

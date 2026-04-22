@@ -335,9 +335,9 @@ public class TicketService {
             throw new ForbiddenException("Only the ticket reporter can upload attachments");
         }
 
-        // Cannot upload to resolved or closed tickets
-        if (ticket.getStatus() == TicketStatus.RESOLVED || ticket.getStatus() == TicketStatus.CLOSED) {
-            throw new AppException("Cannot upload attachments to resolved or closed tickets", HttpStatus.BAD_REQUEST);
+        // Cannot upload unless ticket is OPEN
+        if (ticket.getStatus() != TicketStatus.OPEN) {
+            throw new AppException("Cannot upload attachments after the ticket has been picked up or closed", HttpStatus.BAD_REQUEST);
         }
 
         // Check attachment count
@@ -386,15 +386,29 @@ public class TicketService {
 
         UUID currentUserId = SecurityUtils.getCurrentUserId();
 
-        // Only uploader can delete
-        if (!attachment.getUploadedBy().getUserId().equals(currentUserId)) {
-            throw new ForbiddenException("You can only delete your own attachments");
+        User currentUser = userRepository.findById(currentUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        boolean isAdmin = hasPermission(currentUser, "tickets.delete");
+
+        boolean isUploader = attachment.getUploadedBy().getUserId().equals(currentUserId);
+
+        // Permission check
+        if (!isUploader && !isAdmin) {
+            throw new ForbiddenException("You do not have permission to delete this attachment");
         }
 
-        // Cannot delete from resolved/closed tickets
-        if (attachment.getTicket().getStatus() == TicketStatus.RESOLVED ||
-                attachment.getTicket().getStatus() == TicketStatus.CLOSED) {
-            throw new AppException("Cannot delete attachments from resolved or closed tickets", HttpStatus.BAD_REQUEST);
+        // Rules for Uploader
+        if (isUploader && !isAdmin) {
+            if (attachment.getTicket().getStatus() != TicketStatus.OPEN) {
+                throw new AppException("You can only delete your attachments when the ticket is OPEN", HttpStatus.BAD_REQUEST);
+            }
+        }
+
+        // Rules for Admin
+        if (isAdmin) {
+            if (attachment.getTicket().getStatus() == TicketStatus.CLOSED) {
+                throw new AppException("Attachments cannot be deleted from a CLOSED ticket", HttpStatus.BAD_REQUEST);
+            }
         }
 
         // Delete file from filesystem
