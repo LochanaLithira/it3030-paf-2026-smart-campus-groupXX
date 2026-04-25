@@ -3,7 +3,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { BookOpen, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { authApi } from '@/api/auth';
 import { useAuthStore } from '@/store/authStore';
+import { BrandLogo } from '@/components/layout/BrandLogo';
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID as string;
 const REDIRECT_URI = import.meta.env.VITE_OAUTH_REDIRECT_URI as string ?? `${window.location.origin}/oauth/callback`;
@@ -155,7 +156,7 @@ export function LoginPage() {
         {/* Brand */}
         <div className="flex flex-col items-center gap-3 text-center">
           <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-primary shadow-lg">
-            <BookOpen className="h-8 w-8 text-primary-foreground" />
+            <BrandLogo size="md" className="h-9 w-9" />
           </div>
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-foreground">Smart Campus</h1>
