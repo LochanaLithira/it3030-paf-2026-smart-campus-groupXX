@@ -4,7 +4,6 @@ import {
   Users,
   ShieldCheck,
   Settings,
-  BookOpen,
   ChevronRight,
   Building2,
   MapPin,
@@ -16,6 +15,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/authStore';
 import { PERMISSIONS } from '@/lib/permissions';
+import { BrandLogo } from '@/components/layout/BrandLogo';
 
 interface NavItem {
   label: string;
@@ -103,7 +103,7 @@ export function Sidebar() {
     <aside className="hidden md:flex flex-col w-64 bg-sidebar border-r border-sidebar-border">
       {/* Brand */}
       <div className="flex items-center gap-2 px-6 h-16 border-b border-sidebar-border shrink-0">
-        <BookOpen className="h-6 w-6 text-sidebar-primary" />
+        <BrandLogo size="sm" className="ring-1 ring-sidebar-primary/20" />
         <span className="font-bold text-sidebar-foreground text-lg">Smart Campus</span>
       </div>
 

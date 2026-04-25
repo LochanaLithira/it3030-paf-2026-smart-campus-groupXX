@@ -48,8 +48,8 @@ export function ProfilePage() {
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
               <p className="text-muted-foreground mb-1">Account Status</p>
-              <Badge variant={user.active ? 'default' : 'destructive'}>
-                {user.active ? 'Active' : 'Deactivated'}
+              <Badge variant={user.isActive ? 'default' : 'destructive'}>
+                {user.isActive ? 'Active' : 'Deactivated'}
               </Badge>
             </div>
             <div>
