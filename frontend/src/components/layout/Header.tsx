@@ -1,7 +1,17 @@
+import { useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { LogOut, User, Settings } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,10 +36,22 @@ function getInitials(name: string) {
 export function Header() {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
 
-  const handleLogout = async () => {
-    await logout();
-    navigate({ to: '/login' });
+  const requestLogout = () => {
+    setConfirmOpen(true);
+  };
+
+  const handleConfirmLogout = async () => {
+    setIsSigningOut(true);
+    try {
+      await logout();
+      setConfirmOpen(false);
+      navigate({ to: '/login' });
+    } finally {
+      setIsSigningOut(false);
+    }
   };
 
   return (
@@ -47,7 +69,7 @@ export function Header() {
         <Button
           variant="ghost"
           size="sm"
-          onClick={handleLogout}
+          onClick={requestLogout}
           className="text-muted-foreground hover:text-destructive gap-1.5"
         >
           <LogOut className="h-4 w-4" />
@@ -83,7 +105,7 @@ export function Header() {
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 className="text-destructive focus:text-destructive"
-                onClick={handleLogout}
+                onClick={requestLogout}
               >
                 <LogOut className="mr-2 h-4 w-4" />
                 Sign out
@@ -92,6 +114,25 @@ export function Header() {
           </DropdownMenu>
         )}
       </div>
+
+      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <DialogContent className="sm:max-w-md" showCloseButton={false}>
+          <DialogHeader>
+            <DialogTitle>Confirm sign out</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to sign out of Smart Campus?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose render={<Button variant="outline" disabled={isSigningOut} />}>
+              Cancel
+            </DialogClose>
+            <Button variant="destructive" onClick={handleConfirmLogout} disabled={isSigningOut}>
+              {isSigningOut ? 'Signing out...' : 'Sign out'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </header>
   );
 }
