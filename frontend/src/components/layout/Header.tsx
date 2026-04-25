@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
-import { LogOut, User, Settings } from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -12,26 +11,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { NotificationBell } from '@/components/layout/NotificationBell';
 import { useAuthStore } from '@/store/authStore';
-
-function getInitials(name: string) {
-  return name
-    .split(' ')
-    .map((n) => n[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase();
-}
 
 export function Header() {
   const { user, logout } = useAuthStore();
@@ -65,53 +46,17 @@ export function Header() {
       <div className="flex items-center gap-3">
         <NotificationBell />
 
-        {/* Visible logout button */}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={requestLogout}
-          className="text-muted-foreground hover:text-destructive gap-1.5"
-        >
-          <LogOut className="h-4 w-4" />
-          Sign out
-        </Button>
-
+        {/* Sign out intentionally stays as the right-most action */}
         {user && (
-          <DropdownMenu>
-            <DropdownMenuTrigger className="flex items-center gap-2 rounded-full focus:outline-none focus:ring-2 focus:ring-ring">
-              <Avatar className="h-8 w-8">
-                <AvatarImage src={user.profilePictureUrl ?? undefined} alt={user.fullName} />
-                <AvatarFallback>{getInitials(user.fullName)}</AvatarFallback>
-              </Avatar>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuGroup>
-                <DropdownMenuLabel>
-                  <div>
-                    <p className="font-medium">{user.fullName}</p>
-                    <p className="text-xs text-muted-foreground">{user.email}</p>
-                  </div>
-                </DropdownMenuLabel>
-              </DropdownMenuGroup>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => navigate({ to: '/profile' })}>
-                <User className="mr-2 h-4 w-4" />
-                Profile
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate({ to: '/roles' })}>
-                <Settings className="mr-2 h-4 w-4" />
-                Settings
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                className="text-destructive focus:text-destructive"
-                onClick={requestLogout}
-              >
-                <LogOut className="mr-2 h-4 w-4" />
-                Sign out
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={requestLogout}
+            className="text-muted-foreground hover:text-destructive gap-1.5"
+          >
+            <LogOut className="h-4 w-4" />
+            Sign out
+          </Button>
         )}
       </div>
 
