@@ -84,7 +84,7 @@ const ticketFormSchema = z
       .or(z.literal('')),
     preferredContactPhone: z
       .string()
-      .regex(/^[+]?[0-9]{10,15}$/, 'Invalid phone format (10-15 digits, + optional)')
+      .regex(/^0\d{9}$/, 'Invalid phone format (10 digits, must start with 0)')
       .optional()
       .or(z.literal('')),
     dueDate: z.date().min(new Date(new Date().setHours(0, 0, 0, 0)), 'Due date cannot be in the past').optional(),
@@ -507,7 +507,7 @@ export function TicketForm({ onSubmit, onCancel, isLoading, defaultValues }: Tic
               <FormControl>
                 <Input
                   type="tel"
-                  placeholder="+94771234567 or 0771234567"
+                  placeholder="0771234567"
                   {...field}
                 />
               </FormControl>

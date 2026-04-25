@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Smart Campus - Module C (Full Tickets API)",
-    "description": "Complete Postman collection covering all 11 endpoints for Maintenance & Incident Ticketing.",
+    "description": "Complete Postman collection covering all 10 endpoints for Maintenance & Incident Ticketing.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -48,7 +48,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"assignedTechId\": \"{{technician_id}}\",\n  \"dueDate\": \"2026-12-31T23:59:59Z\"\n}"
+              "raw": "{\n  \"assignedTechId\": \"{{technician_id}}\",\n  \"dueDate\": \"2026-12-31\"\n}"
             },
             "url": { "raw": "{{base_url}}/api/v1/tickets/{{ticket_id}}/assign", "host": ["{{base_url}}"], "path": ["api", "v1", "tickets", "{{ticket_id}}", "assign"] }
           }
