@@ -62,7 +62,7 @@ export interface UserResponse {
   email: string;
   fullName: string;
   profilePictureUrl: string | null;
-  active: boolean;
+  isActive: boolean;
   roles: string[];
   permissions: string[];
   createdAt: string;

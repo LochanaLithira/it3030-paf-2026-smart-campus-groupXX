@@ -1,0 +1,21 @@
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Smart Campus logo">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0D3B66"/>
+      <stop offset="100%" stop-color="#1E6FA8"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#F4D35E"/>
+      <stop offset="100%" stop-color="#EE964B"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="12" y="12" width="232" height="232" rx="52" fill="url(#bg)"/>
+
+  <path d="M56 166h144v12H56z" fill="#ffffff" opacity="0.92"/>
+  <path d="M68 154V92h120v62h-12v-50H80v50z" fill="#ffffff"/>
+  <path d="M98 100h12v66H98zm48 0h12v66h-12z" fill="#ffffff" opacity="0.9"/>
+
+  <circle cx="128" cy="72" r="22" fill="url(#accent)"/>
+  <path d="M128 54l6 11 12 2-9 8 2 12-11-6-11 6 2-12-9-8 12-2z" fill="#0D3B66"/>
+</svg>

@@ -126,7 +126,7 @@ export function UserManagementPage() {
         </div>
       ),
     }),
-    columnHelper.accessor('active', {
+    columnHelper.accessor('isActive', {
       header: 'Status',
       cell: (info) => (
         <Badge variant={info.getValue() ? 'default' : 'destructive'} className="text-xs">
@@ -163,7 +163,7 @@ export function UserManagementPage() {
                     Assign Roles
                   </DropdownMenuItem>
                 )}
-                {canDeactivate && row.active && (
+                {canDeactivate && row.isActive && (
                   <DropdownMenuItem
                     className="text-destructive focus:text-destructive"
                     onClick={() => deactivate.mutate(row.userId)}

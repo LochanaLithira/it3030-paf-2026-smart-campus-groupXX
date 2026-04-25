@@ -10,6 +10,21 @@ import { tokenStorage } from '@/api/client';
 import { authApi } from '@/api/auth';
 import type { Permission } from '@/lib/permissions';
 
+type UserLike = UserResponse & { active?: boolean };
+
+function normalizeUser(user: UserLike): UserResponse {
+  return {
+    ...user,
+    // Backend/legacy payloads may send "active" instead of "isActive".
+    isActive:
+      typeof user.isActive === 'boolean'
+        ? user.isActive
+        : typeof user.active === 'boolean'
+          ? user.active
+          : true,
+  };
+}
+
 interface AuthState {
   user: UserResponse | null;
   isAuthenticated: boolean;
@@ -33,7 +48,7 @@ export const useAuthStore = create<AuthState>()(
       isLoading: false,
 
       setUser: (user: UserResponse) => {
-        set({ user, isAuthenticated: true });
+        set({ user: normalizeUser(user), isAuthenticated: true });
       },
 
       logout: async () => {
@@ -80,7 +95,27 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'smartcampus-auth-v2',
+      version: 3,
       storage: createJSONStorage(() => localStorage),
+      migrate: (persistedState: unknown) => {
+        const state = persistedState as { user?: UserLike | null; isAuthenticated?: boolean } | undefined;
+
+        return {
+          ...state,
+          user: state?.user ? normalizeUser(state.user) : null,
+          isAuthenticated: Boolean(state?.isAuthenticated && state?.user),
+        };
+      },
+      merge: (persistedState: unknown, currentState) => {
+        const state = persistedState as { user?: UserLike | null; isAuthenticated?: boolean } | undefined;
+
+        return {
+          ...currentState,
+          ...state,
+          user: state?.user ? normalizeUser(state.user) : null,
+          isAuthenticated: Boolean(state?.isAuthenticated && state?.user),
+        };
+      },
       // Only persist user, not loading state
       partialize: (state) => ({
         user: state.user,
