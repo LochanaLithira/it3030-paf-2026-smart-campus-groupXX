@@ -1,8 +1,38 @@
 # Smart Campus Resource Management Platform
 
-Full-stack web application for managing campus resources — rooms, equipment, bookings, maintenance tickets, and user administration.
+Full-stack web application for managing campus resources including locations, assets, bookings, maintenance tickets, and user administration. The project is a monorepo with a Spring Boot backend and a React frontend.
 
-**Stack:** Spring Boot 3 (Java 21) · PostgreSQL 16 · React 19 · TypeScript · Docker Compose
+**Stack:** Spring Boot 3 (Java 21), PostgreSQL 16, React 19, TypeScript, Docker Compose
+
+---
+
+## Features and Modules
+
+### Module A: Facilities and Assets (Member 1)
+- **Asset management:** CRUD for locations (buildings, floors, rooms) and resources (lecture halls, labs, equipment).
+- **Availability tracking:** Weekly time windows for resource availability.
+- **Tagging system:** Tags mapped to resources for advanced search and filtering.
+
+### Module B: Booking Management (Member 2)
+- **Reservations:** Booking engine constrained by resource availability.
+- **Conflict prevention:** PostgreSQL `btree_gist` exclusion constraints prevent double-booking.
+- **Recurrence engine:** iCal RRULE support for recurring booking groups.
+
+### Module C: Maintenance and Incident Ticketing (Member 3)
+- **Incident ticket API:** Ticket creation and management linked to resources or locations.
+- **SLA timer:** Frontend `SLATimerCard` shows time remaining based on priority and `dueDate`.
+- **SLA and deadlines:** Backend SLA tracking via `dueDate` and assignment deadlines.
+- **Secure attachments:** Multipart uploads with validation (max 3 files, 3 MB each, JPG/PNG/WEBP/GIF).
+- **Status workflow and audit trail:** State machine (`OPEN` -> `IN_PROGRESS` -> `RESOLVED` -> `CLOSED` / `REJECTED`) with `ticket_status_history` logging.
+- **Role-based visibility:** BOLA defenses for user, technician, and admin access.
+- **Notifications:** Alerts on ticket creation, assignment, and updates.
+- **Comments:** Threaded comments with edit/delete and ownership checks.
+
+### Module D: Auth, Roles, and Notifications (Member 4)
+- **Authentication:** Email/password and Google OAuth 2.0.
+- **Security:** Stateless JWT (RS256) with access and refresh tokens.
+- **RBAC:** Permission arrays (`TEXT[]`) mapped to ADMIN, USER, and TECHNICIAN roles.
+- **Notification engine:** Centralized in-app notifications across modules.
 
 ---
 
@@ -13,13 +43,13 @@ Full-stack web application for managing campus resources — rooms, equipment, b
 | Docker Desktop | 24+ | https://docs.docker.com/get-docker/ |
 | Docker Compose | v2 (`docker compose`) | Bundled with Docker Desktop |
 | Node.js | 20 LTS | https://nodejs.org |
-| Java JDK | 21+ | https://adoptium.net (only needed for local backend dev) |
+| Java JDK | 21+ | https://adoptium.net (for local backend dev) |
 
 ---
 
-## Quick Start (Recommended)
+## Quick Start
 
-### 1. Clone the repo
+### 1. Clone the repository
 
 ```bash
 git clone <repo-url>
@@ -32,60 +62,58 @@ cd it3030-paf-2026-smart-campus-groupXX
 ```bash
 cp .env.example .env
 ```
-Open `.env` and fill in the two required fields:
+Set the required Google OAuth values:
 ```dotenv
 GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
 GOOGLE_CLIENT_SECRET=your-client-secret
 ```
-Everything else has working defaults for local development.
 
-> **Where to get Google credentials:** Go to [Google Cloud Console](https://console.cloud.google.com) → APIs & Services → Credentials → Create OAuth 2.0 Client ID (Web application).  
-> Add `http://localhost:8080/api/v1/oauth2/callback/google` as an **Authorized redirect URI**.
-
-**Frontend (`.env` in `frontend/`):**
+**Frontend (`frontend/.env`):**
 ```bash
 cp frontend/.env.example frontend/.env
 ```
-Open `frontend/.env` and fill in:
 ```dotenv
 VITE_GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
 ```
 
-### 3. Stop any local PostgreSQL (it conflicts on port 5432)
+Google OAuth redirect URI:
+`http://localhost:8080/api/v1/oauth2/callback/google`
+
+### 3. Stop any local PostgreSQL service
 
 ```bash
 # Linux/macOS
-sudo systemctl stop postgresql   # or: brew services stop postgresql
+sudo systemctl stop postgresql
 
-# Windows — from Services app, stop "postgresql-x64-xx"
+# Windows
+# Stop "postgresql-x64-xx" from the Services app
 ```
 
-### 4. Start the backend stack
+### 4. Start backend services
 
 ```bash
 docker compose up --build
 ```
 
 This starts:
-- **PostgreSQL 16** on port `5432` — auto-migrates schema via Flyway on first run
-- **Spring Boot API** on port `8080` — waits for Postgres health before starting
-- **pgAdmin** on port `5050`
+- PostgreSQL 16 on port `5432` with Flyway migrations
+- Spring Boot API on port `8080`
+- pgAdmin on port `5050`
 
-Wait until you see log output like:
+Wait for:
 ```
 smartcampus-backend | Started BackendApplication in X.XXX seconds
 ```
 
 ### 5. Start the frontend dev server
 
-In a **separate terminal**:
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
 
-Frontend is served at **http://localhost:5173**.
+Frontend runs at `http://localhost:5173`.
 
 ---
 
@@ -93,36 +121,35 @@ Frontend is served at **http://localhost:5173**.
 
 | Service | URL | Credentials |
 |---------|-----|-------------|
-| Frontend | http://localhost:5173 | — |
+| Frontend | http://localhost:5173 | - |
 | Backend API | http://localhost:8080/api/v1 | JWT Bearer |
-| Swagger UI | http://localhost:8080/api/v1/swagger-ui.html | — |
+| Swagger UI | http://localhost:8080/api/v1/swagger-ui.html | - |
 | pgAdmin | http://localhost:5050 | admin@smartcampus.local / admin |
-| PostgreSQL (direct) | localhost:5432 | smartcampus / smartcampus |
+| PostgreSQL | localhost:5432 | smartcampus / smartcampus |
 
 ---
 
-## Logging In
+## Authentication Notes
 
-The app supports three ways to authenticate:
+The login page supports:
+1. Email/password sign-in
+2. Self-registration (role assigned by admin)
+3. Google OAuth (requires `VITE_GOOGLE_CLIENT_ID`)
 
-1. **Email/Password** — use the Sign In tab on the login page
-2. **Sign Up** — create an account (you will have no role until an admin assigns one)
-3. **Google OAuth** — requires valid `VITE_GOOGLE_CLIENT_ID` in `frontend/.env`
-
-> If you sign up yourself, your account shows a yellow "Contact admin" banner until a user with admin access assigns you a role. To get admin access for local dev, use the seeded admin credentials or update the role directly in pgAdmin.
+If you self-register, you will see a "Contact admin" banner until a role is assigned.
 
 ---
 
 ## Default Seed Data
 
-The database is automatically seeded on first startup (Flyway V2 migration):
+Seeded by Flyway V2 on first startup:
 
 | Item | Value |
 |------|-------|
-| ADMIN role | Has all permissions |
-| USER role | Basic read/view permissions |
+| ADMIN role | All permissions |
+| USER role | Basic read and view permissions |
 
-To check what was seeded, open pgAdmin at http://localhost:5050, connect to the `smartcampus` database, and browse the `roles` and `users` tables.
+To review seeded data, open pgAdmin and check the `roles` and `users` tables.
 
 ---
 
@@ -132,16 +159,16 @@ To check what was seeded, open pgAdmin at http://localhost:5050, connect to the 
 # Stop everything
 docker compose down
 
-# Stop and wipe all data (fresh start)
+# Stop and wipe all data
 docker compose down -v
 
-# Rebuild after backend code changes
+# Rebuild backend after code changes
 docker compose up --build backend
 
 # View backend logs
 docker compose logs -f backend
 
-# View postgres logs
+# View PostgreSQL logs
 docker compose logs -f postgres
 
 # Run backend tests
@@ -162,20 +189,20 @@ it3030-paf-2026-smart-campus-groupXX/
 │   │   ├── config/       Security, CORS, JWT, Swagger configuration
 │   │   ├── controller/   REST controllers
 │   │   ├── dto/          Java 21 records (request/response types)
-│   │   ├── exception/    Custom exceptions + global handler
-│   │   ├── model/        JPA entities + enums
+│   │   ├── exception/    Custom exceptions and global handler
+│   │   ├── model/        JPA entities and enums
 │   │   ├── repository/   Spring Data JPA repositories
 │   │   ├── security/     JWT filter, OAuth2 service, permission evaluator
 │   │   └── service/      Business logic
 │   └── src/main/resources/
 │       ├── application.properties
 │       └── db/migration/  Flyway SQL migrations
-├── frontend/         React + TypeScript application
+├── frontend/         React and TypeScript application
 │   └── src/
 │       ├── api/       HTTP client functions (ky)
 │       ├── components/ Reusable UI components
 │       ├── hooks/     TanStack Query data hooks
-│       ├── lib/       Utilities, permission constants
+│       ├── lib/       Utilities and permission constants
 │       ├── pages/     Route-level page components
 │       ├── router.tsx TanStack Router configuration
 │       ├── store/     Zustand auth store
@@ -189,44 +216,24 @@ it3030-paf-2026-smart-campus-groupXX/
 
 ---
 
-## Documentation
-
-All design documents are in `docs/`:
-
-| File | Contents |
-|------|---------|
-| `api_doc.md` | Full REST API reference — every endpoint, request/response, status codes |
-| `data_model.md` | Database schema, ER diagram, permission catalogue |
-| `tasks.md` | 129 tasks broken down by member with sprint assignments |
-| `design_guideline.md` | Coding conventions, Git workflow, API patterns |
-| `implementation_master_plan.md` | Sprint timeline and dependency graph |
-| `security_concerns.md` | Auth/JWT/RBAC security notes |
-| `user-journeys.md` | User flows for all 3 roles |
-
-For code generation / AI assistant context, see `claude.md` at the root.
-
----
-
 ## Troubleshooting
 
 **Port 5432 already in use**
 ```bash
 sudo systemctl stop postgresql
-# or kill the process: sudo lsof -i :5432 | grep LISTEN
 ```
 
-**Backend won't start — "Flyway migration failed"**
+**Flyway migration failed**
 ```bash
-# Wipe the database volume and start fresh
 docker compose down -v && docker compose up --build
 ```
 
-**Frontend shows "Network Error" / can't reach API**
-- Make sure `docker compose up` is running
-- Check `frontend/.env` has `VITE_API_BASE_URL=http://localhost:8080`
+**Frontend cannot reach API**
+- Ensure `docker compose up` is running
+- Verify `frontend/.env` has `VITE_API_BASE_URL=http://localhost:8080`
 
-**Google OAuth "redirect_uri_mismatch"**
-- In Google Cloud Console, ensure `http://localhost:8080/api/v1/oauth2/callback/google` is listed as an Authorized Redirect URI
+**Google OAuth redirect URI mismatch**
+- Add `http://localhost:8080/api/v1/oauth2/callback/google` in Google Cloud Console
 
 **"Contact admin" banner after sign-up**  
 This is expected — self-registered users have no role. Ask an admin to assign a role via User Management, or do it directly in pgAdmin.
